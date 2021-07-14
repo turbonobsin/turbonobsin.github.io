@@ -1,0 +1,13 @@
+0.0.1 : 7-13-21
+    - Added entire debug menu.
+    - Added Rusty Sniper, Coders Gun, Rotted Wand, Rotted Staff
+    - Started Staff abilities.
+    - Added Staff create shield but doesn't work well,
+        added heal.
+    - Fixed bugs
+    - Added sniper weapon type
+    - For pistol, added hold rmb for quick lockon and q+lmb
+        for selecting targets to lock on to. Normal attack will
+        aim at this target.
+
+0.0.2 : 7-14-21

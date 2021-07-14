@@ -1,0 +1,90 @@
+body{
+    margin:0px;
+    background-color:rgb(48,48,48);
+    overflow-x:hidden;
+}
+canvas{
+    image-rendering:pixelated;
+    border-bottom:solid 2px black;
+    width:100%;
+    position:absolute;
+    top:0px;
+}
+#pauseSpan{
+    position:absolute;
+    z-index:1;
+    margin:5px;
+    color:white;
+    font-weight:bold;
+    border-bottom:solid 2px white;
+    visibility:hidden;
+    pointer-events:none;
+    top:20px;
+    background-color:black;
+    padding:2px;
+}
+#cont{
+    color:white;
+    margin:10px;
+    margin-top:460px;
+}
+#classDiv{
+    padding:10px;
+    background-color:black;
+    width:fit-content;
+}
+#classDiv > button{
+    display:block;
+}
+button{
+    background-color:white;
+    font-weight:bold;
+    border:solid 2px black;
+    border-radius:0px;
+    margin:5px;
+}
+button:hover{
+    background-color:gray;
+}
+button:active{
+    background-color:black;
+    color:white;
+}
+#createWepDiv{
+    padding:10px;
+    background-color:black;
+    width:fit-content;
+}
+#controlsDiv{
+    position:absolute;
+    margin-left:350px;
+    padding:10px;
+    background-color:black;
+    width:fit-content;
+}
+#enDiv{
+    position:absolute;
+    margin-left:120px;
+    padding:10px;
+    background-color:black;
+    width:fit-content;
+}
+#enDiv > button{
+    display:block;
+}
+.cont{
+    position:absolute;
+    margin-left:120px;
+    padding:10px;
+    background-color:black;
+    width:fit-content;
+}
+.cont2{
+    padding:10px;
+    background-color:black;
+    width:fit-content;
+    margin-bottom:5px;
+}
+#useBgDiv{
+    margin-left:190px;
+}

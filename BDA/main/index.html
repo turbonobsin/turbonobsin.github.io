@@ -1,0 +1,52 @@
+<html>
+    <head>
+        <title>BDA development</title>
+        <link rel="stylesheet" href="main.css">
+    </head>
+    <body>
+        <span id="pauseSpan">PAUSED</span>
+        <canvas id="can"></canvas>
+        <canvas id="b_can"></canvas>
+
+        <div id="cont">
+            <div class="cont2">Settings / Controls</div>
+            <div id="controlsDiv">
+                Control Info<br><br>
+                <span id="controlInfo"></span>
+            </div>
+            <div id="enDiv">
+                <button onclick="spawnDebug(ENEMIES.gollum)">Spawn Gollum</button>
+                <button onclick="spawnDebug(ENEMIES.gollum,10)">10x</button>
+                <button onclick="spawnDebug(ENEMIES.speedRoller)">Spawn SpeedRoller</button>
+                <button onclick="spawnDebug(ENEMIES.speedRoller,10)">10x</button><br>
+                <button onclick="debugRevive()">Revive</button>
+            </div>
+            <div id="classDiv">
+                <button onclick="changeClass(me,0)">Swordman</button>
+                <button onclick="changeClass(me,1)">Gunman</button>
+                <button onclick="changeClass(me,2)">Mage</button>
+                <button onclick="changeClass(me,3)">Sage</button>
+                <button onclick="changeClass(me,4)">Necroman</button>
+            </div>
+            <br><br>
+            <div class="cont" id="useBgDiv">
+                Use Background?<input type="checkbox" onclick="useBackground = !useBackground" checked="true"><br><br>
+                Bg Color?<input type="color" oninput="can.style.backgroundColor = this.value">
+            </div>
+            <div id="createWepDiv">
+                <input id="cwd_name" placeholder="Weapon Name"><br>
+                <input id="cwd_damage" type="number" placeholder="Damage"><br>
+                <input id="cwd_input" type="range" min="0" max="4" step="1" oninput="createWepDiv_input(this)"><br>
+                <span id="cwd_output"></span><br>
+                <button onclick="cwd_create()">Create</button>
+            </div>
+        </div>
+
+
+        <script src="NobsinEngine.js"></script>
+        <script src="tt.js"></script>
+        <script src="weapons.js"></script>
+        <script src="screens.js"></script>
+        <script src="main.js"></script>
+    </body>
+</html>
