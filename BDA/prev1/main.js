@@ -641,6 +641,7 @@ can2.addEventListener("contextmenu",e=>{
 document.addEventListener("keydown",e=>{
     let key = e.key.toLowerCase();
     keys[key] = true;
+    if(key == " ") e.preventDefault();
     if(key == "arrowdown" || key == "arrowup" || key == "arrowright" || key == "arrowleft") e.preventDefault();
     /*if(key == "c"){
         let c = prompt("Pick a color:");
