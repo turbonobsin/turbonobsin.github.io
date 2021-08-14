@@ -11,3 +11,220 @@
         aim at this target.
 
 0.0.2 : 7-14-21
+    - Added heal spell to staff on Sage class
+    - Fixed bugs with gun not working all the time I think
+    - Fixed bugs with not preventing default properly
+    - Added spell menu with all ui features
+    - Added lightning base spell
+    - Added elemental weakness to getDamage
+
+0.0.3 : 7-15-21
+    - Fixed elemental weakness in getDamage so critical doesn't affect whether it shows blue or not
+    - Changed colors of spells: Fire (slightly), Ice, Wind
+    - Added spells: Life, Energy, Mega (hidden)
+    - Added ability to change text color in magicData by property "text"
+    - Added fire spell
+    - Added ice spell
+    - Added frozen effect to slow down enemies
+    - Added white indicator above mouse to show when charging is done
+    - Added posPreview for charging spells
+    - Added lockOnHb ability for spells
+    - Changed lockOnHb so that hold Q to bring up locks, then right click to select
+    - Change lockOnHb so that it always shows up even when not holding Q
+    - Added more capability to bullets:
+        - Changed: null can be used for color param to render nothing
+        - Added onDeathAnim property to removeBullet
+        - Added noShadow property to disable shadows for images
+        - Added onHit callback for when the bullet touches an enemy
+
+0.0.4 : 7-16-21
+    - Added earth spell
+    - Moved life spell from staff
+    - Added wind spell
+    - Added energy spell
+    - Graphics for light spell started
+    - Added particles for each spell type
+    - Fire hits cause frozen effect to end twice as soon
+
+0.0.5 : 7-17-21
+    - Added support for custom functions for non base spells
+    - Added vortex spell
+    - Added light spell
+
+0.0.6 : 7-18-21
+    - Modified light spell so it isn't as glowy
+    - Added can3 for small text
+    - Drew water well, basic house, basic shed, and big cottage house
+
+0.0.7 : 7-19-21
+    - Added full 3D box collision
+    - Added physcially calculated shadow for player
+    - Added new shadow to fireball
+    - Added step up ability for collision
+
+0.1.0 : 7-20-21
+    - Added dep system to debug colls
+    - Made drawShadow perfectlly acurate
+    - Made drawShadow work with dep
+    - Fixed player when dead not showing fallen over texture properly
+    - Faster drawShadow calc
+    - Added basic house to scene
+    - Added dep system to player, enemies, shadow for fireball, house, house door
+    - Changed preview line's shadow for fire spell to have true shadow dep (disapears behind objects and shows on obj underneith)
+    - Added sObjs system
+    - Added bullet restriction so they can't pass through solid colliders (the ones players can't move through)
+    - Added "worlds and chunks" system
+    - Added createDoor function with full mechanic, animation, and functionallity both ways
+    - Started creating basic door's world: floor, colliders, door
+
+0.1.1 : 7-21-21
+    - Added transition between worlds
+    - Added createPlant and createObj functions
+    - Added and drew some decor around the house
+    - Started trying to fix step up so it works for colliders not in order
+
+0.1.2 : 7-22-21
+    - Reverted stepup to original function as new method didn't work
+    - Made functionallity for stepping on moving colliders to move you along with it:
+        When you step on a moving collider, you will stay on top and move with it
+    - Started adding test "Walker" enemy
+
+0.1.3 : 7-23-21
+    - Drew textures for wolf enemy
+    - Added outline option to drawImage_basic_tint2_dep
+
+0.1.4 : 7-27-21
+    - Added movement and animation for wolf, and drew chomp animation
+
+0.1.5 : 7-28-21
+    - Added damage dealing to wolf
+    - Added hitList option to drawHitBox so you can constantly draw the hitbox but it will only hit once each player until hitbox reset
+
+0.1.6 : 7-30-21
+    - Drew some plants for scene and rock path. Finally getting to drawing some scenery and figuring it out
+    - Created some barrels for the main house (water barrels)
+    - Created new enum for colors
+    - Added color option to createObj so in the image it will replace the color [254,254,254] with you specified color
+    - Changed original plants to use 254,254,254 instead of pure white so you can still use the white color without replacing it
+    - Added tools menu
+    - Added rusty hoe tool
+    - Added preview and temp red pixel for hoed land, just a test
+
+0.1.7 : 7-31-21
+    - Added seed bag, watering can, and bucket tools
+    - Seed bag displays what seed is selected like spells, and above seed type it shows how much seeds of max you have of that type, current types are "Wheat,Peanuts"
+    - Added brown color to hole
+    - Added hoe system to extend dug holes to create rows, can be horz or vert
+    - Added rounded corners to rows
+    - Added dep system to rows
+    - Added rain
+    - Added nighttime lighting
+
+0.1.8 : 8-1-21
+    - Added day-night cycle with dusk and dawn, independent from rain
+
+0.1.9 : 8-2-21
+    - Tweaked day-night cycle to make it more realistic
+    - Added startRain and endRain to smoothly transition between raining and not
+    - Added lights for seeing when its dark or in the rain
+    - Changed rain to be property on world not chunk
+    - Added growing plants, you can place plant down on tilled dirt
+
+0.1.10 : 8-4-21
+    - Further tweaked day-night cycle
+    - Added Sickle to harvest crops with slash animation
+    - Added plantData and giveDrops functionallity
+    - Added Wheat and WheatSeeds items that are awarded when harvesting wheat
+    - Fixed startRain and stopRain to truely make them a smooth transition
+    - Added Items and Support Items tab in smallInv
+    - Added Right Click Menu with craft here option
+    - Added craft here window, only has tabs at top and 2 options for survival tab
+    - Changed default width for smallOpenInv to 62 from 60 so the "-"s line up on each menu
+
+0.1.11 : 8-5-21
+    - Added large barrel option to survival objs
+    - Fixed craftInv to use nob3 centerX and Y for width and height
+    - Added exit button to bottom right corner for craftInv
+    - Added "Required Materials", "Required Tools", and "Info" tab to craftInv
+    - Added display for required materials to show the list and appears red if you don't have enough of that material
+    - Added info to be displayed and has automatic wrapping
+    - Added build button in top right corner, gray and nonselectable if cannot build, and green and selectable if can
+    - When clicking build shows rad2 circle at chosen loc and has 2 button cancel and build.
+        - Cancel button brings you back to menu
+        - Build runs the build function for that obj and creates it and takes the materials from you
+    - Changed giveDrops to properly support negative amounts so when you have 0 items it removes it from your inv
+    - Added whenMouseUp function that will run callback when mouse button 0 is up
+    - Added campfire obj (texture only)
+    - You can move preview build loc by using arrow keys
+    - Added isMenuOpen function to prevent keybinds, pre_keybinds, and mouseUp events from running during openMenu
+
+0.1.12 : 8-6-21
+    - Added (None) unequip option to weapons inv and tools inv
+    - Using hand and left clicking does attack like sickle to hit world objs
+    - Using hand and right clicking will pick up world objs if they can be picked up
+    - Added worldObjs struct
+    - Added hitWObj function
+    - Added stick wObj
+
+0.1.13 : 8-7-21
+    - Changed createObj so that it returns the created obj
+    - Added rock wObj
+    - Changed stick wObj so you can rick click to pick up or break with hit, takes 1 hit, rock takes 2 hits
+    - Added particle animations for rock and stick to spray off particles when hit in the direction hit
+    - Paricles remain for a random time and fade away
+    - Hitting large barrel splashes water
+    - Changed hoe so its right click does what shovel used to do, create a starting spot
+    - Shovel now digs ditch
+    - If you put a ditch under the spout on large_barrel and hit that barrel it will pour out water into the ditch
+    - Water flows around the ditch
+    - Each barrel has a capacity of 4 buckets and releases 1 bucket at a time,
+    - When it is halfway full, only water will 1 pixel height is shown
+    - When it is empty no water will be shown
+    - The amount of water particles shown when hit depends on how much buckets are there out of capacity
+    - Added colors.fluids
+    - Added names.fluids
+    - Added display for bucket to show gray EMPTY when bucket is empty and blue WATER when filled with water "no ingame way to fill yet"
+    - Changed RCA Menu so it only opens at your mouse location when you press "f", and press "f" to close
+
+0.1.14 : 8-9-21
+    - Added rain starting and stopping at random times (happens too fast currently)
+    - Added water particles that slide off the roof and splash
+    - Added lhb (liquid hitbox) that will show white when hovering over a liquid location with the bucket tool
+    - Bucket can take and fill water in lhb places
+    - Splash animations occur with this
+    - Added particleSims struct
+    - Fixed using bucket to put water into ditch
+    - Bucket shows cap/maxCap for lhb objs and will properly take and fill in all areas when there is capacity and not fill when there is max capacity
+
+0.1.15 : 8-10-21
+    - Removed collision from rain to increase performance
+    - Added particles to hoeing and shoveling
+    - Added mechanic to Tamper (left click only)
+    - Added particles to Tamper
+    - Fixed world transition so it didn't crazy bog down in performance when its raining
+    - Fixed rain so that transitions are actually smooth (not glitchy) and actually smoothly transition between all times of day as well
+    - Fix to the rain transition somehow caused glitch where start of day turns full dark
+    - Started adding procedural trees
+    - Trees generate with custom w,l,and 1-3 height and wave in the wind with branches and leaves
+
+0.1.16 : 8-11-21
+    - Added more detail to leaves and trunk on trees
+    - Added hp dependent on w of tree and can be hit down with axe
+    - Tree falls over and bursts apart into all branches on the ground
+    - Falling branches will break sObjs (tilled dirt, ditches, it did break large barrel, hopefully not house!)
+    - Falling branches also deal 6 damage and cause particle effects and animation
+    - Fallen tree branches can be broken with axe and give wood
+    - Added axe type with mechanic
+    - Added chain type with mechanic kinda, it pulls around objs weirdly, not final yet
+    - Some bug fixes
+    - Changed name "Catagory" on craftInv to "Craft Menu"
+    - Added "Inventory" by pressing "r"
+    - Added items tab to inventory, lists all your items and amounts, next it lists what recipies are available (ing or res) for that item, then you select recipe
+        and it shows required items and then it will show info based on which item name you hover over
+    - Craft button is grayed out unless you can craft it, you can use the arrows to change how much you want to craft, the max is represented in gray text to the left
+    - Added regInputData - Clicking on the amount to craft allows you to type freely a value and then it submits it on enter or on deselect
+    - Crafting menu actually works and gives you the crafted items
+    - Added recipes struct, only has one recipe currently
+
+0.1.17 : 8-12-21
+    - 

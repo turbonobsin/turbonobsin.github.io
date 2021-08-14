@@ -12,6 +12,21 @@ var tt = {
         stunned:tl.loadAnim("speedRoller/speedRoller_stunned.png","sr_stunned",16,16,null,{delay:14}),
         roll:tl.loadAnim("speedRoller/speedRoller_roll.png","sr_roll",16,16)
     },
+    enemies:{
+        walker:{
+            main:tl.load("cool_char2.png"),
+            //idle:tl.load("cool_char2.png"),
+            //walk:tl.load("cool_char2.png")
+        },
+        wolf:{
+            main:tl.load("enemies/wolf2.png"),
+            idle:tl.loadAnim("enemies/wolf3_idle.png",null,16,16,null,{delay:20}),
+            walk:tl.loadAnim("enemies/wolf3_walk.png",null,16,16,null,{delay:10}),
+            run:tl.loadAnim("enemies/wolf3_run.png",null,16,16,null,{delay:8}),
+            chomp_open:tl.loadAnim("enemies/wolf_movechomp_open.png",null,24,24),
+            chomp_close:tl.loadAnim("enemies/wolf_movechomp_close.png",null,24,24,{delay:2})
+        }
+    },
     chars:[
         tl.load("cool_char2.png")
     ],
@@ -28,7 +43,8 @@ var tt = {
         stab1:tl.loadAnim("c2_stab1.png","c2_stab1",24,24),
     },
     scenes:[
-        tl.load("scene1.2.png")
+        tl.load("scene1.2.png"),
+        tl.load("chunk1Testing.png")
     ],
     bullets:{
         dirtball:tl.load("dirtball.png"),
@@ -46,7 +62,56 @@ var tt = {
         lockTarget2:tl.loadAnim("ui/lockTarget2.png","lockTarget2",16,16,null,{delay:10})
     },
     magic:{
-        heal:tl.loadAnim("magic/heal2.png","heal",16,16)
+        heal:tl.loadAnim("magic/heal2.png","heal",16,16),
+        magicBase:tl.loadAnim("magic/magicBase.png","magicBase",4,4),
+        lightning:tl.loadAnim("magic/lightning.png","lightning",16,24,null,{delay:3}),
+        fire:tl.loadAnim("magic/fire_plain.png","fire",16,16,null,{delay:4}),
+        fire2:tl.loadAnim("magic/fire2.png","fire2",16,16,null,{delay:4}),
+        ice:tl.load("magic/ice.png"),
+        iceCol:convert("cornflowerblue"),
+        earth:tl.load("magic/earth.png")
+    },
+    env:{
+        towns:{
+            house:tl.loadAnim("env/towns/house.png","house",30,39),
+            door:tl.loadAnim("env/towns/door.png","red_door",12,12,null,{rev:true}),
+            farm:tl.load("env/towns/farm.png"),
+            farm_wheat:tl.loadAnim("env/towns/farm_wheat.png","farm_wheat",24,24,null,{delay:20}),
+            waterwell:tl.load("env/towns/waterwell.png"),
+            soil:tl.load("env/towns/farm_soil.png"),
+            medium_barrel:tl.load("env/towns/medium_barrel.png")
+        },
+        plantsL:[
+            tl.load("env/foliage/plant0.png"),
+            tl.load("env/foliage/plant1.png"),
+            tl.load("env/foliage/plant2.png"),
+            tl.load("env/foliage/plant3.png"),
+            tl.load("env/foliage/plant4.png"),
+            tl.load("env/foliage/tree1.png"), //5
+            tl.load("env/foliage/tree2.png"),
+            tl.load("env/foliage/deadtree1.png"),
+            tl.load("env/foliage/flower1.png"),
+            tl.load("env/foliage/flower2.png"), //9
+        ],
+        plants:{
+            leaningFlower:tl.loadAnim("env/foliage/leaning_flower.png",null,12,12,null,{delay:15,rubberband:true}),
+            leaningFlowerR:tl.loadAnim("env/foliage/leaning_flowerR.png",null,12,12,null,{delay:20,rubberband:true}),
+        },
+        groundFeatures:[
+            tl.loadAnim("env/foliage/wheat.png","wheat",16,16,null,{delay:20}),
+            tl.load("env/foliage/pond.png"),
+        ]
+    },
+    tools:{
+        sickle:{
+            swing:tl.loadAnim("tools/sickle_swing.png",null,16,16)
+        }
+    },
+    objs:{
+        survival:{
+            campfire:tl.load("objs/campfire.png"),
+            rock:tl.load("objs/rock.png")
+        }
     }
 };
 var enemyData = {
@@ -61,27 +126,34 @@ var enemyData = {
 var anim = {
     char:function(o,id){
         let frame;
+        let img;
+        let dep = o.y+(o.z+1)*nob.height;
         switch(id){
             case 0: //idle
-                nob.drawImage_basic(tt.char.main,o.x-6,o.y-11-o.z);
+                img = tt.char.main;
+                nob.drawImage_basic_dep(img,o.x-6,o.y-11-o.z,false,dep,2);
                 break;
             case 1: //walk
                 frame = Math.floor((frames%30)/(30/2));
-                nob.drawImage_basic(tt.char.walk[frame],o.x-6,o.y-11-o.z);
+                img = tt.char.walk[frame];
+                nob.drawImage_basic_dep(img,o.x-6,o.y-11-o.z,false,dep,2);
                 break;
             case 2: //swing1
                 frame = Math.floor((frames%20)/(20/3));
-                nob.drawImage_basic(tt.char.swing2[frame],o.x-12,o.y-23-o.z);
+                img = tt.char.swing2[frame];
+                nob.drawImage_basic_dep(img,o.x-12,o.y-23-o.z,false,dep,2);
                 break;
             case 3: //swirl1
                 frame = Math.floor((frames%20)/(20/5));
-                nob.drawImage_basic(tt.char.swirl1[frame],o.x-12,o.y-23-o.z);
+                img = tt.char.swirl1[frame];
+                nob.drawImage_basic_dep(img,o.x-12,o.y-23-o.z,false,dep,2);
                 break;
         }
+        return img;
     }
 };
 
-function createParticleAnim(f,x,y,z,destroyAfterAnim=true){
+function createParticleAnim(f,x,y,z,destroyAfterAnim=true,times=1){
     let d = {
         x,y,z,
         anim:{
@@ -93,7 +165,7 @@ function createParticleAnim(f,x,y,z,destroyAfterAnim=true){
         destroyAfterAnim
     };
     objs.push(d);
-    startAnim(d,f,null,1);
+    startAnim(d,f,null,times);
     return d;
 }
 
@@ -139,7 +211,7 @@ function hitboxCollide(o,hb,en){
     }
 }
 
-function getDamage(o,en,weaknessMulti){
+function getDamage(o,en,weaknessMulti,element){
     //let damage = o.mStrength;
     let damage = 0;
     let aa = getAAFromAnim(o);
@@ -150,6 +222,8 @@ function getDamage(o,en,weaknessMulti){
     if(o.equip.weapon) damage += o.equip.weapon.ref.damage;
     let type = o.equip.weapon.getType();
 
+    let ret = 0;
+
     if(weaknessMulti != null){
         switch(type){
             case WeaponType.Katana:
@@ -159,13 +233,26 @@ function getDamage(o,en,weaknessMulti){
                 damage *= Math.max(weaknessMulti/4,1.5);
         }
     }
+    let usedWeak = false;
+    if(element != null){
+        ret = 1;
+    }
+    if(element == 5) damage *= 0.1;
+    if(element == 0){
+        if(en.effects.frozen) en.effectD.frozen.i *= 2;
+    }
+    if(en.weakElements) if(en.weakElements.includes(element)){
+        damage *= en.weakMultis[en.weakElements.indexOf(element)];
+        usedWeak = true;
+    }
 
     let crit = (Math.random() < o.mCrt);
-    if(crit) damage *= o.mCrtDam;
+    if(crit) damage *= ((Math.random()*o.mCrtDam/2)+1);
 
-    return Math.floor(damage);
+    if(ret == 0) return Math.floor(damage);
+    else if(ret == 1) return [Math.floor(damage),usedWeak];
 }
-function displayDamage(amt,x,y,z,isPlayer,extraTime=0){
+function displayDamage(amt,x,y,z,isPlayer,extraTime=0,col){
     let ranx = (Math.random()-0.5)*2;
     let rany = (Math.random()-0.5)*2;
     y -= z;
@@ -173,8 +260,9 @@ function displayDamage(amt,x,y,z,isPlayer,extraTime=0){
         let v = 20+extraTime;
         let h = Math.floor(v/2);
         let a = (i < v ? 255 : (255-(i-v)/h*255));
-        let str = (amt<0?"+":"")+(Math.abs(amt)).toString();
-        nob2.drawText(str,x+ranx,y+rany+(a != 255 ? 1 : 0),isPlayer===true?(amt>=0?[255,20,20,a]:[100,255,100,a]):isPlayer?isPlayer:[255,255,255,a],true);
+        let str = (typeof amt == "number" ? ((amt<0?"+":"")+(Math.abs(amt)).toString()) : amt);
+        if(!col) col = (isPlayer===true?(amt>=0?[255,20,20,a]:[100,255,100,a]):isPlayer?isPlayer:[255,255,255,a]);
+        nob2.drawText(str,x+ranx,y+rany+(a != 255 ? 1 : 0),col,true,false,true,true);
     });
 }
 function dealDamage(amt,en,who){ //to enemy
@@ -439,6 +527,18 @@ function getClosestEnemiesInRange(x,y,z,r){
     }
     return [list,dList];
 }
+function getSObjsInRange(x,y,z,r){
+    let list = [];
+    for(let i = 0; i < sobjs.length; i++){
+        let o = sobjs[i];
+        let dx = o.x-x;
+        let dy = o.y-y;
+        let dz = o.z-z;
+        let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+        if(dist < r) list.push(o);
+    }
+    return list;
+}
 function getClosestPlayerInRange(x,y,z,r){
     let p;
     let d = 9999;
@@ -457,23 +557,31 @@ function getClosestPlayerInRange(x,y,z,r){
     }
     return p;
 }
-function drawHitBox(o,hb,damage=1,func){
+function drawHitBox(o,hb,damage=1,func,hitList,vx,vy,vz){
     let pL = getClosestPlayersInRange(o.x,o.y,o.z,Math.abs(hb[0])*4)[0];
     let hit = false;
     let res2;
     for(let i = 0; i < pL.length; i++){
         let p = pL[i];
-        let res = hitboxCollide(o,hb,p);
-        if(res) if(res.hit){
-            hit = true;
-            res2 = res;
-            if(func == null){
-                if(damage != null){
-                    takeDamage(damage,p,o[3]/2,o[4]/2,o[5]/2,false);
-                    displayDamage(damage,res.x,res.y,res.z,true);
+        let pass = true;
+        if(hitList) if(hitList[players.indexOf(p)]) pass = false;
+        if(pass){
+            let res = hitboxCollide(o,hb,p);
+            if(res) if(res.hit){
+                hit = true;
+                res2 = res;
+                if(hitList) hitList[players.indexOf(p)] = true;
+                if(func == null){
+                    if(damage != null){
+                        if(o[3]) vx = o[3]/2;
+                        if(o[4]) vy = o[4]/2;
+                        if(o[5]) vz = o[5]/2;
+                        takeDamage(damage,p,vx,vy,vz,false);
+                        displayDamage(damage,res.x,res.y,res.z,true);
+                    }
                 }
+                else func(o,hb,p,res,damage);
             }
-            else func(o,hb,p,res,damage);
         }
     }
     return res2;
@@ -483,25 +591,34 @@ function drawHitBoxPlayer(o,hb,damage=1,func,destroyOnHit=false,exDamage=0){
     let x = (o[0] == null ? o.x : o[0]);
     let y = (o[1] == null ? o.y : o[1]);
     let z = (o[2] == null ? o.z : o[2]);
-    pL = getClosestEnemiesInRange(x,y,z,Math.max(Math.abs(hb[0])*4,10))[0];
+    //pL = getSObjsInRange(x,y,z,Math.min(Math.abs(hb[0])*4));
+    pL = getClosestEnemiesInRange(x,y,z,Math.min(Math.abs(hb[0])*4,10))[0];
     for(let i = 0; i < pL.length; i++){
         let p = pL[i];
         let res = hitboxCollide(o,hb,p);
-        function hit(){
+        let useWeakness = false;
+        function hit(res){
             if(func == null){
                 //dealDamage(damage,p,o[3]/2,o[4]/2,o[5]/2,false);
-                if(damage == "a"){
-                    damage = getDamage(o.player,p,res.box[7]);
+                if(p.hp != null){
+                    if(damage == "a" && o.element == null){
+                        damage = getDamage(o.player,p,res.box[7]);
+                    }
+                    else if(damage == "b" || o.element != null){
+                        let r = getDamage(o.player,p,res.box[7],o.element);
+                        damage = r[0];
+                        if(r[1]) useWeakness = true;
+                    }
+                    damage += exDamage;
+                    dealDamage(damage,p,o.ref);
+                    displayDamage(damage,res.x,res.y,res.z,useWeakness?[100,200,255,255]:null);
                 }
-                damage += exDamage;
-                dealDamage(damage,p,o.ref);
-                displayDamage(damage,res.x,res.y,res.z);
                 if(destroyOnHit) removeBullet(pBullets,o.ref,true);
             }
             else func(o,hb,p,res,damage+exDamage);
         }
         if(res) if(res.hit){
-            hit();
+            hit(res);
         }
         /*else{
             for(let j = 0; j < p.hitboxes.length; j++){
@@ -656,10 +773,11 @@ var ENEMIES = {
         ang:0,
         delay:4,
         data:{},
-        effects:{},
         lastDown:-9999,
         downTime:240,
         downCooldown:720,
+        weakElements:[3],
+        weakMultis:[2],
         onHit:function(){
             if(!this.effects.stunned) if(this.frames >= this.lastDown+this.downCooldown) if(Math.random() < 0.25){
                 createParticleAnim(tt.particles.smoke[0],this.x,this.y,this.z);
@@ -846,190 +964,778 @@ var ENEMIES = {
                     this.lastDown = this.frames;
                 }
             }
-        },
-        ai_old2:function(){
-            //draw wheel
-            //let w = this.wheel;
-            let self = this;
-            function drawReqHelper(a,c){
-                let x = Math.cos(a)*10+self.x;
-                let y = Math.sin(a)*10+self.y;
-                nob.drawLine_smart(self.x,self.y,x,y,c,1);
-            }
-            for(let i = 0; i < this.reqDirs.length; i++){
-                drawReqHelper(this.reqDirs[i],[255,255,0,255]);
-            }
-            drawReqHelper(this.ang,[0,255,255,255]);
-            //nob.drawLine_smart(this.x,this.y,this.x-w[3],this.y,);
-            //
-            if(this.frames%5 == 0){
-                this.reqDirs = [];
-                this.reqDirsLvl = [];
+        }
+    },
+    walker:{
+        type:"walker",
+        origin:"bm",
+        hp:300,
+        hitboxes:[[-3,-4,3,0,0,5,"body"]],
+        img:cloneWhenLoaded(tt.enemies.walker.main),
+        viewRad:100,
+        baseImg:tt.enemies.walker.main,
+        data:{},
+        drag:0.005,
+        ai:function(){
+            //max velocity
+            let max = 1;
+            if(this.vx > max) this.vx = max;
+            else if(this.vx < -max) this.vx = -max;
+            if(this.vy > max) this.vy = max;
+            else if(this.vy < -max) this.vy = -max;
 
-                let id = Math.floor(Math.random()*players.length);
-                let p;
-                if(this.action.p) p = this.action.p;
-                else{
-                    p = players[id];
-                    this.action.p = p;
+            //if doing nothing
+            if(this.action.move == -1){
+                //scan for players in range every 20 frames
+                if(frames%20 == 0){
+                    this.data.p = getClosestPlayerInRange(this.x,this.y,0,this.viewRad);
                 }
-                let dx = p.x-this.x;
-                let dy = p.y-this.y;
-                let ang = Math.atan2(dy,dx);
-                if(ang < 0) ang += Math.PI*2;
-                this.reqDirs.push(ang);
-                this.reqDirsLvl.push(1);
-
-                if(this.ang < 0) this.ang += Math.PI;
-                this.ang %= 6.28;
                 
-                //let d1 = ang-this.ang;
-                //let d2 = Math.PI*2-Math.abs(d1);//this.ang+(Math.PI*2-ang);
-                /*let d1 = this.ang-ang;
-                let d2 = Math.PI*2-Math.abs(d1);
-                if(Math.abs(d1) <= Math.abs(d2)) this.ang -= 0.1;
-                else this.ang += 0.1;*/
-                var wantRot = ang;
-                var MoveDir = 0;
-                var BehindMe = this.ang - Math.PI;
-                if (BehindMe < 0)
-                    BehindMe += Math.PI*2;
+                //if there is a player in range
+                if(this.data.p){
+                    let p = this.data.p;
 
-                if (wantRot != this.ang)
-                {
-                    if (wantRot == BehindMe)
-                        MoveDir = -1; // or randomly choose
-                    else if ((wantRot > BehindMe && wantRot < this.ang) ||
-                            (this.rotation < 180 && (wantRot > BehindMe ||
-                                                    wantRot < this.ang)))
-                        MoveDir = 1;
-                    else if ((wantRot < BehindMe && wantRot > this.ang) ||
-                            (this.ang > 180 && (wantRot < BehindMe ||
-                                                    wantRot > this.ang)))
-                        MoveDir= -1;
-
-                    this.ang += MoveDir/10;// * MathHelper.ToRadians(45) * Time.deltaTime;
+                    //get distance to player
+                    let dx = p.x-this.x;
+                    let dy = p.y-this.y;
+                    let dist = Math.sqrt(dx*dx+dy*dy);
+                    if(dist > 50){
+                        nob.setPixel(this.x,this.y-10,[255,0,0,255]);
+                        moveObj(this,dx/dist,dy/dist,0);
+                    }
+                    else if(dist > 30){
+                        nob.setPixel(this.x,this.y-10,[200,0,255,255]);
+                        moveObj(this,dx/dist/2,dy/dist/2,0);
+                    }
+                    else if(dist < 10){
+                        //swing
+                        this.action.move = 0;
+                        this.data.x = dx/dist;
+                        this.data.y = dy/dist;
+                    }
                 }
-
-                //console.log(this.ang);
-                //let da = this.reqDirs[0]-this.ang;
-                //this.ang += da/4;
-                //if(ang > Math.PI ? (ang > this.ang) : (ang < this.ang)) this.ang += 0.1;
-                //else this.ang -= 0.1;
-
-                let tx = Math.cos(this.ang)*0.5;
-                let ty = Math.sin(this.ang)*0.5;
-                this.vx += tx;
-                this.vy += ty;
-
-                let max = 1;
-                if(this.vx > max) this.vx = max;
-                else if(this.vx < -max) this.vx = -max;
-                if(this.vy > max) this.vy = max;
-                else if(this.vy < -max) this.vy = -max;
+            }
+            else switch(this.action.move){
+                case 0: //swing
+                    if(!this.isAttacking){
+                        this.isAttacking = true;
+                        let T = this;
+                        subAnim(60,function(i,t){
+                            if(i == 0) createParticleAnim(tt.char.swirl1,T.x,T.y,0,true,1);
+                            if(i >= t/2){
+                                moveObj(T,-T.data.x/30,-T.data.y/30,0);
+                            }
+                            if(i == t-1){
+                                T.action.move = -1;
+                                T.data = {};
+                                T.isAttacking = false;
+                            }
+                        });
+                    }
+                    break;
             }
         },
-        ai_old:function(){
-            if(this.frames%10 == 0){
-                let id = Math.floor(Math.random()*players.length);
-                let p = players[id];
-                let targX = p.x;
-                let targY = p.y;
-                if(false) if(!this.action.start){
-                    if(this.x > p.x){
-                        if(this.x-p.x >= Math.abs(this.y-p.y)){
-                            if(p.y >= this.y){
-                                targY -= 11;
-                                this.action.dir = -1;
-                            }
-                            else{
-                                targY += 11;
-                                this.action.dir = 1;
-                            }
+        init:function(){
+            this.action.move = -1;
+            this.action.targ = null;
+            this.data.p = null;
+        }
+    },
+    wolf:{
+        type:"wolf",
+        origin:"bm",
+        hp:50,
+        hitboxes:[[-3,-3,3,0,0,5,"body"]],
+        img:cloneWhenLoaded(tt.enemies.wolf.main),
+        viewRad:100,
+        baseImg:tt.enemies.wolf.main,
+        lastX:0,
+        lastY:0,
+        fx:0,
+        fy:0,
+        jumpFlip:1,
+        data:{},
+        startActionId:-1,
+        startActionI:0,
+        startActionT:0,
+        rotDir:1,
+        ai:function(){
+            if(this.startActionT != 0){
+                this.startActionI++;
+                if(this.startActionI >= this.startActionT){
+                    this.startActionI = 0;
+                    this.startActionT = 0;
+                    this.action.move = this.startActionId;
+                }
+            }
+            else{
+                this.startActionId = -1;
+                this.startActionI = 0;
+                this.startActionT = 0;
+            }
+            if(this.startActionT == 0) if(this.action.move == -1){
+                let p = me;
+                if(p.isDead) p = null;
+                if(p){
+                    let dx = p.x-this.x;
+                    let dy = p.y-this.y;
+                    let dist = Math.sqrt(dx*dx+dy*dy);
+                    let ang = Math.atan2(dy,dx);
+                    if(dx >= 0) this.isFlipped = false;
+                    else this.isFlipped = true;
+                    ang += Math.PI;
+                    if(dist <= 10){ //move toward stalk line
+                        startAnim(this,tt.enemies.wolf.walk,null,0,true);
+                        let tx = Math.cos(ang)*30+p.x;
+                        let ty = Math.sin(ang)*30+p.y;
+                        dx = tx-this.x;
+                        dy = ty-this.y;
+                        moveObj(this,dx/60,dy/60,0);
+                    }
+                    else if(dist < 30 && dist > 10){
+                        startAnim(this,tt.enemies.wolf.walk,null,0,true);
+                        ang += 0.01*this.rotDir;
+                        let tx = Math.cos(ang)*dist+p.x;
+                        let ty = Math.sin(ang)*dist+p.y;
+                        let dx2 = tx-this.x;
+                        let dy2 = ty-this.y;
+                        let res = moveObj(this,dx2,dy2,0);
+                        if(!res) this.rotDir *= -1;
+
+                        if(Math.random() < 0.01){ //mouth rush
+                            startAnim(this,tt.enemies.wolf.idle,null,0);
+                            let speed = 2;
+                            this.data.tx = dx/dist*1.5/speed;
+                            this.data.ty = dy/dist*1.5/speed;
+                            this.data.i = 0;
+                            this.data.dist = 60*speed;
+                            this.data.hitList = [];
+
+                            this.startActionId = 1;
+                            this.startActionI = 0;
+                            this.startActionT = 20;
                         }
-                        else{
-                            targX += 11;
-                            if(p.y >= this.y){
-                                this.action.dir = -1;
-                            }
-                            else{
-                                this.action.dir = 1;
-                            }
-                        } 
+                    }
+                    else if(dist >= 30){
+                        this.jumpFlip *= -1;
+                        let dist2 = Math.min(20,dist);
+                        let a = 0.7*this.jumpFlip;
+                        let tx = Math.cos(ang+a)*dist2;
+                        let ty = Math.sin(ang+a)*dist2;
+                        let speed = 3;
+                        this.data.tx = tx/dist2/speed;
+                        this.data.ty = ty/dist2/speed;
+                        this.data.dist = dist2;
+                        this.data.i = 0;
+                        this.data.speed = 1/speed;
+
+                        this.startActionId = 0;
+                        this.startActionI = 0;
+                        this.startActionT = 30;
+                    }
+                }
+                else{
+                    startAnim(this,tt.enemies.wolf.idle,null,0,true);
+                }
+            }
+            this.fx = this.x-this.lastX;
+            this.fy = this.y-this.lastY;
+            this.lastX = this.x;
+            this.lastY = this.y;
+            switch(this.action.move){
+                case 0: //jump rush
+                    if(this.data.i == 0){ //start
+                        startAnim(this,tt.enemies.wolf.run,null,2);
+                    }
+                    this.data.i += this.data.speed;
+                    if(this.data.i >= this.data.dist){
+                        this.data = {};
+                        this.action.move = -1;
                     }
                     else{
-                        
+                        this.x -= (Math.sin(this.data.i/this.data.dist*Math.PI*2)+1)*this.data.tx;
+                        this.y -= (Math.sin(this.data.i/this.data.dist*Math.PI*2)+1)*this.data.ty;
                     }
-                }
-                let dx = targX-this.x;
-                let dy = targY-this.y;
-                let dz = 0;//p.z-this.z;
-                let dx2 = p.x-this.x;
-                let dy2 = p.y-this.y;
-                let dist = Math.sqrt(dx2*dx2+dy2*dy2+dz*dz)-10;
-                let vx = dx/dist;
-                let vy = dy/dist;
-                let vz = dz/dist;
-                let speed = 0.35;
-                
-                
+                    break;
+                case 1: //mouth rush
+                    if(this.data.i > 4 && this.data.i < Math.floor(this.data.dist/2)){
+                        drawHitBox(this,[-2,-2,2,2,0,4,"wolfJaws"],4,null,this.data.hitList,this.data.tx,this.data.ty);
+                    }
+                    if(this.data.i == 0){
+                        this.isAttacking = true;
+                        startAnim(this,tt.enemies.wolf.chomp_open,function(o){
+                            o.oimg = tt.enemies.wolf.chomp_open[5];
+                        },1);
+                    }
+                    if(this.data.i == Math.floor(this.data.dist*0.3)){
+                        startAnim(this,tt.enemies.wolf.chomp_close,function(o){
+                            o.oimg = null;
+                            startAnim(o,tt.enemies.wolf.run,null,0,true);
+                        },1);
+                    }
+                    this.data.i++;
+                    if(this.data.i >= this.data.dist){
+                        this.data = {};
+                        this.action.move = -1;
+                        this.isAttacking = false;
+                        this.oimg = null;
+                    }
+                    else{
+                        this.x += (Math.sin(this.data.i/this.data.dist*Math.PI*2))*this.data.tx;
+                        this.y += (Math.sin(this.data.i/this.data.dist*Math.PI*2))*this.data.ty;
+                    }
 
-                //if(Math.random()<0.01) this.action.goOut = !this.action.goOut;
-                
-                
-                if(false) if(dist <= 11){
-                    this.action.start = true;
-                    //this.vx -= vx*speed;
-                    //this.vy -= vy*speed;
-
-                    /*this.vx = 0;
-                    this.vy = 0;
-                    let ang = Math.atan2(-dy2,-dx2);
-                    ang += 0.05;
-                    let tx = Math.cos(ang)*10+p.x;
-                    let ty = Math.sin(ang)*10+p.y;
-                    this.x = tx;
-                    this.y = ty;*/
-                    this.vx = 0;
-                    this.vy = 0;
-                    let ang = Math.atan2(-dy2,-dx2);
-                    //ang += Math.PI/2;
-                    ang += 0.08;//*this.action.dir;
-                    let tx = Math.cos(ang)*11+p.x;
-                    let ty = Math.sin(ang)*11+p.y;
-                    let lx = tx-this.x;
-                    let ly = ty-this.y;
-                    this.x += lx/4;
-                    this.y += ly/4;
-
-                    //dx = tx-this.x;
-                    //dy = ty-this.y;
-                    //dist = Math.sqrt(dx*dx+dy*dy);
-                    //vx = dx/dist;
-                    //vy = dy/dist;
-                }
-
-                if(dist <= 11){
-                    this.vx += -dx/dist*speed;
-                    this.vy += -dy/dist*speed;
-                }
-                else {
-                    this.vx += vx*speed;
-                    this.vy += vy*speed;
-                    this.action.start = false;
-                }
-
-                let max = 1;
-                if(this.vx > max) this.vx = max;
-                else if(this.vx < -max) this.vx = -max;
-                if(this.vy > max) this.vy = max;
-                else if(this.vy < -max) this.vy = -max;
-                
-                
-                //this.vz += vz*speed;
-                //this.z++;
-                //this.grounded = false;
+                    break;
             }
         }
     }
 };
+
+const plantData = [
+    { //Wheat
+        onDestroy:function(x,y,z,seed){
+
+        },
+        getDrops:function(o,seed){
+            let amt = Math.floor(Math.random()*4)+1;
+            let l = [
+                createItem(items.materials.wheat,amt),
+                createItem(items.materials.wheatSeed,4)
+            ];
+            return l;
+        }
+    }
+];
+function giveDrops(l,o){
+    for(let i = 0; i < l.length; i++){
+        let item = l[i];
+        let type = item.getType();
+        if(wepTypes.includes(type)) o.inv.weapons.push(item);
+        else if(toolTypes.includes(type)) o.inv.tools.push(item);
+        else if(type == -1){
+            let extra = item.amt;
+            for(let j = 0; j < o.inv.tools.length; j++){
+                let tool = o.inv.tools[j];
+                if(tool.getType() == WeaponType.SeedBag){
+                    let sType = item.ref.subType;
+                    if(tool.amt[sType] < tool.size){
+                        tool.amt[sType] += extra;
+                        extra = 0;
+                        if(tool.amt[sType] > tool.size){
+                            extra = tool.amt[sType]-tool.size;
+                            tool.amt[sType] = tool.size;
+                        }
+                        else return;
+                    }
+                }
+            }
+            //console.log("EXTRA: ",extra);
+        }
+        else{
+            let base;
+            for(let j = 0, a = o.inv.items.length; j < a; j++){
+                let it = o.inv.items[j];
+                if(it.ref == item.ref){
+                    base = it;
+                    break;
+                }
+            }
+            if(base?(base.amt+item.amt > 0):true){
+                if(!base) o.inv.items.push(item);
+                else base.amt += item.amt;
+            }
+            else{
+                o.inv.items.splice(o.inv.items.indexOf(item),1);
+            }
+        }
+    }
+}
+
+const worldObjs = {
+    stick:function(x,y,z,dir,l=4){
+        let hl = Math.floor(l/2);
+        let d = {
+            x,y,z,
+            dir,l,hl,
+            vhb:null,
+            hp:1,
+            canBePickedUp:true,
+            update:function(){
+                let bd = black; //border
+                if(this.hover) bd = white;
+                if(this.dir == 0){
+                    let dep = this.y+(this.z+1)*nob.height;
+                    nob.drawLine_smart_dep(this.x-this.hl,this.y,this.x+this.hl,this.y,colors.wood,1,dep);
+                    nob.drawLine_smart_dep(this.x-this.hl,this.y-1,this.x+this.hl,this.y-1,bd,1,dep);
+                    nob.drawLine_smart_dep(this.x-this.hl,this.y+1,this.x+this.hl,this.y+1,bd,1,dep);
+                    nob.setPixel_dep(this.x-this.hl-1,this.y,bd,dep);
+                    nob.setPixel_dep(this.x+this.hl+1,this.y,bd,dep);
+                }
+                else{
+                    let dep = this.y+(this.z+1)*nob.height;
+                    for(let i = -this.hl; i <= this.hl; i++){
+                        nob.setPixel_dep(this.x,this.y+i,colors.wood,dep+i+this.hl);
+                        nob.setPixel_dep(this.x-1,this.y+i,black,dep+i+this.hl);
+                        nob.setPixel_dep(this.x+1,this.y+i,black,dep+i+this.hl);
+                    }
+                    nob.setPixel_dep(this.x,this.y-this.hl-1,black,dep);
+                    nob.setPixel_dep(this.x,this.y+this.hl+1,black,dep+this.l);
+                }
+                this.hover = false;
+            },
+            getDrops:function(o){
+                return [createItem(items.materials.stick,1)];
+            },
+            onDestroy:function(o,dx,dy,ang){
+                for(let i = 0; i < 4; i++){
+                    pBullets.push([this.x,this.y,this.z,(Math.random()-0.5)/4+dx/4,(Math.random()-0.5)/4+dy/4,0.5,black,function(o){
+                        o[5] -= 0.05;
+                        if(o[2] < 0){
+                            subAnim(50+Math.floor(Math.random()*20),function(i,t){
+                                nob.setPixel_dep(o[0],o[1]-o[2],black,0);
+                            });
+                            removeBullet(pBullets,o);
+                        }
+                    }]);
+                }
+            }
+        };
+        if(dir == 0) d.vhb = [-hl,-1,hl,2];
+        else d.vhb = [-1,-hl,2,hl];
+        sobjs.push(d);
+    },
+    rock:function(x,y,z){
+        let d = {
+            x,y,z,
+            vhb:[-1,-3,1,0],
+            hp:2,
+            update:function(){
+                let img = tt.objs.survival.rock;
+                nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-img.h,true,this.y+(this.z)*nob.height,2);
+            },
+            getDrops:function(o){
+                return [createItem(items.materials.small_rock,1)];
+            },
+            onHit:function(o,dx,dy,ang,amt=1){
+                for(let i = 0; i < amt; i++){
+                    pBullets.push([this.x,this.y,this.z,(Math.random()-0.5+dx)/4,(Math.random()-0.5+dy)/4,0.5,black,function(o){
+                        o[5] -= 0.05;
+                        if(o[2] < 0){
+                            subAnim(50+Math.floor(Math.random()*20),function(i,t){
+                                nob.setPixel_dep(o[0],o[1]-o[2],black,0);
+                            });
+                            removeBullet(pBullets,o);
+                        }
+                    }]);
+                }
+            },
+            onDestroy:function(o,dx,dy,ang){
+                this.onHit(o,dx,dy,ang,4);
+            }
+        };
+        sobjs.push(d);
+    },
+    large_barrel:function(x,y,z,col,fluid=1,cap=4){
+        let d = {
+            x,y,z,
+            col,
+            vhb:[-3,-3,3,3], //view hitbox
+            lhb:[-2,-1,1,1,5], //liquid hitbox
+            lhover:false,
+            hp:9999,
+            fluid,cap:Math.min(cap,4),
+            maxCap:4,
+            update:function(){
+                let col2 = colors.hole;
+                this.col = colors.hole;
+                if(this.cap != 0){
+                    this.col = colors.fluids[this.fluid-1];
+                    if(this.cap > 2){
+                        col2 = this.col;
+                    }
+                    else col2 = black;
+                }
+                if(this.lhover){
+                    this.col = white;
+                    col2 = white;
+                }
+                let img = env.towns.medium_barrel;
+                nob.drawImage_basic_replace2_dep(img,this.x-img.w/2,this.y-this.z-img.h,replaceCol,col2,replaceCol2,this.col,this.y+(this.z)*nob.height,2);
+            },
+            onHit:function(o,dx,dy,ang){
+                let col = colors.fluids[this.fluid-1];
+                if(this.lhover) col = white;
+                let t = this;
+                let filled = false;
+                if(this.cap>0) for(let i = 0; i < sobjs.length; i++){
+                    let s = sobjs[i];
+                    if(s.type == 1){
+                        if(s.x >= this.x-5 && s.x < this.x-5+1 && s.y >= this.y-2-1 && s.y < this.y-2+2){
+                            if(s.fluid == 0){
+                                setFluid(s);
+                                filled = true;
+                                this.cap--;
+                            }
+                        }
+                    }
+                }
+                if(filled) subAnim(20,function(){
+                    nob.setPixel(t.x-4,t.y-3,col);
+                    nob.setPixel(t.x-4,t.y-2,col);
+                });
+                for(let i = 0; i < Math.ceil(this.cap/4*4); i++) 
+                    pBullets.push([this.x,this.y,this.z+8,(Math.random()-0.5)/4,(Math.random()-0.5)/4,0.5,false,function(o){
+                        nob.setPixel_dep(o[0],o[1]-o[2],o[8].col,o[1]+o[2]*nob.height);
+                        o[5] -= 0.05;
+                        if(o[2] < 0){
+                            subAnim(50+Math.floor(Math.random()*20),function(i,t){
+                                nob.setPixel_dep(o[0],o[1]-o[2],o[8].col,0);
+                            });
+                            removeBullet(pBullets,o);
+                        }
+                    },{col}]);
+            }
+        };
+        sobjs.push(d);
+    },
+    water_well:function(x,y,fluid=1){
+        let d = {
+            x,y,z:0,
+            lhb:[-2,-1,2,1,4],
+            lhover:false,
+            colls:[[-8,-7,8,0,0,10,0]],
+            fluid,
+            cap:100,
+            maxCap:100,
+            update:function(){
+                let col = gray;
+                if(this.fluid) col = colors.fluids[this.fluid-1];
+                if(this.lhover) col = white;
+                let img = env.towns.waterwell;
+                nob.drawImage_basic_replace_dep(img,this.x-img.w/2,this.y-this.z-img.h,replaceCol,col,this.y+this.z*nob.height,2);
+            },
+            onTakeFluid:function(o,dx,dy){
+                console.log("take");
+            },
+            onPutFluid:function(o,dx,dy){
+                console.log("put");
+            }
+        };
+        for(let i = 0; i < d.colls.length; i++){
+            let c = d.colls[i];
+            colls.push([d.x+c[0],d.y+c[1],d.x+c[2],d.y+c[3],d.z+c[4],d.z+c[5],c[6]]);
+        }
+        sobjs.push(d);
+    },
+    tree1:function(x,y){
+        let d = {
+            x,y,z:0,
+            data:[[],[],[],[],[]], //angles,branches,start angle,ang vel,dir
+            a:(Math.random()-0.5),
+            l:8,
+            w:2,
+            startW:2,
+            type:2,
+            fell:false,
+            break:false,
+            breakObjs:[],
+            weight:0,
+            branchCnt:0,
+            pushCnt:0,
+            pushCnt2:0,
+            hp:10,
+            update:function(){
+                this.branchCnt = 0;
+                this.pushCnt = 0;
+                this.pushCnt2 = 0;
+                if(this.beginFell){
+                    this.sWeight = this.weight;
+                    this.fell = true;
+                }
+                this.weight = 0;
+                let l = this.l;
+                this.w = this.startW;
+                let w = Math.ceil(this.w);
+                this.w *= 0.6;
+                let a = this.a;
+                let x = this.x;
+                let y = this.y;
+                let z = this.z;
+                let tx = Math.sin(a)*l+x;
+                let tz = Math.cos(a)*l+z;
+                nob.drawLine_smart_filled(x,y-z,tx,y-tz,black,w+2,y+(z+1)*nob.height,2);
+                nob.drawLine_smart_filled(x,y-z,tx,y-tz,colors.soil,w,y+(z+3)*nob.height,2);
+                x = tx;
+                z = tz;
+                this.weight += tx-this.x;
+                this.renderBranch(x,y,z,a,this.data);
+
+                if(!this.done) if(this.fell){
+                    if(this.sWeight < 0){
+                        let amt = (Math.abs(Math.sin(this.a))/50);
+                        if(amt <= 0.01 && amt >= -0.01) amt = 0.01;
+                        this.a -= amt; //0.01
+                        if(this.a <= -Math.PI/2){
+                            this.fell = false;
+                            this.breaking = true;
+                        }
+                    }
+                    else if(this.sWeight > 0){
+                        let amt = (Math.abs(Math.sin(this.a))/50);
+                        if(amt <= 0.01 && amt >= -0.01) amt = 0.01;
+                        this.a += amt;
+                        if(this.a >= Math.PI/2){
+                            this.fell = false;
+                            this.breaking = true;
+                        }
+                    }
+                }
+                if(this.break){
+                    let amt = sobjs.length;
+                    this.data = [[],[],[],[],[]];
+                    this.hp = this.startW;
+                    this.getDrops = function(o){
+                        return [createItem(items.materials.wood,Math.ceil(this.l/3)+this.startW)];
+                    };
+                    for(let i = 0; i < this.breakObjs.length; i++){
+                        let b = this.breakObjs[i];
+                        sobjs.push(b);
+                    }
+                    this.break = false;
+                    this.breaking = false;
+                    this.done = true;
+                    console.log(this.breakObjs.length);
+                    console.log(sobjs.length-amt);
+                    console.log(this.branchCnt,this.pushCnt,this.pushCnt2);
+                }
+                if(this.done){
+                    if(this.a > 0){
+                        if(this.a < Math.PI/2) this.a += 0.1;
+                        else{
+                            this.a = Math.PI/2;
+                        }
+                    }
+                    else if(this.a < 0){
+                        if(this.a > -Math.PI/2) this.a -= 0.1;
+                        else{
+                            this.a = -Math.PI/2;
+                        }
+                    }
+                }
+                if(this.breaking) this.break = true;
+            },
+            fellIt:function(){
+                this.sWeight = this.weight;
+                this.fell = true;
+            },
+            renderBranch:function(x,y,z,a,b){
+                let l = this.l;
+                let w = Math.ceil(this.w);
+                this.w *= 0.6;
+                for(let i = 0; i < b[0].length; i++){
+                    if(b[1][i]) for(let j = 0; j < b[1][i].length; j++) this.renderBranch(x,y,z,a,b[1][i][j]);
+                    this.branchCnt++;
+
+                    b[0][i] += b[3][i];
+                    b[3][i] += b[4][i]*0.0001; //0.003
+                    let drag = 0.00005; //0.001
+                    if(b[3][i] >= drag) b[3][i] -= drag;
+                    else if(b[3][i] <= -drag) b[3][i] += drag;
+                    else b[3][i] = 0;
+                    let maxAng = 0.2;
+                    let maxVel = 0.01;
+                    if(b[3][i] > maxVel) b[3][i] = maxVel;
+                    else if(b[3][i] < -maxVel) b[3][i] = -maxVel;
+                    let dx = b[0][i]-b[2][i];
+                    if(dx > maxAng){
+                        //b[0][i] = maxAng;
+                        b[4][i] = -1;
+                    }
+                    else if(dx < -maxAng){
+                        //b[0][i] = -maxAng;
+                        b[4][i] = 1;
+                    }
+                    if(Math.random() < 0.05) b[4][i] *= -1;
+                    /*let grav = 0.1;
+                    if(b[3][i] > grav) b[3][i] -= grav;
+                    else if(b[3][i] < -grav) b[3][i] += grav;*/
+                    
+
+                    a += b[0][i];
+                    
+                    tx = Math.sin(a)*l+x;
+                    tz = Math.cos(a)*l+z;
+                    if(tz < 1){
+                        if(Math.abs(tz-z) < 1) tz = 0;
+                        else tz = 1;
+                    }
+                    let wood = colors.soil;
+                    if(this.w < 0.1) wood = tint(colors.soil,[0.8,0.8,0.8])
+                    nob.drawLine_smart_filled(x,y-z,tx,y-tz,black,w+2,y+(z+1)*nob.height,2);
+                    nob.drawLine_smart_filled(x,y-z,tx,y-tz,wood,w,y+(z+3)*nob.height,2);
+                    //nob.drawLine_smart_filled(x,y-z,tx,y-tz,black,1,y+(z+3)*nob.height,2);
+                    //nob.drawLine_smart_filled(x,y-z,tx,y-tz,wood,1,y+(z+3)*nob.height,2);
+
+                    nob.drawLine_smart_dep(x,this.y,tx,this.y,black,w,0);
+                    
+                    if(this.w < 1){
+                        let ww = this.w*6+3; //6+4 //2+4
+                        nob.drawCircle(tx,y-tz,ww+1,black);
+                        nob.drawCircle(tx,y-tz,ww,tint(colors.plant,[0.8,0.8,0.8]));
+                        nob.drawCircle(tx,y-tz,ww-1,black);
+                        nob.drawCircle(tx,y-tz,ww-2,colors.plant);
+                    }
+
+                    this.pushCnt2++;
+                    if(this.break){
+                        this.pushCnt++;
+                        let az = 0;
+                        let ax = 0;
+                        //let r = 
+                        this.breakObjs.push({
+                            x,y,z,a,l,w,data:[b[0],[null],b[2],[0],[0]],
+                            startW:w,
+                            type:2,
+                            vz:0,
+                            bounce:0,
+                            pullable:true,
+                            az,ax,
+                            hp:w,
+                            getDrops:function(o){
+                                return [createItem(items.materials.wood,Math.ceil(this.l/3))];
+                            },
+                            //tx:r[0],
+                            //ty:r[1],
+                            //tz:r[2],
+                            update:function(){
+                                let l = this.l;
+                                this.w = this.startW;
+                                let w = Math.ceil(this.w);
+                                this.w *= 0.6;
+                                let a = this.a;
+                                let x = this.x;
+                                let y = this.y;
+                                let z = this.z;
+                                let tx = Math.sin(a)*l+x;
+                                let tz = Math.cos(a)*l+z;
+                                nob.drawLine_smart_filled(x,y-z,tx,y-tz,black,w+2,y+(z+1)*nob.height,2);
+                                nob.drawLine_smart_filled(x,y-z,tx,y-tz,colors.soil,w,y+(z+3)*nob.height,2);
+                                x = tx;
+                                z = tz;
+    
+                                if(this.z <= 0){
+                                    this.vz = 0;
+                                    this.z = 0;
+                                    if(this.bounce == 0){
+                                        this.bounce++;
+                                        let xx = (x+tx)/2;
+                                        let zz = (z+tz)/2;
+                                        particleSims.splash(xx,this.y,zz,0,0,1,black,4);
+                                        createParticleAnim(tt.particles.smoke[0],xx,this.y,zz,true,1);
+                                        this.x += (Math.random()-0.5)*5;
+                                        let rad = 5;
+                                        let p = getClosestPlayerInRange(xx,this.y,zz,rad);
+                                        if(p) takeDamage(6,p,0,0,0);
+                                        let list = [];
+                                        for(let i = 0; i < sobjs.length; i++) list[i] = sobjs[i];
+                                        for(let i = 0; i < list.length; i++){
+                                            let s = list[i];
+                                            if(s.vhb) if(xx+rad >= s.x+s.vhb[0] && xx-rad < s.x+s.vhb[2] && this.y+rad >= s.y+s.vhb[1] && this.y-rad < s.y+s.vhb[3]){
+                                                if(s.destroy) s.destroy();
+                                                else removeSObj(s);
+                                            }
+                                        }
+                                    }
+                                    if(this.a > 0){
+                                        if(this.a < Math.PI/2) this.a += 0.1;
+                                        else this.a = Math.PI/2;
+                                    }
+                                    else if(this.a < 0){
+                                        if(this.a > -Math.PI/2) this.a -= 0.1;
+                                        else this.a = -Math.PI/2;
+                                    }
+                                }
+                                else{
+                                    this.vz -= 0.05;
+                                    this.z += this.vz;
+                                    this.y += (Math.random()-0.5)*3;
+                                    if(Math.random()<0.05) particleSims.splash(this.x,this.y,this.z,Math.cos(this.a),Math.random()-0.5,1,black,1);
+                                }
+                            },
+                            //renderBranch:this.renderBranch,
+                            fell:false,
+                            break:false,
+                            breakObjs:[]
+                        });
+                    }
+
+                    x = tx;
+                    z = tz;
+                    this.weight += tx-this.x;
+                    if(tz <= 0){
+                        this.fell = false;
+                        this.breaking = true;
+                    }
+                }
+            }
+        };
+        sobjs.push(d);
+        function createBranch(d,branchAmt=1){
+            let branches = [];
+            for(let i = 0; i < branchAmt; i++){
+                let ang = Math.random()*Math.PI/2*(Math.random()<0.5?1:-1);
+                branches.push([[ang],[null],[ang],[0],[Math.random()<0.5?1:-1]]);
+            }
+            let ang = (Math.random()-0.5);
+            d.data[0].push(ang);
+            d.data[1].push(branches);
+            d.data[2].push(ang);
+            d.data[3].push(0);
+            d.data[4].push(Math.random()<0.5?1:-1);
+        }
+        //init
+        createBranch(d,Math.floor(Math.random()*4)+2); //2
+        if(Math.random()<0.9) createBranch(d,Math.floor(Math.random()*4)+1); //1
+        if(Math.random()<0.7) createBranch(d,Math.floor(Math.random()*4)+1); //1
+
+        return d;
+    }
+};
+function hitWObj(s,amt,o,dx,dy,ang){
+    if(s.onHit) s.onHit(o,dx,dy,ang);
+    s.hp -= amt;
+    if(s.hp <= 0){
+        if(s.getDrops) giveDrops(s.getDrops(o),o);
+        if(s.onDestroy) s.onDestroy(o,dx,dy,ang);
+        sobjs.splice(sobjs.indexOf(s),1);
+    }
+}
+
+const particleSims = {
+    splash:function(x,y,z,dx,dy,dz,col,amt){ //dz usually 0.5
+        for(let i = 0; i < amt; i++){
+            pBullets.push([x,y,z,(Math.random()-0.5+dx)/4,(Math.random()-0.5+dy)/4,dz,col,function(o){
+                o[5] -= 0.05;
+                if(o[2] < 0){
+                    subAnim(50+Math.floor(Math.random()*20),function(i,t){
+                        nob.setPixel_dep(o[0],o[1]-o[2],col,0);
+                    });
+                    removeBullet(pBullets,o);
+                }
+            }]);
+        }
+    },
+    rain_spash:function(x,y,z){
+        for(let i = -1; i <= 1; i += 2){
+            let sz = z;
+            pBullets.push([x,y,sz,(Math.random()-0.5)/3,(Math.random()-0.5)/3,0.8,lightgray,function(o){ //4 //1 //way?(i/6):0,!way?(i/6):0
+                o[5] -= 0.1;
+                if(o[2] < o[8].sz) removeBullet(pBullets,o);
+            },{sz}]);
+        }
+    }
+};
+
+function fellTree(tree){
+    tree.break = true;
+}

@@ -1,0 +1,90 @@
+0.0.1 : 7-13-21
+    - Added entire debug menu.
+    - Added Rusty Sniper, Coders Gun, Rotted Wand, Rotted Staff
+    - Started Staff abilities.
+    - Added Staff create shield but doesn't work well,
+        added heal.
+    - Fixed bugs
+    - Added sniper weapon type
+    - For pistol, added hold rmb for quick lockon and q+lmb
+        for selecting targets to lock on to. Normal attack will
+        aim at this target.
+
+0.0.2 : 7-14-21
+    - Added heal spell to staff on Sage class
+    - Fixed bugs with gun not working all the time I think
+    - Fixed bugs with not preventing default properly
+    - Added spell menu with all ui features
+    - Added lightning base spell
+    - Added elemental weakness to getDamage
+
+0.0.3 : 7-15-21
+    - Fixed elemental weakness in getDamage so critical doesn't affect whether it shows blue or not
+    - Changed colors of spells: Fire (slightly), Ice, Wind
+    - Added spells: Life, Energy, Mega (hidden)
+    - Added ability to change text color in magicData by property "text"
+    - Added fire spell
+    - Added ice spell
+    - Added frozen effect to slow down enemies
+    - Added white indicator above mouse to show when charging is done
+    - Added posPreview for charging spells
+    - Added lockOnHb ability for spells
+    - Changed lockOnHb so that hold Q to bring up locks, then right click to select
+    - Change lockOnHb so that it always shows up even when not holding Q
+    - Added more capability to bullets:
+        - Changed: null can be used for color param to render nothing
+        - Added onDeathAnim property to removeBullet
+        - Added noShadow property to disable shadows for images
+        - Added onHit callback for when the bullet touches an enemy
+
+0.0.4 : 7-16-21
+    - Added earth spell
+    - Moved life spell from staff
+    - Added wind spell
+    - Added energy spell
+    - Graphics for light spell started
+    - Added particles for each spell type
+    - Fire hits cause frozen effect to end twice as soon
+
+0.0.5 : 7-17-21
+    - Added support for custom functions for non base spells
+    - Added vortex spell
+    - Added light spell
+
+0.0.6 : 7-18-21
+    - Modified light spell so it isn't as glowy
+    - Added can3 for small text
+    - Drew water well, basic house, basic shed, and big cottage house
+
+0.0.7 : 7-19-21
+    - Added full 3D box collision
+    - Added physcially calculated shadow for player
+    - Added new shadow to fireball
+    - Added step up ability for collision
+
+0.1.0 : 7-20-21
+    - Added dep system to debug colls
+    - Made drawShadow perfectlly acurate
+    - Made drawShadow work with dep
+    - Fixed player when dead not showing fallen over texture properly
+    - Faster drawShadow calc
+    - Added basic house to scene
+    - Added dep system to player, enemies, shadow for fireball, house, house door
+    - Changed preview line's shadow for fire spell to have true shadow dep (disapears behind objects and shows on obj underneith)
+    - Added sObjs system
+    - Added bullet restriction so they can't pass through solid colliders (the ones players can't move through)
+    - Added "worlds and chunks" system
+    - Added createDoor function with full mechanic, animation, and functionallity both ways
+    - Started creating basic door's world: floor, colliders, door
+
+0.1.1 : 7-21-21
+    - Added transition between worlds
+    - Added createPlant and createObj functions
+    - Added and drew some decor around the house
+    - Started trying to fix step up so it works for colliders not in order
+
+0.1.2 : 7-22-21
+    - Reverted stepup to original function as new method didn't work
+    - Made functionallity for stepping on moving colliders to move you along with it:
+        When you step on a moving collider, you will stay on top and move with it
+    - Started adding test "Walker" enemy

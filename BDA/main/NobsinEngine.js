@@ -4,11 +4,11 @@
  *
  * AUTHORS: Turbo Nobsin
  *
- * VERSION: a1.0.5
- * DATE: 7-13-21
+ * VERSION: a1.1.11
+ * DATE: 8-12-21
  *
  * WHATS NEW?
- * 	- Added "+" character
+ *  - 
  */
 
 class NobsinCtx{
@@ -53,6 +53,11 @@ class NobsinCtx{
   blendMode = 0;
   pixelCount = 0;
 
+  camX = 0;
+  camY = 0;
+  camZ = 0;
+  useCam = false;
+
   isFree(x,y){
     if(x < 0) return;
     if(y < 0) return;
@@ -72,7 +77,22 @@ class NobsinCtx{
     this.pixelCount++;
     return 1;
   }
+  setData2(ind,r,g,b,a){ //set pixel at index
+    if(ind == null) return;
+    ind = Math.floor(ind);
+    this.buf[ind] = r;
+    this.buf[ind+1] = g;
+    this.buf[ind+2] = b;
+    this.buf[ind+3] = a;
+    this.pixelCount++;
+    return 1;
+  }
   setPixel(x=0,y=0,col){
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
     x = Math.floor(x);
     y = Math.floor(y);
     if(x < 0) return;
@@ -130,7 +150,38 @@ class NobsinCtx{
     }
     this.pixelCount++;
   }
+  setPixel_blend(x=0,y=0,col){
+    x = Math.floor(x);
+    y = Math.floor(y);
+    if(x < 0) return;
+    if(x > this.right) return;
+    if(y < 0) return;
+    if(y > this.bottom) return;
+    
+    //i Simple
+    let iS = x+y*this.width;
+    let i = iS*4;
+    if(!col){
+      this.buf[i] = 0;
+      this.buf[i+1] = 0;
+      this.buf[i+2] = 0;
+      this.buf[i+3] = 255;
+    }
+    else{
+      this.buf[i] = Math.floor((this.buf[i]+col[0])/2);
+      this.buf[i+1] = Math.floor((this.buf[i+1]+col[1])/2);;
+      this.buf[i+2] = Math.floor((this.buf[i+2]+col[2])/2);;
+      this.buf[i+3] = Math.floor((this.buf[i+3]+col[3])/2);;
+    }
+    this.pixelCount++;
+    return 1;
+  }
   setPixel_dep(x=0,y=0,col,dep=0){
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
     x = Math.floor(x);
     y = Math.floor(y);
     if(x < 0) return;
@@ -361,7 +412,19 @@ class NobsinCtx{
       ind += (this.width*4-wd*4);
     }
   }
+  /* DEP:
+  let dInd = xx+(y+j)*this.width;
+  let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+  if(check) if(this.dep[dInd] <= dd){
+    let tInd = dInd*4;
+    this.dep[dInd] = dd;
+    */
   drawRect(x1,y1,wr,hr,col){
+    if(this.useCam){
+      x1 -= this.camX;
+      y1 -= this.camY;
+      y1 += this.camZ;
+    }
     wr = Math.floor(wr);
     hr = Math.floor(hr);
     x1 = Math.floor(x1);
@@ -390,8 +453,95 @@ class NobsinCtx{
       ind += (this.width*4-wd*4);
     }
   }
+  drawRect_dep(x1,y1,wr,hr,col,dep=0,upright=false){
+    if(this.useCam){
+      x1 -= this.camX;
+      y1 -= this.camY;
+      y1 += this.camZ;
+    }
+    wr = Math.floor(wr);
+    hr = Math.floor(hr);
+    x1 = Math.floor(x1);
+    y1 = Math.floor(y1);
+    let x = x1;
+    let y = y1;
+    let ind = (x+y*this.width)*4;
+    let wd = wr;
+    let hd = hr;
+    for(let j = 0; j < hd; j++){
+      for(let i = 0; i < wd; i++){
+        let pass = true;
+        if(x < 0) pass = false;
+        else if(x >= this.width) pass = false;
+        //let dInd = x+(y+j)*this.width;
+        let dInd = Math.floor(ind/4);
+        let dd = (upright===2?(dep+(hd-j)*nob.height):upright?(dep+(hd-j)):dep);
+        if(pass) if(this.dep[dInd] <= dd){
+          this.dep[dInd] = dd;
+          this.buf[ind] = col[0];
+          this.buf[ind+1] = col[1];
+          this.buf[ind+2] = col[2];
+          this.buf[ind+3] = col[3];
+        }
+        x++;
+        ind += 4;
+      }
+      y++;
+      x -= wd;
+      ind += (this.width*4-wd*4);
+    }
+  }
+  drawCircle_other(buf,width,scale,x1,y1,r,col,useCam=false){
+    if(useCam) if(this.useCam){
+      x1 -= this.camX;
+      y1 -= this.camY;
+      y1 += this.camZ;
+    }
+    if(Math.floor(r) < 1){
+      //this.setPixel(x1,y1,col);
+      return;
+    }
+    r = Math.floor(r);
+    x1 = Math.floor(x1);
+    y1 = Math.floor(y1);
+    let x = x1-r;
+    let y = y1-r;
+    let ind = (x+y*width)*scale;
+    let d = r+r;
+    for(let j = 0; j < d; j++){
+      let j2 = j-r;
+      let l;
+      if(r < 6) l = Math.floor(Math.abs(Math.sqrt(r*r-j2*j2)));
+      else l = Math.round(Math.abs(Math.sqrt(r*r-j2*j2)));
+      x += (r-l);
+      ind += (r-l)*scale;
+      for(let i = r-l; i < r+l; i++){
+        let pass = true;
+        if(x < 0) pass = false;
+        else if(x >= width) pass = false;
+        if(pass){
+          buf[ind] = col[0];
+          buf[ind+1] = col[1];
+          buf[ind+2] = col[2];
+          buf[ind+3] = col[3];
+          this.pixelCount++;
+        }
+        x++;
+        ind += scale;
+      }
+      y++;
+      let shiftX = (l+l+(r-l));
+      x -= shiftX;
+      ind += (width*scale-shiftX*scale);
+    }
+  }
   drawCircle(x1,y1,r,col){
     //if(Math.ceil(r) <= 0) return;
+    if(this.useCam){
+      x1 -= this.camX;
+      y1 -= this.camY;
+      y1 += this.camZ;
+    }
     if(Math.floor(r) <= 1){
       this.setPixel(x1,y1,col);
       return;
@@ -470,7 +620,12 @@ class NobsinCtx{
       ind += (this.width*4-shiftX*4);
     }
   }
-  drawCircle_custom(x1,y1,r,col,func,arg){ //circle with gradient, ex by default
+  drawCircle_custom(x1,y1,r,col,func,arg){
+    if(this.useCam){
+      x1 -= this.camX;
+      y1 -= this.camY;
+      y1 += this.camZ;
+    }
     if(Math.floor(r) <= 1){
       this.setPixel_ex((x1+y1*this.width)*4,col);
       return;
@@ -508,6 +663,11 @@ class NobsinCtx{
     }
   }
   drawCircle_grad(x1,y1,r,col,solidEdge=null){ //circle with gradient, ex by default
+    if(this.useCam){
+      x1 -= this.camX;
+      y1 -= this.camY;
+      y1 += this.camZ;
+    }
     if(Math.floor(r) <= 1){
       this.setPixel_ex((x1+y1*this.width)*4,col);
       return;
@@ -661,7 +821,7 @@ class NobsinCtx{
       ind += (this.width*4-shiftX*4);
     }
   }
-  drawRect_dep(x,y,w,h,col,dep=0){
+  drawRect_dep_old(x,y,w,h,col,dep=0){
     if(!col) return;
     x = Math.floor(x);
     y = Math.floor(y);
@@ -976,6 +1136,181 @@ class NobsinCtx{
         }
       }
     }
+  }
+  isPixelInLine(x0,y0,x1,y1,w,mx,my){
+    let hw = Math.floor(w/2); //half width
+
+    if(w < 1 && w > 0.1) w = 1;
+    let ly = y1-y0;
+    let lx = x1-x0;
+    let m = ly/lx;
+    let am = Math.abs(m);
+    
+    {
+      x0 = Math.floor(x0);
+      x1 = Math.floor(x1);
+      y0 = Math.floor(y0);
+      y1 = Math.floor(y1);
+
+      //this.drawRect_dep(x0-hw,y0-hw,w,w,c,dep,upright);
+      //this.drawRect_dep(x1-hw,y1-hw,w,w,c,dep+(upright==2?(Math.max(0,(y1-y0)*this.height)):0),upright);
+
+      let dx = Math.abs(x1-x0);
+      let sx = x0<x1 ? 1 : -1;
+      let dy = -Math.abs(y1-y0);
+      let sy = y0<y1 ? 1 : -1;
+      let err = dx+dy;
+
+      while(true){   /* loop */
+        if(am >= 1){ //vertical slope
+          for(let i = -hw; i <= hw; i++){
+            if(x0+i == mx && y0 == my) return true;
+          }
+        }
+        else{ //horz slope
+          for(let i = -hw; i <= hw; i++){
+            if(x0 == mx && y0+i == my) return true;
+          }
+        }
+        if(x0 == x1 && y0 == y1) return false;
+        let e2 = 2*err;
+        if(e2 >= dy){ /* e_xy+e_x > 0 */
+          err += dy;
+          x0 += sx;
+        }
+        if(e2 <= dx){ /* e_xy+e_y < 0 */
+          err += dx;
+          y0 += sy;
+        }
+      }
+    }
+  }
+  drawLine_smart_filled(x0,y0,x1,y1,c,w,dep=0,upright=false){
+    //posibly temp
+    let hw = Math.floor(w/2); //half width
+
+    if(w < 1 && w > 0.1) w = 1;
+    let ly = y1-y0;
+    let lx = x1-x0;
+    let m = ly/lx;
+    let am = Math.abs(m);
+
+    /*
+
+    let dInd = xx+(y+j)*this.width;
+          let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+          if(check) if(this.dep[dInd] <= dd){
+            let tInd = dInd*4;
+            this.dep[dInd] = dd;
+
+    */
+    
+    {
+      x0 = Math.floor(x0);
+      x1 = Math.floor(x1);
+      y0 = Math.floor(y0);
+      y1 = Math.floor(y1);
+      let startY = y0;
+
+      this.drawRect_dep(x0-hw,y0-hw,w,w,c,dep,upright);
+      this.drawRect_dep(x1-hw,y1-hw,w,w,c,dep+(upright==2?(Math.max(0,(y1-y0)*this.height)):0),upright);
+
+      let dx = Math.abs(x1-x0);
+      let sx = x0<x1 ? 1 : -1;
+      let dy = -Math.abs(y1-y0);
+      let sy = y0<y1 ? 1 : -1;
+      let err = dx+dy;  /* error value e_xy */
+
+      while(true){   /* loop */
+        //let res = this.setPixel(x0,y0,c);
+        if(am >= 1){ //vertical slope
+          for(let i = -hw; i <= hw; i++){
+            let depi = (startY-y0)*this.height;
+            this.setPixel_dep(x0+i,y0,c,dep+depi);
+          }
+        }
+        else{ //horz slope
+          for(let i = -hw; i <= hw; i++){
+            let depi = (startY-(y0+i))*this.height;
+            this.setPixel_dep(x0,y0+i,c,dep+depi);
+          }
+        }
+        //if(!res) break;
+        
+        if(x0 == x1 && y0 == y1) break;
+        let e2 = 2*err;
+        if(e2 >= dy){ /* e_xy+e_x > 0 */
+          err += dy;
+          x0 += sx;
+        }
+        if(e2 <= dx){ /* e_xy+e_y < 0 */
+          err += dx;
+          y0 += sy;
+        }
+      }
+    }
+  }
+  getLine(x0,y0,x1,y1,c,w){
+
+    let l = [];
+    //posibly temp
+    let hw = Math.floor(w/2); //half width
+
+    //fix ends
+
+    
+
+    //
+
+    //if(Math.floor(w) == 1) return;
+    //this.plotLine(x0,y0,x1,y1,c);
+    if(w < 1 && w > 0.1) w = 1;
+    let ly = y1-y0;
+    let lx = x1-x0;
+    let m = ly/lx;
+    let am = Math.abs(m);
+    
+    {
+      x0 = Math.floor(x0);
+      x1 = Math.floor(x1);
+      y0 = Math.floor(y0);
+      y1 = Math.floor(y1);
+
+      let dx = Math.abs(x1-x0);
+      let sx = x0<x1 ? 1 : -1;
+      let dy = -Math.abs(y1-y0);
+      let sy = y0<y1 ? 1 : -1;
+      let err = dx+dy;  /* error value e_xy */
+
+      while(true){   /* loop */
+        //let res = this.setPixel(x0,y0,c);
+        if(am >= 1){ //vertical slope
+          for(let i = -hw; i <= hw; i++){
+            //this.setPixel(x0+i,y0,c);
+            l.push([x0+i,y0,0]);
+          }
+        }
+        else{ //horz slope
+          for(let i = -hw; i <= hw; i++){
+            //this.setPixel(x0,y0+i,c);
+            l.push([x0,y0+i,0]);
+          }
+        }
+        //if(!res) break;
+        
+        if(x0 == x1 && y0 == y1) break;
+        let e2 = 2*err;
+        if(e2 >= dy){ /* e_xy+e_x > 0 */
+          err += dy;
+          x0 += sx;
+        }
+        if(e2 <= dx){ /* e_xy+e_y < 0 */
+          err += dx;
+          y0 += sy;
+        }
+      }
+    }
+    return l;
   }
   outlineColor = [0,0,0,255];
   drawLine_smart_outline(x0,y0,x1,y1,c,w){
@@ -1348,6 +1683,11 @@ class NobsinCtx{
   widthOff = 0;
   drawImage(data,x=0,y=0){
     if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
     x = Math.floor(x);
     y = Math.floor(y);
     let w = data.w;
@@ -1513,8 +1853,13 @@ class NobsinCtx{
 
     return 1;
   }
-  drawImage_basic(data,x=0,y=0){
+  drawImage_basic(data,x=0,y=0,camera=false){
     if(!data) return;
+    if(this.useCam || camera){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
     x = Math.floor(x);
     y = Math.floor(y);
     let w = data.w;
@@ -1574,8 +1919,536 @@ class NobsinCtx{
 
     return 1;
   }
+  drawImage_basic_dep(data,x=0,y=0,camera=false,dep=0,upright=false){
+    if(!data) return;
+    if(this.useCam || camera){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let w = data.w;
+    let h = data.h;
+    if(w == 0) return;
+    if(h == 0) return;
+    if(!data.data) return;
+    if(data.data.length == 0) return;
+
+    if(!this.flipX) for(let j = 0; j < h; j++){
+      for(let i = 0; i < w; i++){
+        let ind = (i+j*w)*4;
+        if(data.data[ind+3]){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          let dInd = xx+(y+j)*this.width;
+          let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+          if(check) if(this.dep[dInd] <= dd){
+            let tInd = dInd*4;
+            this.dep[dInd] = dd;
+            this.buf[tInd] = data.data[ind];
+            this.buf[tInd+1] = data.data[ind+1];
+            this.buf[tInd+2] = data.data[ind+2];
+            this.buf[tInd+3] = data.data[ind+3];
+          }
+        }
+      }
+    }
+    else{
+      for(let j = 0; j < h; j++){
+        for(let i = 0; i < w; i++){
+          let ind = ((w-i-1)+j*w)*4;
+          if(data.data[ind+3]){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            let dInd = xx+(y+j)*this.width;
+            let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+            if(check) if(this.dep[dInd] <= dd){
+              let tInd = dInd*4;
+              this.dep[dInd] = dd;
+              this.buf[tInd] = data.data[ind];
+              this.buf[tInd+1] = data.data[ind+1];
+              this.buf[tInd+2] = data.data[ind+2];
+              this.buf[tInd+3] = data.data[ind+3];
+            }
+          }
+        }
+      }
+    }
+
+    return 1;
+  }
+  drawImage_basic_tint(data,x=0,y=0,tr,tg,tb){
+    if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let w = data.w;
+    let h = data.h;
+    if(w == 0) return;
+    if(h == 0) return;
+    if(!data.data) return;
+    if(data.data.length == 0) return;
+
+    if(!this.flipX) for(let j = 0; j < h; j++){
+      for(let i = 0; i < w; i++){
+        let ind = (i+j*w)*4;
+        if(data.data[ind+3]){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          if(check){
+            let tInd = (xx+(y+j)*this.width)*4;
+            this.buf[tInd] = Math.floor(data.data[ind]*tr);
+            this.buf[tInd+1] = Math.floor(data.data[ind+1]*tg);
+            this.buf[tInd+2] = Math.floor(data.data[ind+2]*tb);
+            this.buf[tInd+3] = data.data[ind+3];
+          }
+        }
+      }
+    }
+    else{
+      for(let j = 0; j < h; j++){
+        for(let i = 0; i < w; i++){
+          let ind = ((w-i-1)+j*w)*4;
+          if(data.data[ind+3]){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            if(check){
+              let tInd = (xx+(y+j)*this.width)*4;
+              this.buf[tInd] = Math.floor(data.data[ind]*tr);
+              this.buf[tInd+1] = Math.floor(data.data[ind+1]*tg);
+              this.buf[tInd+2] = Math.floor(data.data[ind+2]*tb);
+              this.buf[tInd+3] = data.data[ind+3];
+            }
+          }
+        }
+      }
+    }
+
+    return 1;
+  }
+  drawImage_basic_tint2(data,x=0,y=0,t1,t2){
+    if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let w = data.w;
+    let h = data.h;
+    if(w == 0) return;
+    if(h == 0) return;
+    if(!data.data) return;
+    if(data.data.length == 0) return;
+
+    if(!this.flipX) for(let j = 0; j < h; j++){
+      for(let i = 0; i < w; i++){
+        let ind = (i+j*w)*4;
+        if(data.data[ind+3]){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          if(check){
+            let tInd = (xx+(y+j)*this.width)*4;
+            this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
+            this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
+            this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
+            this.buf[tInd+3] = data.data[ind+3];
+          }
+        }
+      }
+    }
+    else{
+      for(let j = 0; j < h; j++){
+        for(let i = 0; i < w; i++){
+          let ind = ((w-i-1)+j*w)*4;
+          if(data.data[ind+3]){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            if(check){
+              let tInd = (xx+(y+j)*this.width)*4;
+              this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
+              this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
+              this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
+              this.buf[tInd+3] = data.data[ind+3];
+            }
+          }
+        }
+      }
+    }
+
+    return 1;
+  }
+  drawImage_basic_tint2_dep(data,x=0,y=0,t1,t2,dep=0,upright=false,outline){
+    if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let w = data.w;
+    let h = data.h;
+    if(w == 0) return;
+    if(h == 0) return;
+    if(!data.data) return;
+    if(data.data.length == 0) return;
+
+    if(!this.flipX) for(let j = 0; j < h; j++){
+      for(let i = 0; i < w; i++){
+        let ind = (i+j*w)*4;
+        if(data.data[ind+3]){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          let dInd = xx+(y+j)*this.width;
+          let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+          if(check) if(this.dep[dInd] <= dd){
+            let tInd = dInd*4;
+            this.dep[dInd] = dd;
+            this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
+            this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
+            this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
+            this.buf[tInd+3] = data.data[ind+3];
+          }
+        }
+        else if(outline){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          let dInd = xx+(y+j)*this.width;
+          let tInd = dInd*4;
+          if(check) if(!(this.buf[tInd] == 255 && this.buf[tInd+1] == 255 && this.buf[tInd+2] == 255)){
+            if(check){
+              let pass = false;
+              if(ind+3+4 < data.data.length && data.data[ind+3+4] != 0) pass = true;
+              else if(ind+3-4 >= 0 && data.data[ind+3-4] != 0) pass = true;
+              else if(ind+3+w*4 < data.data.length && data.data[ind+3+w*4] != 0) pass = true;
+              else if(ind+3-w*4 >= 0 && data.data[ind+3-w*4] != 0) pass = true;
+              if(pass){
+                this.dep[dInd] = 60000;
+                this.buf[tInd] = outline[0];
+                this.buf[tInd+1] = outline[1];
+                this.buf[tInd+2] = outline[2];
+                this.buf[tInd+3] = 255;
+              }
+            }
+          }
+        }
+      }
+    }
+    else{
+      for(let j = 0; j < h; j++){
+        for(let i = 0; i < w; i++){
+          let ind = ((w-i-1)+j*w)*4;
+          if(data.data[ind+3]){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            let dInd = xx+(y+j)*this.width;
+            let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+            if(check) if(this.dep[dInd] <= dd){
+              let tInd = dInd*4;
+              this.dep[dInd] = dd;
+              this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
+              this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
+              this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
+              this.buf[tInd+3] = data.data[ind+3];
+            }
+          }
+          else if(outline){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            let dInd = xx+(y+j)*this.width;
+            let tInd = dInd*4;
+            if(check) if(!(this.buf[tInd] == 255 && this.buf[tInd+1] == 255 && this.buf[tInd+2] == 255)){
+              if(check){
+                let pass = false;
+                if(ind+3+4 < data.data.length && data.data[ind+3+4] != 0) pass = true;
+                else if(ind+3-4 >= 0 && data.data[ind+3-4] != 0) pass = true;
+                else if(ind+3+w*4 < data.data.length && data.data[ind+3+w*4] != 0) pass = true;
+                else if(ind+3-w*4 >= 0 && data.data[ind+3-w*4] != 0) pass = true;
+                if(pass){
+                  this.dep[dInd] = 60000;
+                  this.buf[tInd] = outline[0];
+                  this.buf[tInd+1] = outline[1];
+                  this.buf[tInd+2] = outline[2];
+                  this.buf[tInd+3] = 255;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return 1;
+  }
+  drawImage_basic_replace_dep(data,x=0,y=0,t1,t2,dep=0,upright=false){
+    if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let w = data.w;
+    let h = data.h;
+    if(w == 0) return;
+    if(h == 0) return;
+    if(!data.data) return;
+    if(data.data.length == 0) return;
+
+    if(!this.flipX) for(let j = 0; j < h; j++){
+      for(let i = 0; i < w; i++){
+        let ind = (i+j*w)*4;
+        if(data.data[ind+3]){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          let dInd = xx+(y+j)*this.width;
+          let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+          if(check) if(this.dep[dInd] <= dd){
+            let tInd = dInd*4;
+            this.dep[dInd] = dd;
+            if(data.data[ind] == t1[0] && data.data[ind+1] == t1[1] && data.data[ind+2] == t1[2]){
+              this.buf[tInd] = t2[0];
+              this.buf[tInd+1] = t2[1];
+              this.buf[tInd+2] = t2[2];
+            }
+            else{
+              this.buf[tInd] = data.data[ind];
+              this.buf[tInd+1] = data.data[ind+1];
+              this.buf[tInd+2] = data.data[ind+2];
+            }
+            this.buf[tInd+3] = data.data[ind+3];
+          }
+        }
+      }
+    }
+    else{
+      for(let j = 0; j < h; j++){
+        for(let i = 0; i < w; i++){
+          let ind = ((w-i-1)+j*w)*4;
+          if(data.data[ind+3]){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            let dInd = xx+(y+j)*this.width;
+            let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+            if(check) if(this.dep[dInd] <= dd){
+              let tInd = dInd*4;
+              this.dep[dInd] = dd;
+              if(data.data[ind] == t1[0] && data.data[ind+1] == t1[1] && data.data[ind+2] == t1[2]){
+                this.buf[tInd] = t2[0];
+                this.buf[tInd+1] = t2[1];
+                this.buf[tInd+2] = t2[2];
+              }
+              else{
+                this.buf[tInd] = data.data[ind];
+                this.buf[tInd+1] = data.data[ind+1];
+                this.buf[tInd+2] = data.data[ind+2];
+              }
+              this.buf[tInd+3] = data.data[ind+3];
+            }
+          }
+        }
+      }
+    }
+
+    return 1;
+  }
+  drawImage_basic_replace2_dep(data,x=0,y=0,t1,t2,t3,t4,dep=0,upright=false){
+    if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let w = data.w;
+    let h = data.h;
+    if(w == 0) return;
+    if(h == 0) return;
+    if(!data.data) return;
+    if(data.data.length == 0) return;
+
+    if(!this.flipX) for(let j = 0; j < h; j++){
+      for(let i = 0; i < w; i++){
+        let ind = (i+j*w)*4;
+        if(data.data[ind+3]){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          let dInd = xx+(y+j)*this.width;
+          let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+          if(check) if(this.dep[dInd] <= dd){
+            let tInd = dInd*4;
+            this.dep[dInd] = dd;
+            if(data.data[ind] == t1[0] && data.data[ind+1] == t1[1] && data.data[ind+2] == t1[2]){
+              this.buf[tInd] = t2[0];
+              this.buf[tInd+1] = t2[1];
+              this.buf[tInd+2] = t2[2];
+            }
+            else if(data.data[ind] == t3[0] && data.data[ind+1] == t3[1] && data.data[ind+2] == t3[2]){
+              this.buf[tInd] = t4[0];
+              this.buf[tInd+1] = t4[1];
+              this.buf[tInd+2] = t4[2];
+            }
+            else{
+              this.buf[tInd] = data.data[ind];
+              this.buf[tInd+1] = data.data[ind+1];
+              this.buf[tInd+2] = data.data[ind+2];
+            }
+            this.buf[tInd+3] = data.data[ind+3];
+          }
+        }
+      }
+    }
+    else{
+      for(let j = 0; j < h; j++){
+        for(let i = 0; i < w; i++){
+          let ind = ((w-i-1)+j*w)*4;
+          if(data.data[ind+3]){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            let dInd = xx+(y+j)*this.width;
+            let dd = (upright===2?(dep+(h-j)*nob.height):upright?(dep+(h-j)):dep);
+            if(check) if(this.dep[dInd] <= dd){
+              let tInd = dInd*4;
+              this.dep[dInd] = dd;
+              if(data.data[ind] == t1[0] && data.data[ind+1] == t1[1] && data.data[ind+2] == t1[2]){
+                this.buf[tInd] = t2[0];
+                this.buf[tInd+1] = t2[1];
+                this.buf[tInd+2] = t2[2];
+              }
+              else if(data.data[ind] == t3[0] && data.data[ind+1] == t3[1] && data.data[ind+2] == t3[2]){
+                this.buf[tInd] = t4[0];
+                this.buf[tInd+1] = t4[1];
+                this.buf[tInd+2] = t4[2];
+              }
+              else{
+                this.buf[tInd] = data.data[ind];
+                this.buf[tInd+1] = data.data[ind+1];
+                this.buf[tInd+2] = data.data[ind+2];
+              }
+              this.buf[tInd+3] = data.data[ind+3];
+            }
+          }
+        }
+      }
+    }
+
+    return 1;
+  }
+  drawImage_basic_tintAdd(data,x=0,y=0,tr,tg,tb){
+    if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    x = Math.floor(x);
+    y = Math.floor(y);
+    let w = data.w;
+    let h = data.h;
+    if(w == 0) return;
+    if(h == 0) return;
+    if(!data.data) return;
+    if(data.data.length == 0) return;
+
+    if(!this.flipX) for(let j = 0; j < h; j++){
+      for(let i = 0; i < w; i++){
+        let ind = (i+j*w)*4;
+        if(data.data[ind+3]){
+          let check = true;
+          let xx = x+i;
+          if(xx < 0) check = false;
+          else if(xx >= this.width) check = false;
+          if(check){
+            let tInd = (xx+(y+j)*this.width)*4;
+            if(data.data[ind] == 0 && data.data[ind+1] == 0 && data.data[ind+2] == 0){
+              this.buf[tInd] = 0;
+              this.buf[tInd+1] = 0;
+              this.buf[tInd+2] = 0;
+            }
+            else{
+              this.buf[tInd] = Math.floor(data.data[ind]+tr);
+              this.buf[tInd+1] = Math.floor(data.data[ind+1]+tg);
+              this.buf[tInd+2] = Math.floor(data.data[ind+2]+tb);
+            }
+            this.buf[tInd+3] = data.data[ind+3];
+          }
+        }
+      }
+    }
+    else{
+      for(let j = 0; j < h; j++){
+        for(let i = 0; i < w; i++){
+          let ind = ((w-i-1)+j*w)*4;
+          if(data.data[ind+3]){
+            let check = true;
+            let xx = x+i;
+            if(xx < 0) check = false;
+            else if(xx >= this.width) check = false;
+            if(check){
+              let tInd = (xx+(y+j)*this.width)*4;
+              if(data.data[ind] == 0 && data.data[ind+1] == 0 && data.data[ind+2] == 0){
+                this.buf[tInd] = 0;
+                this.buf[tInd+1] = 0;
+                this.buf[tInd+2] = 0;
+              }
+              else{
+                this.buf[tInd] = Math.floor(data.data[ind]+tr);
+                this.buf[tInd+1] = Math.floor(data.data[ind+1]+tg);
+                this.buf[tInd+2] = Math.floor(data.data[ind+2]+tb);
+              }
+              this.buf[tInd+3] = data.data[ind+3];
+            }
+          }
+        }
+      }
+    }
+
+    return 1;
+  }
   drawImage_trans(data,x=0,y=0,opacity=1){
     if(!data) return;
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
     x = Math.floor(x);
     y = Math.floor(y);
     let w = data.w;
@@ -1720,7 +2593,11 @@ class NobsinCtx{
   drawImage_warp(data,x=0,y=0,sx=1,sy=1,a=0,dep=0,upright=false){
     //p'x = cos(theta) * (px-ox) - sin(theta) * (py-oy) + ox
     //p'y = sin(theta) * (px-ox) + cos(theta) * (py-oy) + oy
-
+    if(this.useCam){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
     x = Math.floor(x);
     y = Math.floor(y);
     let w = data.w;
@@ -2104,13 +2981,62 @@ class NobsinCtx{
       }
     }
   }
-  drawText(text,x,y,c,border,glow=false){
+  drawLetter_custom(tData,l,x,y,c,border){
+    let data = tData;
+    let d = tData[l];
+    if(!d){
+      d = letterData[l];
+      data = letterData;
+    }
+    if(!d) return;
+    let row = 0;
+    let collumn = 0;
+    x--;
+    y -= data.halfh;
+    if(border){
+      this.drawLine_smart(x-1,y-1,x+data.rwidth,y-1,border,1);
+      this.drawLine_smart(x-1,y+data.height,x+data.rwidth,y+data.height,border,1);
+      this.drawLine_smart(x-1,y-1,x-1,y+data.height,border,1);
+      this.drawLine_smart(x+data.rwidth,y-1,x+data.rwidth,y+data.height,border,1);
+    }
+    for(let i = 0; i < d.length; i++){
+      if(d[i]){
+        row = Math.floor(i/data.rwidth);
+        collumn = i%data.rwidth;
+        this.setPixel(x+collumn,y+row,c);
+      }
+      else if(border){
+        row = Math.floor(i/data.rwidth);
+        collumn = i%data.rwidth;
+        this.setPixel(x+collumn,y+row,border);
+      }
+    }
+  }
+  drawText(text,x,y,c,border,glow=false,centered=true,camera=false){
+    if(camera){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
     let half = (text.length/2*4);
     if(glow) this.drawCircle_grad(x,y,8,[0,0,0,220]);
     if(border === true) border = [0,0,0,c[3]];
     else if(border) border = [border[0],border[1],border[2],c[3]];
     for(let i = 0; i < text.length; i++){
-      this.drawLetter(text[i],x+i*4-half,y,c,border);
+      this.drawLetter(text[i],x+i*4-(centered?(half):-2),y,c,border);
+    }
+  }
+  drawText_custom(tData,text,x,y,c,border,glow=false,camera=false){
+    if(camera){
+      x -= this.camX;
+      y -= this.camY;
+      y += this.camZ;
+    }
+    if(glow) this.drawCircle_grad(x,y,8,[0,0,0,220]);
+    if(border === true) border = [0,0,0,c[3]];
+    else if(border) border = [border[0],border[1],border[2],c[3]];
+    for(let i = 0; i < text.length; i++){
+      this.drawLetter_custom(tData,text[i],x+i*tData.width,y,c,border);
     }
   }
 }
@@ -2229,15 +3155,27 @@ class NobsinTextureLoader{
           }
         }
 
-        t.names[name+"_"+ii] = t.buf.length;
+        if(name) t.names[name+"_"+ii] = t.buf.length;
         let dd = {w:cw,h:ch,loaded:true,data:dat};
         t.buf[t.buf.length] = dd;
         list.push(dd);
+        if(atr.rev){ //also create anim in reverse
+          list.rev.splice(0,0,dd);
+        }
+      }
+      if(atr.rubberband){ //go forwards and back through anim
+        let l = list.length-1;
+        for(let i = 1; i < l; i++){
+          list.push(list[l-i]);
+        }
       }
 
       //this.buf[this.buf.length] = 
     });
     if(atr.delay) list.delay = atr.delay;
+    if(atr.rev){ //also create anim in reverse
+      list.rev = []; //deepClone(list).reverse()
+    }
     return list;
   }
 }
@@ -2484,7 +3422,47 @@ function updateEvts(){
  * added 7-8-21, brand new feature
  */
 
+var letterDataWide = {
+  width:6,
+  height:5,
+  halfh:2,
+  rwidth:5,
+  "H":[
+    1,0,0,0,1,
+    1,0,0,0,1,
+    1,1,1,1,1,
+    1,0,0,0,1,
+    1,0,0,0,1
+  ],
+  "W":[
+    1,0,0,0,1,
+    1,0,0,0,1,
+    1,0,1,0,1,
+    1,1,0,1,1,
+    1,0,0,0,1
+  ],
+
+  //special characters
+  "u":[
+    0,0,1,0,0,
+    0,1,1,1,0,
+    1,1,1,1,1,
+    0,0,1,0,0,
+    0,0,1,0,0
+  ],
+  "d":[
+    0,0,1,0,0,
+    0,0,1,0,0,
+    1,1,1,1,1,
+    0,1,1,1,0,
+    0,0,1,0,0
+  ]
+};
 var letterData = {
+  width:4,
+  height:5,
+  halfh:2,
+  rwidth:3,
   0:[
     1,1,1,
     1,0,1,
@@ -2761,5 +3739,142 @@ var letterData = {
     1,1,1,
     0,1,0,
     0,0,0
+  ],
+  "-":[
+    0,0,0,
+    0,0,0,
+    1,1,1,
+    0,0,0,
+    0,0,0
+  ],
+  ":":[
+    0,0,0,
+    0,1,0,
+    0,0,0,
+    0,1,0,
+    0,0,0
+  ],
+  "|":[
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0
+  ],
+
+  //0.1.7 symbols
+  ",":[
+    0,0,0,
+    0,0,0,
+    0,0,0,
+    0,1,0,
+    0,1,0
+  ],
+  ".":[
+    0,0,0,
+    0,0,0,
+    0,0,0,
+    0,0,0,
+    0,1,0
+  ],
+  ";":[
+    0,0,0,
+    0,1,0,
+    0,0,0,
+    0,1,0,
+    0,1,0
+  ],
+  "'":[
+    0,1,0,
+    0,1,0,
+    0,0,0,
+    0,0,0,
+    0,0,0
+  ],
+  '"':[
+    1,0,1,
+    1,0,1,
+    0,0,0,
+    0,0,0,
+    0,0,0
+  ],
+  "=":[
+    0,0,0,
+    1,1,1,
+    0,0,0,
+    1,1,1,
+    0,0,0
+  ],
+  "?":[
+    1,1,1,
+    0,0,1,
+    0,1,1,
+    0,0,0,
+    0,1,0
+  ],
+  "!":[
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,0,0,
+    0,1,0
+  ],
+  "*":[
+    1,0,1,
+    0,1,0,
+    1,0,1,
+    0,0,0,
+    0,0,0
+  ],
+  "(":[
+    0,1,0,
+    1,0,0,
+    1,0,0,
+    1,0,0,
+    0,1,0
+  ],
+  ")":[
+    0,1,0,
+    0,0,1,
+    0,0,1,
+    0,0,1,
+    0,1,0
+  ],
+  "[":[
+    1,1,0,
+    1,0,0,
+    1,0,0,
+    1,0,0,
+    1,1,0
+  ],
+  "]":[
+    0,1,1,
+    0,0,1,
+    0,0,1,
+    0,0,1,
+    0,1,1
+  ],
+
+  //SPECIAL SHAPES
+  "l":[
+    0,0,1,
+    0,1,1,
+    1,1,1,
+    0,1,1,
+    0,0,1
+  ],
+  "r":[
+    1,0,0,
+    1,1,0,
+    1,1,1,
+    1,1,0,
+    1,0,0
+  ],
+  "u":[
+    0,1,0,
+    1,1,1,
+    0,1,0,
+    0,1,0,
+    0,1,0
   ]
 };
