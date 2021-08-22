@@ -1389,7 +1389,10 @@ let craftingCatList = [
                 name:"BARREL",
                 info:"LARGE STORAGE FOR ONE ITEM, WHETHER IT'S WATER, SEEDS, OR FOOD",
                 reqMat:[items.materials.wheat],
-                reqAmt:[10]
+                reqAmt:[10],
+                build:function(x,y,z){
+                    worldObjs.large_barrel(x,y,z,white);
+                }
             },
             {
                 name:"LARGE BARREL",

@@ -1414,7 +1414,8 @@ const weaponData = {
                     w.amt[id]--;
                     ro.seed = {
                         id,
-                        i:0
+                        i:0,
+                        c:0
                     };
                 }
             }
@@ -1541,8 +1542,18 @@ const weaponData = {
             let r = this.prev(o,mx,my);
             let ro = r[2];
             if(button == 0) if(ro) if(ro.seed){
-                if(!o.isAttacking){
+                let needed = 0;
+                switch(ro.seed.id){
+                    case 0:
+                        needed = 2;
+                        break;
+                    case 1:
+                        break;
+                }
+                if(!o.isAttacking) if(needed <= ro.seed.c){
                     giveDrops(plantData[ro.seed.id].getDrops(o,ro.seed),o);
+                    console.log(ro.x,ro.y,ro.z);
+                    if(plantData[ro.seed.id].onDestroy) plantData[ro.seed.id].onDestroy(ro.x,ro.y,ro.z,ro.seed);
                     ro.seed = null;
                     
 
@@ -1753,8 +1764,8 @@ const weaponData = {
                 let obj;
                 for(let i = 0; i < sobjs.length; i++){
                     let s = sobjs[i];
-                    if(s.type == 2){
-                            /*let hw = Math.ceil(s.w/2);
+                    //if(s.type == 2){
+                    {        /*let hw = Math.ceil(s.w/2);
 
                             let tx = Math.floor(Math.sin(s.a)*s.l+s.x);
                             let ty = Math.floor(Math.cos(s.a)*s.l+s.y);
@@ -2227,15 +2238,15 @@ function createTilledDirt(x,y,horz,type=0){
                 this.seed.i++;
                 switch(this.seed.id){
                     case 0: //Wheat
-                        let h = Math.min(4,Math.floor(this.seed.i/360*4));
+                        let h = Math.min(2,Math.floor(this.seed.i/360*2));
+                        this.seed.c = h;
                         nob.setPixel_dep(this.x,this.y+1,black,this.y+2);
                         nob.setPixel_dep(this.x,this.y-h,black,this.y+2+(h*nob.height));
                         for(let i = 0; i < h; i++){
-                            nob.setPixel_dep(this.x,this.y-i,colors.plant,this.y+2+(i*nob.height));
+                            nob.setPixel_dep(this.x,this.y-i,colors.seeds[0],this.y+2+(i*nob.height));
                             nob.setPixel_dep(this.x-1,this.y-i,black,this.y+2+(i*nob.height));
                             nob.setPixel_dep(this.x+1,this.y-i,black,this.y+2+(i*nob.height));
                         }
-                        //nob.drawLine_smart_dep(this.x,this.y,this.x,this.y-h,colors.plant,1,this.y+2);
                         break;
                 }
             }

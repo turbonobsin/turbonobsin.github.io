@@ -150,7 +150,7 @@ class NobsinCtx{
     }
     this.pixelCount++;
   }
-  setPixel_blend(x=0,y=0,col){
+  setPixel_blend(x=0,y=0,col,a=1){
     x = Math.floor(x);
     y = Math.floor(y);
     if(x < 0) return;
@@ -168,10 +168,10 @@ class NobsinCtx{
       this.buf[i+3] = 255;
     }
     else{
-      this.buf[i] = Math.floor((this.buf[i]+col[0])/2);
-      this.buf[i+1] = Math.floor((this.buf[i+1]+col[1])/2);;
-      this.buf[i+2] = Math.floor((this.buf[i+2]+col[2])/2);;
-      this.buf[i+3] = Math.floor((this.buf[i+3]+col[3])/2);;
+      this.buf[i] = Math.floor((this.buf[i]+col[0])/2*a);
+      this.buf[i+1] = Math.floor((this.buf[i+1]+col[1])/2*a);
+      this.buf[i+2] = Math.floor((this.buf[i+2]+col[2])/2*a);
+      this.buf[i+3] = Math.floor((this.buf[i+3]+col[3])/2);
     }
     this.pixelCount++;
     return 1;

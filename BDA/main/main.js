@@ -345,11 +345,11 @@ function update(){
     lights = new Uint8ClampedArray(nob.size);
     mUpEvts = [];
 
-    if(useBackground) nob.drawImage_basic(tt.scenes[0],0,0);
+    //if(useBackground) nob.drawImage_basic(tt.scenes[0],0,0);
     if(me.world.bg) can.style.backgroundColor = me.world.bg;
     nob.drawRect(0,0,nob.width,nob.height,me.world.bgCol);
     if(me.chunk.update) me.chunk.update();
-    if(me.world == mainWorld) nob.drawImage_basic(tt.scenes[1],0,0);
+    //if(me.world == mainWorld) nob.drawImage_basic(tt.scenes[1],0,0);
 
     //TEST TEXT
     nob2.drawText("ROCK GOLLUM",0,3,white,black,false,false);
@@ -412,6 +412,8 @@ function update(){
     //
     
     //enemies
+    let isTick = false;
+    if(frames%3 == 0) isTick = true;
     let enL = [];
     for(let i = 0; i < ens.length; i++){
         enL.push(ens[i]);
@@ -514,6 +516,7 @@ function update(){
             en.frames++;
             runEffect(en);
             if(en.frames%selfDelay == 0) if(en.ai) en.ai();
+            if(isTick) if(en.tick) en.tick();
 
             /*let res = drawHitBox(o,o.hitboxes[0],null,function(o,hb,p,res){
                 o.vx = 0;
@@ -1189,6 +1192,7 @@ function update(){
         //let cast = 4; //20 scary //4 night //2 storm //1 normal rain
         if(Math.random() < chance){ //0.5
             for(let j = 0; j < amt; j++) pBullets.push([Math.random()*nob.width,Math.random()*nob.height,nob.height+10,0,0,-2,gray,function(o){ //100 z
+                o[3] -= 0.01;
                 let remove = false;
                 if(o[2] < 0) remove = true;
                 if(remove){
@@ -2351,19 +2355,94 @@ worldObjs.rock(nob.centerX-30,nob.centerY-20,0);
 worldObjs.rock(nob.centerX-25,nob.centerY-23,0);
 worldObjs.rock(nob.centerX-32,nob.centerY-26,0);
 worldObjs.rock(nob.centerX-35,nob.centerY-18,0);
+
+//Animals Test
+for(let i = 0; i < 20; i++){
+    let x = Math.floor(Math.random()*nob.width);
+    let y = Math.floor(Math.random()*nob.height);
+    let l = getNonPassivesInRange(x,y,0,15);
+    if(l.length == 0) createEnemy(ENEMIES.animals.cow,x,y,0);
+}
+
 //worldObjs.tree1(nob.centerX-50,nob.centerY-20,0);
 //worldObjs.tree1(nob.centerX-60,nob.centerY-40,0);
 //worldObjs.tree1(nob.centerX-30,nob.centerY-50,0);
 //worldObjs.tree1(nob.centerX-10,nob.centerY-30,0);
 //SPAWN TREES TEST
-for(let i = 0; i < 24; i++){ //24
+if(false) for(let i = 0; i < 24; i++){ //24
     let x = Math.floor(Math.random()*nob.width);
     let y = Math.floor(Math.random()*nob.height);
-    let d = worldObjs.tree1(x,y,0);
-    d.l = Math.ceil(Math.random()*6+4);
-    d.w = Math.ceil(Math.random()*2);
-    d.startW = d.w;
-    d.hp = 10*d.w;
+    let l = getNonPassivesInRange(x,y,0,15);
+    if(l.length == 0){
+        let d = worldObjs.tree1(x,y,10);
+        d.l = Math.ceil(Math.random()*6+4);
+        d.w = Math.ceil(Math.random()*2);
+        d.w = 1;
+        d.l *= 2;
+        d.startW = d.w;
+        d.hp = 10*d.w;
+    }
+}
+
+/*subAnim(240,function(i,t){
+    if(i == t-1){
+        for(let i = 0; i < sobjs.length; i++){
+            let s = sobjs[i];
+            if(s.gId == "tree1"){
+                s.breaking = true;
+            }
+        }
+    }
+});*/
+
+for(let i = 0; i < 100; i++){ //24
+    let x = Math.floor(Math.random()*nob.width);
+    let y = Math.floor(Math.random()*nob.height);
+    let amt = Math.ceil(Math.random()*10);
+    for(let j = 0; j < amt; j++){
+        let offX = (Math.random()-0.5)*10;
+        let offY = (Math.random()-0.5)*10;
+        worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
+    }
+}
+for(let i = 0; i < 50; i++){ //24
+    let x = Math.floor(Math.random()*nob.width);
+    let y = Math.floor(Math.random()*nob.height);
+    let amt = Math.ceil(Math.random()*10);
+    for(let j = 0; j < amt; j++){
+        let offX = (Math.random()-0.5)*10;
+        let offY = (Math.random()-0.5)*10;
+        worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
+    }
+}
+for(let i = 0; i < 5; i++){ //24
+    let x = Math.floor(Math.random()*nob.width);
+    let y = Math.floor(Math.random()*nob.height);
+    let amt = Math.ceil(Math.random()*3);
+    for(let j = 0; j < amt; j++){
+        let offX = (Math.random()-0.5)*20;
+        let offY = (Math.random()-0.5)*20;
+        let l = getNonPassivesInRange(x+offX,y+offY,0,15);
+        if(l.length == 0) createObj(tt.env.tent[Math.floor(Math.random()*2)],x+offX,y+offY,0,2);
+    }
+}
+for(let i = 0; i < 50; i++){ //24
+    let x = Math.floor(Math.random()*nob.width);
+    let y = Math.floor(Math.random()*nob.height);
+    let amt = 1;
+    for(let j = 0; j < amt; j++){
+        let l = getNonPassivesInRange(x,y,0,30);
+        if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5);
+    }
+}
+for(let i = 0; i < 50; i++){ //24
+    let x = Math.floor(Math.random()*nob.width);
+    let y = Math.floor(Math.random()*nob.height);
+    let amt = 1;
+    for(let j = 0; j < amt; j++){
+        let l = getNonPassivesInRange(x,y,0,5);
+        if(l.length == 0) worldObjs.campfire(x,y,0,true);
+    }
 }
 
 //ALL SCREEN DITCH TEST

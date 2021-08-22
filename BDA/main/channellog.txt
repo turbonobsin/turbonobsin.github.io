@@ -227,4 +227,22 @@
     - Added recipes struct, only has one recipe currently
 
 0.1.17 : 8-12-21
+    - I don't know what I did here
+    - Ported NobsinEngine to C++
+    - Made a lot of the core engine of BDA in C++
+
+0.1.18 : 8-20-21
+    - Added more procedural gen
+    - Added campfire sobj with lit property with smoke and sparks that come out
+    - Added tall grass sobj with passable property
+    - Added tent
+    - Added big rock
+    - Made tree gen much more realistic
+    - Trees can knock down other trees
+
+0.1.19 : 8-21-21
+    - Fixed tree leaves to make them look better, they are solid dark green now
+    - Added cow
+
+0.1.20 : 8-22-21
     - 

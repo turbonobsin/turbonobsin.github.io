@@ -25,6 +25,15 @@ var tt = {
             run:tl.loadAnim("enemies/wolf3_run.png",null,16,16,null,{delay:8}),
             chomp_open:tl.loadAnim("enemies/wolf_movechomp_open.png",null,24,24),
             chomp_close:tl.loadAnim("enemies/wolf_movechomp_close.png",null,24,24,{delay:2})
+        },
+        cow:{
+            idle:tl.load("animals/cow.png"),
+            run:tl.loadAnim("animals/cow_run.png",null,12,5,null,{delay:18})
+        }
+    },
+    animals:{
+        cow:{
+            main:tl.load("animals/cow.png")
         }
     },
     chars:[
@@ -100,6 +109,13 @@ var tt = {
         groundFeatures:[
             tl.loadAnim("env/foliage/wheat.png","wheat",16,16,null,{delay:20}),
             tl.load("env/foliage/pond.png"),
+        ],
+        tent:[
+            tl.load("env/tent1.png"),
+            tl.load("env/tent2.png")
+        ],
+        rock:[
+            tl.load("env/rock1.png")
         ]
     },
     tools:{
@@ -536,6 +552,44 @@ function getSObjsInRange(x,y,z,r){
         let dz = o.z-z;
         let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
         if(dist < r) list.push(o);
+    }
+    return list;
+}
+function getSObjsInRange_exclIds(x,y,z,r,ids=[]){
+    let list = [];
+    for(let i = 0; i < sobjs.length; i++){
+        let o = sobjs[i];
+        if(o.gId != null) if(!ids.includes(o.gId)){
+            let dx = o.x-x;
+            let dy = o.y-y;
+            let dz = o.z-z;
+            let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+            if(dist < r) list.push(o);
+        }
+    }
+    return list;
+}
+function getNonPassivesInRange(x,y,z,r){
+    let list = [];
+    for(let i = 0; i < sobjs.length; i++){
+        let o = sobjs[i];
+        if(!o.passive){
+            let dx = o.x-x;
+            let dy = o.y-y;
+            let dz = o.z-z;
+            let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+            if(dist < r) list.push(o);
+        }
+    }
+    for(let i = 0; i < objs.length; i++){
+        let o = objs[i];
+        if(!o.passive){
+            let dx = o.x-x;
+            let dy = o.y-y;
+            let dz = o.z-z;
+            let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+            if(dist < r) list.push(o);
+        }
     }
     return list;
 }
@@ -1188,19 +1242,75 @@ var ENEMIES = {
                     break;
             }
         }
+    },
+    animals:{
+        cow:{
+            type:"cow",
+            origin:"bm",
+            hp:20,
+            hitboxes:[[-3,-3,3,0,0,5,"body"]],
+            img:cloneWhenLoaded(tt.animals.cow.main),
+            baseImg:tt.animals.cow.main,
+            isFlipped:false,
+            i:0,
+            t:60+Math.random()*120,
+            dx:0,
+            dy:0,
+            action:-1,
+            tick:function(){
+                this.i++;
+                if(this.i > this.t){
+                    if(this.action != -1){
+                        startAnim(this,tt.enemies.cow.idle,null,0);
+                        this.action = -1;
+                        this.i = 0;
+                        this.t = 60+Math.random()*120;
+                    }
+                    else if(Math.random() < 0.1){
+                        let tx = (Math.random()-0.5)/4;
+                        let ty = (Math.random()-0.5)/4;
+                        let l = getNonPassivesInRange(this.x+tx,this.y+ty,0,4);
+                        if(l.length == 0){
+                            this.i = 0;
+                            this.t = tt.enemies.cow.run.length*tt.enemies.cow.run.delay*3;
+                            this.action = 0;
+                            this.dx = tx;
+                            this.dy = ty;
+                            if(this.dx >= 0) this.isFlipped = false;
+                            else this.isFlipped = true;
+                        }
+                        else{
+                            this.i = 0;
+                            this.t = 2;
+                        }
+                    }
+                }
+                if(this.action != -1) switch(this.action){
+                    case 0:
+                        startAnim(this,tt.enemies.cow.run,null,3,true);
+                        this.x += this.dx;
+                        this.y += this.dy;
+                        break;
+                }
+            },
+            init:function(){
+                
+            }
+        }
     }
 };
 
 const plantData = [
     { //Wheat
         onDestroy:function(x,y,z,seed){
-
+            console.log(seed);
+            particleSims.splash(x,y,0,0,0,0.5,black,4);
         },
         getDrops:function(o,seed){
             let amt = Math.floor(Math.random()*4)+1;
             let l = [
                 createItem(items.materials.wheat,amt),
-                createItem(items.materials.wheatSeed,4)
+                createItem(items.materials.wheatSeed,2)
             ];
             return l;
         }
@@ -1255,6 +1365,7 @@ const worldObjs = {
     stick:function(x,y,z,dir,l=4){
         let hl = Math.floor(l/2);
         let d = {
+            gId:"stick",
             x,y,z,
             dir,l,hl,
             vhb:null,
@@ -1306,6 +1417,7 @@ const worldObjs = {
     },
     rock:function(x,y,z){
         let d = {
+            gId:"rock",
             x,y,z,
             vhb:[-1,-3,1,0],
             hp:2,
@@ -1337,6 +1449,7 @@ const worldObjs = {
     },
     large_barrel:function(x,y,z,col,fluid=1,cap=4){
         let d = {
+            gId:"large_barrel",
             x,y,z,
             col,
             vhb:[-3,-3,3,3], //view hitbox
@@ -1400,6 +1513,7 @@ const worldObjs = {
     },
     water_well:function(x,y,fluid=1){
         let d = {
+            gId:"water_well",
             x,y,z:0,
             lhb:[-2,-1,2,1,4],
             lhover:false,
@@ -1427,8 +1541,9 @@ const worldObjs = {
         }
         sobjs.push(d);
     },
-    tree1:function(x,y){
+    tree1:function(x,y,OBAMT=0){
         let d = {
+            gId:"tree1",
             x,y,z:0,
             data:[[],[],[],[],[]], //angles,branches,start angle,ang vel,dir
             a:(Math.random()-0.5),
@@ -1444,6 +1559,10 @@ const worldObjs = {
             pushCnt:0,
             pushCnt2:0,
             hp:10,
+            vhb:[-2,-2,2,2],
+            destroy:function(){
+                if(!this.done) this.breaking = true;
+            },
             update:function(){
                 this.branchCnt = 0;
                 this.pushCnt = 0;
@@ -1528,17 +1647,18 @@ const worldObjs = {
                 this.sWeight = this.weight;
                 this.fell = true;
             },
-            renderBranch:function(x,y,z,a,b){
-                let l = this.l;
+            renderBranch:function(x,y,z,a,b,l){
+                if(l == null) l = this.l*0.8;
+                else l *= 0.6; //0.8
                 let w = Math.ceil(this.w);
                 this.w *= 0.6;
                 for(let i = 0; i < b[0].length; i++){
-                    if(b[1][i]) for(let j = 0; j < b[1][i].length; j++) this.renderBranch(x,y,z,a,b[1][i][j]);
+                    if(b[1][i]) for(let j = 0; j < b[1][i].length; j++) this.renderBranch(x,y,z,a,b[1][i][j],l);
                     this.branchCnt++;
 
                     b[0][i] += b[3][i];
-                    b[3][i] += b[4][i]*0.0001; //0.003
-                    let drag = 0.00005; //0.001
+                    b[3][i] += b[4][i]*0.00001; //0.003 //0.0001
+                    let drag = 0.000005; //0.001 //0.00005
                     if(b[3][i] >= drag) b[3][i] -= drag;
                     else if(b[3][i] <= -drag) b[3][i] += drag;
                     else b[3][i] = 0;
@@ -1578,16 +1698,22 @@ const worldObjs = {
 
                     nob.drawLine_smart_dep(x,this.y,tx,this.y,black,w,0);
                     
-                    if(this.w < 1){
+                    if(true) if(this.w < 1){
                         let ww = this.w*6+3; //6+4 //2+4
                         nob.drawCircle(tx,y-tz,ww+1,black);
-                        nob.drawCircle(tx,y-tz,ww,tint(colors.plant,[0.8,0.8,0.8]));
-                        nob.drawCircle(tx,y-tz,ww-1,black);
-                        nob.drawCircle(tx,y-tz,ww-2,colors.plant);
+                        nob.drawCircle(tx,y-tz,ww,colors.darkPlant);
+                        //nob.drawCircle(tx,y-tz,ww+1,black);
+                        //nob.drawCircle(tx,y-tz,ww,tint(colors.plant,[0.8,0.8,0.8]));
+                        //nob.drawCircle(tx,y-tz,ww-1,black);
+                        //nob.drawCircle(tx,y-tz,ww-2,colors.plant);
                     }
 
                     this.pushCnt2++;
                     if(this.break){
+                        //leaf particles
+                        //particleSims.splash(x,y,z,0,0,0.5,colors.darkPlant,16);
+
+                        //falling branches
                         this.pushCnt++;
                         let az = 0;
                         let ax = 0;
@@ -1601,6 +1727,7 @@ const worldObjs = {
                             pullable:true,
                             az,ax,
                             hp:w,
+                            isBurning:false,
                             getDrops:function(o){
                                 return [createItem(items.materials.wood,Math.ceil(this.l/3))];
                             },
@@ -1673,8 +1800,8 @@ const worldObjs = {
                     z = tz;
                     this.weight += tx-this.x;
                     if(tz <= 0){
-                        this.fell = false;
-                        this.breaking = true;
+                        //this.fell = false;
+                        //this.breaking = true;
                     }
                 }
             }
@@ -1684,21 +1811,90 @@ const worldObjs = {
             let branches = [];
             for(let i = 0; i < branchAmt; i++){
                 let ang = Math.random()*Math.PI/2*(Math.random()<0.5?1:-1);
-                branches.push([[ang],[null],[ang],[0],[Math.random()<0.5?1:-1]]);
+                let d2 = [[ang],[null],[ang],[0],[Math.random()<0.5?1:-1]];
+                branches.push(d2);
+                if(Math.random() < 0.5) createBranch(d2,Math.ceil(Math.random()*1));
             }
             let ang = (Math.random()-0.5);
-            d.data[0].push(ang);
-            d.data[1].push(branches);
-            d.data[2].push(ang);
-            d.data[3].push(0);
-            d.data[4].push(Math.random()<0.5?1:-1);
+            let data = d.data;
+            if(!data) data = d;
+            data[0].push(ang);
+            data[1].push(branches);
+            data[2].push(ang);
+            data[3].push(0);
+            data[4].push(Math.random()<0.5?1:-1);
         }
         //init
-        createBranch(d,Math.floor(Math.random()*4)+2); //2
-        if(Math.random()<0.9) createBranch(d,Math.floor(Math.random()*4)+1); //1
-        if(Math.random()<0.7) createBranch(d,Math.floor(Math.random()*4)+1); //1
+        createBranch(d,Math.floor(Math.random()*4)+2+OBAMT); //2
+        if(Math.random()<0.9) createBranch(d,Math.floor(Math.random()*4)+1+OBAMT); //1
+        if(Math.random()<0.7) createBranch(d,Math.floor(Math.random()*4)+1+OBAMT); //1
 
         return d;
+    },
+    tall_grass:function(x,y,z,h,col){
+        let d = {
+            gId:"tall_grass",
+            passive:true,
+            x,y,z,
+            h,
+            c:(!col?[115,145,63,255]:[col[0],col[1],col[2],255]),
+            update:function(){
+                nob.setPixel_dep(this.x,this.y-this.z,black,this.y+(this.z)*nob.height);
+                for(let i = 1; i < this.h; i++){
+                    nob.setPixel_dep(this.x,this.y-this.z-i,this.c,this.y+(this.z+i)*nob.height);
+                    nob.setPixel_dep(this.x-1,this.y-this.z-i,black,this.y+(this.z+i)*nob.height);
+                    nob.setPixel_dep(this.x+1,this.y-this.z-i,black,this.y+(this.z+i)*nob.height);
+                }
+                nob.setPixel_dep(this.x,this.y-this.z-this.h,black,this.y+(this.z+this.h)*nob.height);
+            }
+        };
+        sobjs.push(d);
+    },
+    campfire:function(x,y,z,lit=false){
+        let d = {
+            x,y,z,lit,
+            update:function(){
+                let img = tt.objs.survival.campfire;
+                nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-this.z-img.h,false,this.y+this.z*nob.height,2);
+                if(this.lit){
+                    if(Math.random() < 0.01){ //0.01
+                        particleSims.splash(this.x,this.y-2,0,Math.random()-0.5,Math.random()-0.5,0.5,[Math.floor(Math.random()*255),50,0,255],4);
+                        let f = null;
+                        let img = black;
+                        let e = null;
+                        let vz = 0.2;
+                        pBullets.push([this.x+(Math.random()-0.5)*2,this.y-2,this.z+2,-0.05*Math.random()*3,-0.05,vz,false,function(o){
+                            let rad = Math.ceil(o[8].r);
+                            let a = o[8].a;
+                            a -= 1;
+                            subAnim(1,function(){
+                                nob.drawCircle_custom(o[0],o[1],rad,white,
+                                    function(n,x,y,ind,x1,y1,r,col,l,arg){
+                                        let i2 = (x+y*n.width)*4;
+                                        nob.setPixel(x,y,[n.buf[i2]*0.8,n.buf[i2+1]*0.8,n.buf[i2+2]*0.8,255]);
+                                    });
+                            });
+                            o[8].r *= 0.995;
+                            if(o[8].r < 1 || o[2] > 60) removeBullet(pBullets,o);
+                            /*let ind = (Math.floor(x)+Math.floor(y)*nob.width)*4;
+                            let a = o[8].a;
+                            a = 100;
+                            subAnim(1,function(){
+                                nob.buf[ind] -= 100;
+                                nob.buf[ind+1] -= 100;
+                                nob.buf[ind+2] -= 100;
+                            });*/
+                            //nob.setPixel(o[0],o[1]-o[2],red);
+                        },{
+                            r:3,
+                            a:255,
+                            keepAlive:true
+                        }]);
+                    }
+                }
+            }
+        };
+        sobjs.push(d);
     }
 };
 function hitWObj(s,amt,o,dx,dy,ang){
