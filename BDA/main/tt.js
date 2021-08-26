@@ -28,7 +28,11 @@ var tt = {
         },
         cow:{
             idle:tl.load("animals/cow.png"),
-            run:tl.loadAnim("animals/cow_run.png",null,12,5,null,{delay:18})
+            walk:tl.loadAnim("animals/cow_run.png",null,12,5,null,{delay:18})
+        },
+        pig:{
+            idle:tl.load("animals/pig.png"),
+            walk:tl.loadAnim("animals/pig_walk.png",null,12,12,null,{delay:18})
         }
     },
     animals:{
@@ -1257,48 +1261,66 @@ var ENEMIES = {
             dx:0,
             dy:0,
             action:-1,
-            tick:function(){
-                this.i++;
-                if(this.i > this.t){
-                    if(this.action != -1){
-                        startAnim(this,tt.enemies.cow.idle,null,0);
-                        this.action = -1;
-                        this.i = 0;
-                        this.t = 60+Math.random()*120;
-                    }
-                    else if(Math.random() < 0.1){
-                        let tx = (Math.random()-0.5)/4;
-                        let ty = (Math.random()-0.5)/4;
-                        let l = getNonPassivesInRange(this.x+tx,this.y+ty,0,4);
-                        if(l.length == 0){
-                            this.i = 0;
-                            this.t = tt.enemies.cow.run.length*tt.enemies.cow.run.delay*3;
-                            this.action = 0;
-                            this.dx = tx;
-                            this.dy = ty;
-                            if(this.dx >= 0) this.isFlipped = false;
-                            else this.isFlipped = true;
-                        }
-                        else{
-                            this.i = 0;
-                            this.t = 2;
-                        }
-                    }
-                }
-                if(this.action != -1) switch(this.action){
-                    case 0:
-                        startAnim(this,tt.enemies.cow.run,null,3,true);
-                        this.x += this.dx;
-                        this.y += this.dy;
-                        break;
-                }
-            },
-            init:function(){
-                
-            }
+            tick:animalTick,
+            useWalk:false,
+            imgCat:tt.enemies.cow
+        },
+        pig:{
+            type:"pig",
+            origin:"bm",
+            hp:20,
+            hitboxes:[[-3,-3,3,0,0,5,"body"]],
+            img:cloneWhenLoaded(tt.enemies.pig.idle),
+            baseImg:tt.enemies.pig.idle,
+            isFlipped:false,
+            i:0,
+            t:10+Math.random()*60,
+            dx:0,
+            dy:0,
+            action:-1,
+            tick:animalTick,
+            useWalk:true,
+            imgCat:tt.enemies.pig
         }
     }
 };
+
+function animalTick(){
+    this.i++;
+    if(this.i > this.t){
+        if(this.action != -1){
+            startAnim(this,this.imgCat.idle,null,0);
+            this.action = -1;
+            this.i = 0;
+            this.t = 60+Math.random()*120;
+        }
+        else if(Math.random() < 0.1){
+            let tx = (Math.random()-0.5)/4;
+            let ty = (Math.random()-0.5)/4;
+            let l = getNonPassivesInRange(this.x+tx,this.y+ty,0,4);
+            if(l.length == 0){
+                this.i = 0;
+                this.t = this.imgCat.walk.length*this.imgCat.walk.delay*3;
+                this.action = 0;
+                this.dx = tx;
+                this.dy = ty;
+                if(this.dx >= 0) this.isFlipped = false;
+                else this.isFlipped = true;
+            }
+            else{
+                this.i = 0;
+                this.t = 2;
+            }
+        }
+    }
+    if(this.action != -1) switch(this.action){
+        case 0:
+            startAnim(this,this.imgCat.walk,null,3,true);
+            this.x += this.dx;
+            this.y += this.dy;
+            break;
+    }
+}
 
 const plantData = [
     { //Wheat
@@ -1758,32 +1780,34 @@ const worldObjs = {
                                         let xx = (x+tx)/2;
                                         let zz = (z+tz)/2;
                                         particleSims.splash(xx,this.y,zz,0,0,1,black,4);
-                                        createParticleAnim(tt.particles.smoke[0],xx,this.y,zz,true,1);
-                                        this.x += (Math.random()-0.5)*5;
+                                        //if(Math.random() < 0.1) createParticleAnim(tt.particles.smoke[0],xx,this.y,zz,true,1);
+                                        //this.x += (Math.random()-0.5)*5;
                                         let rad = 5;
                                         let p = getClosestPlayerInRange(xx,this.y,zz,rad);
                                         if(p) takeDamage(6,p,0,0,0);
-                                        let list = [];
-                                        for(let i = 0; i < sobjs.length; i++) list[i] = sobjs[i];
-                                        for(let i = 0; i < list.length; i++){
-                                            let s = list[i];
-                                            if(s.vhb) if(xx+rad >= s.x+s.vhb[0] && xx-rad < s.x+s.vhb[2] && this.y+rad >= s.y+s.vhb[1] && this.y-rad < s.y+s.vhb[3]){
-                                                if(s.destroy) s.destroy();
-                                                else removeSObj(s);
+                                        if(this.l >= 8){
+                                            let list = [];
+                                            for(let i = 0; i < sobjs.length; i++) list[i] = sobjs[i];
+                                            for(let i = 0; i < list.length; i++){
+                                                let s = list[i];
+                                                if(s.vhb) if(xx+rad >= s.x+s.vhb[0] && xx-rad < s.x+s.vhb[2] && this.y+rad >= s.y+s.vhb[1] && this.y-rad < s.y+s.vhb[3]){
+                                                    if(s.destroy) s.destroy();
+                                                    else removeSObj(s);
+                                                }
                                             }
                                         }
                                     }
                                     if(this.a > 0){
-                                        if(this.a < Math.PI/2) this.a += 0.1;
+                                        if(this.a < Math.PI/2) this.a += 0.07;
                                         else this.a = Math.PI/2;
                                     }
                                     else if(this.a < 0){
-                                        if(this.a > -Math.PI/2) this.a -= 0.1;
+                                        if(this.a > -Math.PI/2) this.a -= 0.07;
                                         else this.a = -Math.PI/2;
                                     }
                                 }
                                 else{
-                                    this.vz -= 0.05;
+                                    this.vz -= 0.03; //0.05
                                     this.z += this.vz;
                                     this.y += (Math.random()-0.5)*3;
                                     if(Math.random()<0.05) particleSims.splash(this.x,this.y,this.z,Math.cos(this.a),Math.random()-0.5,1,black,1);
@@ -1813,7 +1837,7 @@ const worldObjs = {
                 let ang = Math.random()*Math.PI/2*(Math.random()<0.5?1:-1);
                 let d2 = [[ang],[null],[ang],[0],[Math.random()<0.5?1:-1]];
                 branches.push(d2);
-                if(Math.random() < 0.5) createBranch(d2,Math.ceil(Math.random()*1));
+                if(Math.random() < 0.2) createBranch(d2,Math.ceil(Math.random()*1)); //rand < 0.5
             }
             let ang = (Math.random()-0.5);
             let data = d.data;

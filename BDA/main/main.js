@@ -332,6 +332,8 @@ function removeSObj(o){
 var collDBG_0 = convert("burlywood");
 var collDBG_1 = convert("wheat");
 var lights;
+
+noise.seed(Math.random());
 function update(){
     if(!paused) window.requestAnimationFrame(update);
     nob.pixelCount = 0;
@@ -350,6 +352,29 @@ function update(){
     nob.drawRect(0,0,nob.width,nob.height,me.world.bgCol);
     if(me.chunk.update) me.chunk.update();
     //if(me.world == mainWorld) nob.drawImage_basic(tt.scenes[1],0,0);
+
+    //PERLIN TEST
+    if(false){ //rivers
+        let ii = 0;
+        for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+            let v = (noise.perlin2(i/50,j/50)/2+0.3)*255;
+            nob.buf[ii] = v;
+            nob.buf[ii+1] = v;
+            nob.buf[ii+2] = v;
+            ii += 4;
+        }
+    }
+    if(true){ //biomes
+        let ii = 0;
+        for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+            let v = (noise.perlin2(i/150,j/150)/2+0.3)*255;
+            nob.buf[ii] = v;
+            nob.buf[ii+1] = v;
+            nob.buf[ii+2] = v;
+            ii += 4;
+        }
+    }
+    //
 
     //TEST TEXT
     nob2.drawText("ROCK GOLLUM",0,3,white,black,false,false);
@@ -2363,22 +2388,28 @@ for(let i = 0; i < 20; i++){
     let l = getNonPassivesInRange(x,y,0,15);
     if(l.length == 0) createEnemy(ENEMIES.animals.cow,x,y,0);
 }
+for(let i = 0; i < 20; i++){
+    let x = Math.floor(Math.random()*nob.width);
+    let y = Math.floor(Math.random()*nob.height);
+    let l = getNonPassivesInRange(x,y,0,15);
+    if(l.length == 0) createEnemy(ENEMIES.animals.pig,x,y,0);
+}
 
 //worldObjs.tree1(nob.centerX-50,nob.centerY-20,0);
 //worldObjs.tree1(nob.centerX-60,nob.centerY-40,0);
 //worldObjs.tree1(nob.centerX-30,nob.centerY-50,0);
 //worldObjs.tree1(nob.centerX-10,nob.centerY-30,0);
 //SPAWN TREES TEST
-if(false) for(let i = 0; i < 24; i++){ //24
+if(true) for(let i = 0; i < 24; i++){ //24
     let x = Math.floor(Math.random()*nob.width);
     let y = Math.floor(Math.random()*nob.height);
     let l = getNonPassivesInRange(x,y,0,15);
     if(l.length == 0){
-        let d = worldObjs.tree1(x,y,10);
+        let d = worldObjs.tree1(x,y,10); //10
         d.l = Math.ceil(Math.random()*6+4);
         d.w = Math.ceil(Math.random()*2);
         d.w = 1;
-        d.l *= 2;
+        //d.l *= 2;
         d.startW = d.w;
         d.hp = 10*d.w;
     }

@@ -239,10 +239,16 @@
     - Added big rock
     - Made tree gen much more realistic
     - Trees can knock down other trees
+    - Made rain come at diagonal
 
 0.1.19 : 8-21-21
     - Fixed tree leaves to make them look better, they are solid dark green now
     - Added cow
 
 0.1.20 : 8-22-21
-    - 
+    - Fixed cow
+    - Started drawing pig/hog
+
+0.1.21 : 8-24-21
+    - Added pig
+    - animalTick function
