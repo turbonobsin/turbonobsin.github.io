@@ -16,12 +16,29 @@ allWorlds[0] = {
             colls:[],
             players:[],
             //
-            doors:[]
+            doors:[],
+            //Biomes
+            biomeBuf:null
         }
     },
     id:0
 };
 var mainWorld = allWorlds[0];
+function initChunkPerlin(chunk){
+  if(!chunk.biomeBuf){
+    chunk.biomeBuf = new Uint8ClampedArray(nob.size);
+  }
+  let ii = 0;
+  for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+    let x = 0*nob.width+i;
+    let y = 0*nob.height+j;
+    let v = (noise.perlin2(x/150,y/150)/2+0.3);
+    let biome = 0; //plains
+    if(v > 0.3) biome = 1;
+    chunk.biomeBuf[ii] = biome;
+    ii += 4;
+  }
+}
 function loadChunk(o,world,cx,cy){
     let isPlayer = o.isPlayer;
     if(o.chunk){
@@ -31,6 +48,9 @@ function loadChunk(o,world,cx,cy){
 
     let s = (cx+","+cy);
     let chunk = world.chunks[s];
+
+    initChunkPerlin(chunk);
+
     o.world = world;
     o.cx = cx;
     o.cy = cy;

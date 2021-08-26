@@ -353,6 +353,11 @@ function update(){
     if(me.chunk.update) me.chunk.update();
     //if(me.world == mainWorld) nob.drawImage_basic(tt.scenes[1],0,0);
 
+    if(!me.chunk.biomeBuf){
+      me.chunk.biomeBuf = new Uint8ClampedArray(nob.size);
+      initChunkPerlin(me.chunk);
+    }
+
     //PERLIN TEST
     if(false){ //rivers
         let ii = 0;
@@ -364,13 +369,26 @@ function update(){
             ii += 4;
         }
     }
-    if(true){ //biomes
+    if(false){ //biomes
         let ii = 0;
         for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
             let v = (noise.perlin2(i/150,j/150)/2+0.3)*255;
             nob.buf[ii] = v;
             nob.buf[ii+1] = v;
             nob.buf[ii+2] = v;
+            ii += 4;
+        }
+    }
+    if(true){ //biomes
+        let ii = 0;
+        //if(me.chunk.biomeBuf[0] != null) document.body.style.backgroundColor = "red";
+        if(true) for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+          let biome = me.chunk.biomeBuf[ii];
+          let nextBiome = me.chunk.biomeBuf[ii+4];
+            let c = biomeData[biome].c;
+            nob.buf[ii] = c[0];
+            nob.buf[ii+1] = c[1];
+            nob.buf[ii+2] = c[2];
             ii += 4;
         }
     }

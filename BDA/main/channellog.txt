@@ -252,3 +252,9 @@
 0.1.21 : 8-24-21
     - Added pig
     - animalTick function
+
+0.1.22 : 8-25-21
+    - Added perlin stuff
+
+0.1.23 : 8-26-21
+    - Added biome colors and data based on perlin at location in chunk
