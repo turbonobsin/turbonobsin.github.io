@@ -4,6 +4,7 @@ const WeaponType = Object.freeze({
     Sniper:2,
     Wand:3,
     Staff:4,
+    Knife:5,
     Wild:10,
     
     //tools
@@ -914,7 +915,55 @@ const weaponData = {
             if(o.cooldown == 0) o.isAttacking = false;
         }
     },
-    10:{
+    5:{ //Knife
+        keybinds:function(o){
+            if(!o.isAttacking) if(mouseDown[0]){
+                o.isAttacking = true;
+                let dx = mx-o.x;
+                let dy = my-o.y;
+                let dist = Math.sqrt(dx*dx+dy*dy);
+                let ang = Math.atan2(dy,dx);
+                ang += Math.PI;
+                if(ang >= Math.PI*2) ang -= Math.PI*2;
+                let ff = tt.tools.sickle.swing;
+                let v = Math.floor(ang/(Math.PI*2)*ff.length);
+                function arAt(i){
+                    if(i < 0) i = ff.length-1;
+                    else if(i >= ff.length) i = 0;
+                    return ff[i];
+                }
+                let f = [arAt(v-1),arAt(v),arAt(v+1)];
+                let d = createParticleAnim(f,o.x,o.y-1,o.z,true,1);
+                subAnim(f.length*(f.delay||4)+10,function(i,t){
+                    d.x = o.x;
+                    d.y = o.y-1;
+                    d.z = o.z;
+                    if(i == t-1) o.isAttacking = false;
+                });
+                //hit
+                //let rad = 4;
+                //let tx = dx/dist*rad+o.x;
+                //let ty = dy/dist*rad+o.y;
+                let r = 6;
+                drawHitBoxPlayer(o,[-r,-r,r,r,-2,2,"knife"],1);
+
+                /*let slist = [];
+                for(let i = 0; i < sobjs.length; i++){
+                    slist[i] = sobjs[i];
+                }
+                for(let i = 0; i < slist.length; i++){
+                    let s = slist[i];
+                    if(s.vhb){ //view hitbox
+                        if(s.hp != null) if(tx+r >= s.x+s.vhb[0] && tx-r < s.x+s.vhb[2] && ty+r >= s.y+s.vhb[1] && ty-r < s.y+s.vhb[3]){
+                            hitWObj(s,1,o,dx/dist,dy/dist,ang);
+                            //break;
+                        }
+                    }
+                }*/
+            }
+        }
+    },
+    10:{ //Wild
         keybinds_pre:function(o){
             let weapon = o.equip.weapon;
             if(!weapon) return;
@@ -1868,6 +1917,13 @@ var items = {
         rotted:{
             name:"Rotted Staff",
             type:WeaponType.Staff,
+            damage:1
+        }
+    },
+    knife:{
+        rusty:{
+            name:"Rusty Knife",
+            type:WeaponType.Knife,
             damage:1
         }
     },

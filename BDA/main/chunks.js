@@ -24,6 +24,9 @@ allWorlds[0] = {
     id:0
 };
 var mainWorld = allWorlds[0];
+function getNoise(x,y){
+    return (noise.simplex2(x/300,y/300)*noise.simplex2(2+x/500,2+y/500)*2+0.2);
+}
 function initChunkPerlin(chunk){
   if(!chunk.biomeBuf){
     chunk.biomeBuf = new Uint8ClampedArray(nob.size);
@@ -32,7 +35,7 @@ function initChunkPerlin(chunk){
   for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
     let x = 0*nob.width+i;
     let y = 0*nob.height+j;
-    let v = (noise.perlin2(x/150,y/150)/2+0.3);
+    let v = (noise.simplex2(x/300,y/300)*noise.simplex2(2+x/500,2+y/500)*2+0.2);
     let biome = 0; //plains
     if(v > 0.3) biome = 1;
     chunk.biomeBuf[ii] = biome;

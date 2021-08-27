@@ -333,6 +333,7 @@ var collDBG_0 = convert("burlywood");
 var collDBG_1 = convert("wheat");
 var lights;
 
+var testSwitch = false;
 noise.seed(Math.random());
 function update(){
     if(!paused) window.requestAnimationFrame(update);
@@ -382,14 +383,23 @@ function update(){
     if(true){ //biomes
         let ii = 0;
         //if(me.chunk.biomeBuf[0] != null) document.body.style.backgroundColor = "red";
-        if(true) for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
-          let biome = me.chunk.biomeBuf[ii];
-          let nextBiome = me.chunk.biomeBuf[ii+4];
-            let c = biomeData[biome].c;
-            nob.buf[ii] = c[0];
-            nob.buf[ii+1] = c[1];
-            nob.buf[ii+2] = c[2];
-            ii += 4;
+        for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+            if(!testSwitch){
+                let biome = me.chunk.biomeBuf[ii];
+                //let nextBiome = me.chunk.biomeBuf[ii+4];
+                let c = biomeData[biome].c;
+                nob.buf[ii] = c[0];
+                nob.buf[ii+1] = c[1];
+                nob.buf[ii+2] = c[2];
+                ii += 4;
+            }
+            else{
+                let v = getNoise(i,j)*255;
+                nob.buf[ii] = v;
+                nob.buf[ii+1] = v;
+                nob.buf[ii+2] = v;
+                ii += 4;
+            }
         }
     }
     //
@@ -2418,18 +2428,40 @@ for(let i = 0; i < 20; i++){
 //worldObjs.tree1(nob.centerX-30,nob.centerY-50,0);
 //worldObjs.tree1(nob.centerX-10,nob.centerY-30,0);
 //SPAWN TREES TEST
-if(true) for(let i = 0; i < 24; i++){ //24
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let l = getNonPassivesInRange(x,y,0,15);
-    if(l.length == 0){
-        let d = worldObjs.tree1(x,y,10); //10
-        d.l = Math.ceil(Math.random()*6+4);
-        d.w = Math.ceil(Math.random()*2);
-        d.w = 1;
-        //d.l *= 2;
-        d.startW = d.w;
-        d.hp = 10*d.w;
+if(true){
+    let allowedPixels = [];
+    let times = 0;
+    let ii = 0;
+    for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+        if(firstChunk.biomeBuf[ii] == 1) allowedPixels.push([i,j]);
+        ii += 4;
+    }
+    times = Math.floor(allowedPixels.length/300);
+    console.log(allowedPixels.length,times);
+    for(let i = 0; i < times; i++){ //24
+        //let x = Math.floor(Math.random()*nob.width);
+        //let y = Math.floor(Math.random()*nob.height);
+        if(Math.random() < 0.6){
+            let i2 = Math.floor(Math.random()*allowedPixels.length);
+            let loc = allowedPixels[i2];
+            let x = loc[0];
+            let y = loc[1];
+            let ind = (x+y*nob.width)*4;
+            let pass = false;
+            if(firstChunk.biomeBuf[ind] == 1) pass = true;
+            if(pass){
+                let l = getNonPassivesInRange(x,y,0,20);
+                if(l.length == 0){
+                    let d = worldObjs.tree1(x,y,10); //10
+                    d.l = Math.ceil(Math.random()*6+4);
+                    d.w = Math.ceil(Math.random()*2);
+                    d.w = 1;
+                    //d.l *= 2;
+                    d.startW = d.w;
+                    d.hp = 10*d.w;
+                }
+            }
+        }
     }
 }
 
@@ -2447,21 +2479,27 @@ if(true) for(let i = 0; i < 24; i++){ //24
 for(let i = 0; i < 100; i++){ //24
     let x = Math.floor(Math.random()*nob.width);
     let y = Math.floor(Math.random()*nob.height);
-    let amt = Math.ceil(Math.random()*10);
-    for(let j = 0; j < amt; j++){
-        let offX = (Math.random()-0.5)*10;
-        let offY = (Math.random()-0.5)*10;
-        worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
+    let ind = (x+y*nob.width)*4;
+    if(firstChunk.biomeBuf[ind] == 0){
+        let amt = Math.ceil(Math.random()*10);
+        for(let j = 0; j < amt; j++){
+            let offX = (Math.random()-0.5)*10;
+            let offY = (Math.random()-0.5)*10;
+            worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
+        }
     }
 }
 for(let i = 0; i < 50; i++){ //24
     let x = Math.floor(Math.random()*nob.width);
     let y = Math.floor(Math.random()*nob.height);
-    let amt = Math.ceil(Math.random()*10);
-    for(let j = 0; j < amt; j++){
-        let offX = (Math.random()-0.5)*10;
-        let offY = (Math.random()-0.5)*10;
-        worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
+    let ind = (x+y*nob.width)*4;
+    if(firstChunk.biomeBuf[ind] == 0){
+        let amt = Math.ceil(Math.random()*10);
+        for(let j = 0; j < amt; j++){
+            let offX = (Math.random()-0.5)*10;
+            let offY = (Math.random()-0.5)*10;
+            worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
+        }
     }
 }
 for(let i = 0; i < 5; i++){ //24
@@ -2478,8 +2516,10 @@ for(let i = 0; i < 5; i++){ //24
 for(let i = 0; i < 50; i++){ //24
     let x = Math.floor(Math.random()*nob.width);
     let y = Math.floor(Math.random()*nob.height);
-    let amt = 1;
-    for(let j = 0; j < amt; j++){
+    let ind = (x+y*nob.width)*4;
+    let pass = false;
+    if(firstChunk.biomeBuf[ind] == 0) pass = true;
+    if(pass){
         let l = getNonPassivesInRange(x,y,0,30);
         if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5);
     }
@@ -2487,8 +2527,10 @@ for(let i = 0; i < 50; i++){ //24
 for(let i = 0; i < 50; i++){ //24
     let x = Math.floor(Math.random()*nob.width);
     let y = Math.floor(Math.random()*nob.height);
-    let amt = 1;
-    for(let j = 0; j < amt; j++){
+    let ind = (x+y*nob.width)*4;
+    let pass = false;
+    if(firstChunk.biomeBuf[ind] == 0) pass = true;
+    if(pass){
         let l = getNonPassivesInRange(x,y,0,5);
         if(l.length == 0) worldObjs.campfire(x,y,0,true);
     }

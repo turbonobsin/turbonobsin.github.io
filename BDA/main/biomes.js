@@ -6,10 +6,10 @@ const biomeNames = [
 const biomeData = [
   {
     name:"PLAINS",
-    c:[100,0,0,255]
+    c:convert("darkolivegreen")
   },
   {
     name:"FOREST",
-    c:[0,100,0,255]
+    c:[20,100,20,255]
   }
 ];

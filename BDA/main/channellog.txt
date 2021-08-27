@@ -258,3 +258,6 @@
 
 0.1.23 : 8-26-21
     - Added biome colors and data based on perlin at location in chunk
+    - Fixed biome colors
+    - Made only certain objs spawn in certain biomes
+    - Only added forest and plains biome

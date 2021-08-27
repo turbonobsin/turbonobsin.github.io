@@ -38,26 +38,26 @@ var black = [0,0,0,255];
 const classData = [
     {
         name:"Swordman",
-        allowedWeapons:[WeaponType.Katana],
+        allowedWeapons:[WeaponType.Knife,WeaponType.Katana],
     },
     {
         name:"Gunman",
-        allowedWeapons:[WeaponType.Pistol,WeaponType.Sniper],
+        allowedWeapons:[WeaponType.Knife,WeaponType.Pistol,WeaponType.Sniper],
         wasd:true
     },
     {
         name:"Mage",
-        allowedWeapons:[WeaponType.Wand,WeaponType.Staff],
+        allowedWeapons:[WeaponType.Knife,WeaponType.Wand,WeaponType.Staff],
         wasd:true
     },
     {
         name:"Sage",
-        allowedWeapons:[WeaponType.Staff,WeaponType.Wand],
+        allowedWeapons:[WeaponType.Knife,WeaponType.Staff,WeaponType.Wand],
         wasd:true
     },
     {
         name:"Necroman",
-        allowedWeapons:[],
+        allowedWeapons:[WeaponType.Knife],
         wasd:true
     }
 ];
@@ -188,6 +188,7 @@ me.inv.weapons.push(createItem(items.wild.coderGun));
 me.inv.weapons.push(createItem(items.wand.rotted));
 me.inv.weapons.push(createItem(items.staff.rotted));
 me.inv.weapons.push(createItem(items.wand.bokeh));
+me.inv.weapons.push(createItem(items.knife.rusty));
 //tools
 me.inv.tools.push(createItem(items.shovel.rusty));
 me.inv.tools.push(createItem(items.hoe.rusty));
