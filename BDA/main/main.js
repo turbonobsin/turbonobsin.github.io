@@ -335,8 +335,16 @@ var lights;
 
 var testSwitch = false;
 noise.seed(Math.random());
+var frameCount = 0;
+var fps = 0;
+setInterval(function(){
+    fps = frameCount;
+    frameCount = 0;
+},1000);
 function update(){
     if(!paused) window.requestAnimationFrame(update);
+    frameCount++;
+    document.getElementById("demo").innerHTML = "FPS: " + fps;
     nob.pixelCount = 0;
     nob.buf = new Uint8ClampedArray(nob.size);
     nob.dep = new Uint16Array(nob.ssize);
@@ -353,11 +361,6 @@ function update(){
     nob.drawRect(0,0,nob.width,nob.height,me.world.bgCol);
     if(me.chunk.update) me.chunk.update();
     //if(me.world == mainWorld) nob.drawImage_basic(tt.scenes[1],0,0);
-
-    if(!me.chunk.biomeBuf){
-      me.chunk.biomeBuf = new Uint8ClampedArray(nob.size);
-      initChunkPerlin(me.chunk);
-    }
 
     //PERLIN TEST
     if(false){ //rivers
@@ -380,791 +383,11 @@ function update(){
             ii += 4;
         }
     }
-    if(true){ //biomes
-        let ii = 0;
-        //if(me.chunk.biomeBuf[0] != null) document.body.style.backgroundColor = "red";
-        for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
-            if(!testSwitch){
-                let biome = me.chunk.biomeBuf[ii];
-                //let nextBiome = me.chunk.biomeBuf[ii+4];
-                let c = biomeData[biome].c;
-                nob.buf[ii] = c[0];
-                nob.buf[ii+1] = c[1];
-                nob.buf[ii+2] = c[2];
-                ii += 4;
-            }
-            else{
-                let v = getNoise(i,j)*255;
-                nob.buf[ii] = v;
-                nob.buf[ii+1] = v;
-                nob.buf[ii+2] = v;
-                ii += 4;
-            }
-        }
-    }
-    //
 
-    //TEST TEXT
-    nob2.drawText("ROCK GOLLUM",0,3,white,black,false,false);
-
-    for(let i = 0; i < colls.length; i++){
-        let c = colls[i];
-        if(c[6] == null){
-            nob.drawRect_dep(c[0],c[3]-c[5],c[2]-c[0],c[5]-c[4],black,c[3],2);
-            let dep = c[1]+c[5]*nob.height;
-            nob.drawRect_dep(c[0],c[1]-c[5],c[2]-c[0],c[3]-c[1],collDBG_0,dep,1);
-
-            nob.drawLine_smart_dep(c[0],c[1]-c[5],c[2]-1,c[1]-c[5],collDBG_1,1,dep+nob.height);
-            nob.drawLine_smart_dep(c[2]-1,c[1]-c[5],c[2]-1,c[3]-c[5]-1,collDBG_1,1,dep+nob.height);
-            nob.drawLine_smart_dep(c[2]-1,c[3]-c[5]-1,c[0],c[3]-c[5]-1,collDBG_1,1,dep+nob.height);
-            nob.drawLine_smart_dep(c[0],c[3]-c[5]-1,c[0],c[1]-c[5],collDBG_1,1,dep+nob.height);
-        }
-
-        /*nob.drawLine_smart(c[0],c[1]-c[4],c[0],c[1]-c[5],black,1);
-        nob.drawLine_smart(c[2],c[1]-c[4],c[2],c[1]-c[5],black,1);
-
-        nob.drawLine_smart(c[0],c[1]-c[4],c[2],c[1]-c[4],gray,1);
-        nob.drawLine_smart(c[2],c[1]-c[4],c[2],c[3]-cs[4],gray,1);
-        nob.drawLine_smart(c[2],c[3]-c[4],c[0],c[3]-c[4],gray,1);
-        nob.drawLine_smart(c[0],c[3]-c[4],c[0],c[1]-c[4],gray,1);
-
-        nob.drawLine_smart(c[0],c[1]-c[5],c[2],c[1]-c[5],white,1);
-        nob.drawLine_smart(c[2],c[1]-c[5],c[2],c[3]-c[5],white,1);
-        nob.drawLine_smart(c[2],c[3]-c[5],c[0],c[3]-c[5],white,1);
-        nob.drawLine_smart(c[0],c[3]-c[5],c[0],c[1]-c[5],white,1);
-
-        nob.drawLine_smart(c[2],c[3],c[2],c[3]-c[5],black,1);
-        nob.drawLine_smart(c[0],c[3],c[0],c[3]-c[5],black,1);*/
-    }
+    runChunk(me.chunk,me.world);
+    if(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy]) runChunk(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy],me.world);
 
     setCamPos(me.x-nob.centerX,me.y-nob.centerY,me.z);
-
-    //screens[0].draw();
-
-    //RANDOM FIREFLIES
-    if(false) if(Math.random() < 0.05) pBullets.push([Math.random()*nob.width,Math.random()*nob.height,Math.random()*10,Math.random()-0.5,Math.random()-0.5,0,null,function(o){
-        draw4PSurround(o[0],o[1],o[2]);
-        nob.setPixel(o[0],o[1],black);
-        nob.setPixel(o[0],o[1]-o[2],convert("lime"));
-        //o[3] += Math.random()-0.5;
-        //o[4] += Math.random()-0.5;
-        o[5] += 0.005;
-        let max = 0.2;
-        if(o[3] > max) o[3] = max;
-        else if(o[3] < -max) o[3] = -max;
-        if(o[4] > max) o[4] = max;
-        else if(o[4] < -max) o[4] = -max;
-        if(o[5] > max) o[3] = max;
-        else if(o[5] < -max) o[5] = -max;
-        let e = o[8];
-        e.count++;
-        if(e.count > 40) removeBullet(pBullets,o);
-    },{
-        count:0
-    }]);
-    //
-    
-    //enemies
-    let isTick = false;
-    if(frames%3 == 0) isTick = true;
-    let enL = [];
-    for(let i = 0; i < ens.length; i++){
-        enL.push(ens[i]);
-    }
-    for(let i = 0; i < enL.length; i++){
-        let en = enL[i];
-        if(en.visible){
-            let o = en;
-
-            //EFFECTS
-            if(o.effects.frozen){
-                o.tint2 = [1,1,2];
-                o.tint = [0,0,100];
-                //o.tint2 = [1,1,4];
-            }
-            let selfDelay = 1;
-            let selfDM = 1;
-            if(o.effects.frozen) selfDelay = 4;
-            selfDM = 1/selfDelay;
-            
-            //PHYSICS
-            if(o.z <= 0){
-                o.z = 0;
-                o.vz = 0;
-                o.grounded = true;
-            }
-            o.vz -= 0.04;
-            let drag = 0.03;
-            if(o.drag) drag = o.drag;
-            if(o.vx >= drag) o.vx -= drag;
-            else if(o.vx <= -drag) o.vx += drag;
-            else o.vx = 0;
-            if(o.vy >= drag) o.vy -= drag;
-            else if(o.vy <= -drag) o.vy += drag;
-            else o.vy = 0;
-
-            //keybinds / actions
-            if(o.action.jump && o.grounded){
-                o.grounded = false;
-                o.vz += 1;
-                o.action.jump = false;
-            }
-            //
-
-            nob.flipX = o.isFlipped;
-
-            if(Math.abs(o.vx) < 0.1) o.vx = 0;
-            if(Math.abs(o.vy) < 0.1) o.vy = 0;
-
-            o.lastX = o.x;
-            o.lastY = o.y;
-            o.lastZ = o.z;
-            o.x += o.vx*selfDM;
-            o.y += o.vy*selfDM;
-            o.z += o.vz*selfDM;
-            if(o.z < 0){
-                o.z = 0;
-                o.vz = 0;
-                o.grounded = true;
-            }
-
-            if(o.z > 0) nob.drawCircle(o.x,o.y,2,black);
-
-            if(!o.isAttacking){
-                let type = tt[o.type];
-                if(!type) type = tt.enemies[o.type];
-                if(o.vx == 0 && o.vy == 0) startAnim(o,type.idle,null,1,true,true)
-                else startAnim(o,type.walk,null,1,true);
-            }
-
-
-
-            //RENDERING
-            let im = runAnimator(en,selfDM);
-            let img = im;
-            if(!im){
-                if(en.oimg) img = en.oimg;
-                else img = en.img.img;
-            }
-
-            //SELECTION
-            let outline = null;
-            let hit = false;
-            switch(o.origin){
-                case "bm":
-                    if(mx >= o.x-img.w/2 && mx <= o.x+img.w/2 && my >= o.y-img.h && my <= o.y) hit = true;
-                    break;
-                default:
-                    if(mx >= o.x-img.w/2 && mx <= o.x+img.w/2 && my >= o.y-img.h/2 && my <= o.y+img.h/2) hit = true;
-            }
-            if(hit) outline = white;
-
-            //if(!im) img = deepClone(en.img.img);
-            //else img = deepClone(im);//deepClone(en.img.img);
-            //img.data = tint(img.data,en.tint);
-            if(o.origin == "bm") nob.drawImage_basic_tint2_dep(img,en.x-img.w/2,en.y-img.h-en.z,en.tint,en.tint2,en.y+(en.z)*nob.height,2,outline);
-            else nob.drawImage_basic_tint2_dep(img,en.x-Math.floor(img.w/2),en.y-Math.floor(img.h/2)-en.z,en.tint,en.tint2,en.y+(en.z)*nob.height,2,outline);
-
-            //RUN AI
-            en.frames++;
-            runEffect(en);
-            if(en.frames%selfDelay == 0) if(en.ai) en.ai();
-            if(isTick) if(en.tick) en.tick();
-
-            /*let res = drawHitBox(o,o.hitboxes[0],null,function(o,hb,p,res){
-                o.vx = 0;
-                o.vy = 0;
-                o.vz = 0;
-                //o.action = {};
-                o.action.move = -1;
-                //o.action.jump = true;
-                //o.z += 2;
-            });
-            if(res){
-                let who = res.who;
-                let hb = res.box;
-                let dx = o.x-(who.x);
-                let dy = o.y-(who.y);
-                let dz = o.z-(who.z);
-                o.x += dx/2;
-                o.y += dy/2;
-                o.z += dz/2;
-            }*/
-
-            //hitbox debug
-            if(false){
-                let x = en.x;
-                let y = en.y;
-                for(let bb = 0; bb < en.hitboxes.length; bb++){
-                    let b = en.hitboxes[bb];
-                    nob.drawLine_smart(x+b[0],y+b[1],x+b[2],y+b[1],[0,0,255,255],1);
-                    nob.drawLine_smart(x+b[0],y+b[3],x+b[2],y+b[3],[0,0,255,255],1);
-                    nob.drawLine_smart(x+b[0],y+b[1],x+b[0],y+b[3],[0,0,255,255],1);
-                    nob.drawLine_smart(x+b[2],y+b[1],x+b[2],y+b[3],[0,0,255,255],1);
-
-                    nob.drawLine_smart(x+b[2],y+b[1]-b[4],x+b[2],y+b[1]-b[5],[100,100,255,255],1);
-                    nob.drawLine_smart(x+b[0],y+b[1]-b[5],x+b[2],y+b[1]-b[5],[100,100,255,255],1);
-                }
-            }
-
-            nob.flipX = false;
-        }
-    }
-
-    //nob.drawCircle_grad(enemy1.x,enemy1.y-6,24,[180,180,180,10]);
-    //drawEnemy1(enemy1);
-
-    /*ctx2.clearRect(0,0,nob.width,nob.height);
-    ctx2.fillStyle = "white";
-    ctx2.strokeStyle = "white";
-    ctx2.lineWidth = 1;
-    ctx2.beginPath();
-    ctx2.moveTo(20,20);
-
-    ctx2.bezierCurveTo(20,20,25,18,30,20);
-    //ctx2.bezierCurveTo(20,25,20,62.5,20,62.5);
-
-    //ctx2.bezierCurveTo(20,80,40,102,75,120);
-    //ctx2.bezierCurveTo(110,102,130,80,130,62.5);
-
-    //ctx2.bezierCurveTo(130,62.5,130,25,100,25);
-    //ctx2.bezierCurveTo(85,25,75,37,75,40);
-
-    ctx2.stroke();*/
-
-    //SMART OBJS -PRE-
-    let objsL = [];
-    for(let i = 0; i < sobjs.length; i++){
-        objsL.push(sobjs[i]);
-    }
-    for(let i = 0; i < objsL.length; i++){
-        let o = objsL[i];
-        if(o.preUpdate) o.preUpdate();
-        if(o.lhover) o.lhover = false;
-    }
-
-    //players
-    let pL = [];
-    for(let i = 0; i < players.length; i++){
-        pL.push(players[i]);
-    }
-    for(let i = 0; i < pL.length; i++){
-        let o = pL[i];
-        o.hoverMenu = false;
-        /*let ind = Math.floor(o.x)+(Math.floor(o.y)+1)*nob.width;
-        switch(ids[ind]){
-            case 0:
-                o.vy += 0.04;
-                break;
-            case 1:
-                o.vy = 0;
-                me.grounded = true;
-                break;
-        }*/
-        if(o.z <= 0){
-            o.z = 0;
-            o.vz = 0;
-            o.grounded = true;
-            o.jumpZ = 0;
-        }
-        o.vz -= 0.04;
-        let drag = 0.03;
-        if(o.vx >= drag) o.vx -= drag;
-        else if(o.vx <= -drag) o.vx += drag;
-        else o.vx = 0;
-        if(o.vy >= drag) o.vy -= drag;
-        else if(o.vy <= -drag) o.vy += drag;
-        else o.vy = 0;
-
-        let noEpGen = false;
-        if(o.locks.length > 0) noEpGen = true;
-        if(!noEpGen) genEp(o);
-
-        if(o.lockOnEn) if(o.lockOnEn.hp <= 0){
-            o.lockOnEn = null;
-            o.lockOnHb = null;
-        }
-        if(i == playerId){
-            let mainW = o.equip.weapon;
-            if(!o.smallInvOpen || keys.d){
-                if(mainW){
-                    let wD = weaponData[mainW.getType()];
-                    if(!isMenuOpen()) if(wD.keybinds_pre) wD.keybinds_pre(o);
-                }
-            }
-            if(true) if(mainW == null){
-                if(!o.isAttacking) if(mouseDown[0]){
-                    o.isAttacking = true;
-                    let dx = mx-o.x;
-                    let dy = my-o.y;
-                    let dist = Math.sqrt(dx*dx+dy*dy);
-                    let ang = Math.atan2(dy,dx);
-                    if(ang < 0) ang += Math.PI*2;
-                    ang += Math.PI;
-                    if(ang >= Math.PI*2) ang -= Math.PI*2;
-                    let ff = tt.tools.sickle.swing;
-                    let v = Math.floor(ang/(Math.PI*2)*ff.length);
-                    function arAt(i){
-                        if(i < 0) i = ff.length-1;
-                        else if(i >= ff.length) i = 0;
-                        return ff[i];
-                    }
-                    let f = [arAt(v-1),arAt(v),arAt(v+1)];
-                    let d = createParticleAnim(f,o.x,o.y-1,o.z,true,1);
-                    subAnim(f.length*(f.delay||4)+10,function(i,t){
-                        d.x = o.x;
-                        d.y = o.y-1;
-                        d.z = o.z;
-                        if(i == t-1) o.isAttacking = false;
-                    });
-                    //hit
-                    let rad = 4;
-                    let tx = dx/dist*rad+o.x;
-                    let ty = dy/dist*rad+o.y;
-                    let r = 4;
-                    let slist = [];
-                    for(let i = 0; i < sobjs.length; i++){
-                        slist[i] = sobjs[i];
-                    }
-                    for(let i = 0; i < slist.length; i++){
-                        let s = slist[i];
-                        if(s.vhb){ //view hitbox
-                            if(s.hp != null) if(tx+r >= s.x+s.vhb[0] && tx-r < s.x+s.vhb[2] && ty+r >= s.y+s.vhb[1] && ty-r < s.y+s.vhb[3]){
-                                hitWObj(s,1,o,dx/dist,dy/dist,ang);
-                                //break;
-                            }
-                        }
-                    }
-                }
-            }
-            if(true) if(mainW == null) if(mouseDown[2]){ //hands
-                let x = mx;
-                let y = my;
-
-                let obj;
-                let rad = 8;
-                for(let i = 0; i < sobjs.length; i++){
-                    let s = sobjs[i];
-                    if(s.canBePickedUp) if(s.vhb){ //view hitbox
-                        let pass = true;
-                        if(o.x <= s.x+s.vhb[0]-rad) pass = false;
-                        else if(o.x >= s.x+s.vhb[2]+rad) pass = false;
-                        else if(o.y <= s.y+s.vhb[1]-rad) pass = false;
-                        else if(o.y >= s.y+s.vhb[3]+rad) pass = false;
-                        else if(pass) if(x >= s.x+s.vhb[0] && x <= s.x+s.vhb[2] && y >= s.y+s.vhb[1] && y <= s.y+s.vhb[3]) obj = s;
-                    }
-                }
-
-                if(obj) if(obj.canBePickedUp){
-                    if(obj.getDrops) giveDrops(obj.getDrops(o),o);
-                    if(obj.onDestroy) obj.onDestroy(o,0,0,0);
-                    sobjs.splice(sobjs.indexOf(obj),1);
-                }
-            }
-            //OPEN RCAMENU
-            if(pressOnce("f")){
-                if(o.bigInv.open) o.bigInv.open = false;
-                if(o.craftingMenuOpen) o.craftingMenuOpen = false;
-                else{
-                    o.RCAMenu.open = !o.RCAMenu.open;
-                    if(o.RCAMenu.open){
-                        o.RCAMenu.x = mx*guiScale3;
-                        o.RCAMenu.y = my*guiScale3;
-                    }
-                }
-            }
-            //OPEN BIGINV
-            if(!o.RCAMenu.open) if(pressOnce("r")){
-                if(o.craftingMenuOpen) o.craftingMenuOpen = false;
-                o.bigInv.open = !o.bigInv.open;
-            }
-
-            //RENDER LOCKONEN
-            if(o.lockOnEn){
-                let frame = Math.floor((frames%20)/10);
-                let en = o.lockOnEn;
-                let hb = o.lockOnHb;
-                let hx = en.x+(hb[0]+hb[2])/2;
-                let hy = en.y+(hb[1]+hb[3])/2;
-                let hz = en.z+(hb[4]+hb[5])/2;
-                let img = tt.ui.lockTarget2[frame];
-                let xx = hx*guiScale-img.w/2;
-                let yy = (hy-hz)*guiScale-img.h/2;
-                nob2.drawImage_basic(img,xx,yy,true);
-            }
-            //
-
-            if(mainW) if((mouseDown[2] && mainW.getType() == WeaponType.Pistol) || keys.q){ // && mainW.getType() == WeaponType.Pistol
-                let range = 20;
-                let click = (mainW.getType == WeaponType.Pistol ? mouseOnce(0) : mouseOnce(2));
-                let isMagic = (mainW.getType() != WeaponType.Pistol);
-                let amtHovered = 0;
-                let select = mouseDown[2];
-                if(!select){
-                    o.locks = [];
-                    o.locksRef = [];
-                }
-                if(isMagic) select = false;
-                let frame = Math.floor((frames%20)/10);
-                let eL = getClosestEnemiesInRange(mx,my,0,range)[0];
-                for(let j = 0; j < o.locks.length; j++){
-                    eL.push(o.locksRef[j]);
-                }
-                for(let j = 0; j < eL.length; j++){
-                    let en = eL[j];
-                    for(let k = 0; k < en.hitboxes.length; k++){
-                        let hb = en.hitboxes[k];
-                        let hx = en.x+(hb[0]+hb[2])/2;
-                        let hy = en.y+(hb[1]+hb[3])/2;
-                        let hz = en.z+(hb[4]+hb[5])/2;
-                        //let dx = hx-o.x;
-                        //let dy = hy-o.y;
-                        //let dz = hz-o.z;
-                        //let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
-                        //if(dist <= range){
-                            let img = tt.ui.target[frame];
-                            let xx = hx*guiScale-img.w/2;
-                            let yy = (hy-hz)*guiScale-img.h/2;
-                            let mx2 = mx*guiScale-3;
-                            let my2 = my*guiScale-3;
-                            let pad = 1;
-
-                            let ind = o.locks.indexOf(hb);
-                            if(mx2 >= xx-pad && mx2 < xx+8+pad && my2 >= yy-pad && my2 < yy+8+pad){
-                                if(click){
-                                    if(o.lockOnHb == hb){
-                                        o.lockOnHb = null;
-                                        o.lockOnEn = null;
-                                    }
-                                    else{
-                                        o.lockOnHb = hb;
-                                        o.lockOnEn = en;
-                                    }
-                                }
-                                if(select) if(ind == -1){
-                                    o.locks.push(hb);
-                                    o.locksRef.push(en);
-                                    ind = o.locks.length-1;
-                                }
-                                amtHovered++;
-                            }
-                            if(hb == o.lockOnHb) img = tt.ui.lockTarget2[frame];
-                            if(ind != -1) img = tt.ui.lockTarget[frame];
-                            nob2.drawImage_basic(img,xx,yy,true);
-                            /*if(!o.lockOnEn) if(pressOnce("q")){
-                                o.lockOnEn = en;
-                                o.lockOnHb = hb;
-                            }*/
-                        //}
-                    }
-                }
-                if(!isMagic) if(amtHovered == 0 && click){
-                    o.lockOnHb = null;
-                    o.lockOnEn = null;
-                }
-                if(keys.shift && pressOnce("q")){
-                    o.lockOnHb = null;
-                    o.lockOnEn = null;
-                }
-            }
-            if(false) if(o.classId == CLASSES.Gunman){
-                let range = 60;
-                let frame = Math.floor((frames%20)/10);
-                for(let j = 0; j < ens.length; j++){
-                    let en = ens[j];
-                    for(let k = 0; k < en.hitboxes.length; k++){
-                        let hb = en.hitboxes[k];
-                        let hx = en.x+(hb[0]+hb[2])/2;
-                        let hy = en.y+(hb[1]+hb[3])/2;
-                        let hz = en.z+(hb[4]+hb[5])/2;
-                        let dx = hx-o.x;
-                        let dy = hy-o.y;
-                        let dz = hz-o.z;
-                        let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
-                        if(dist <= range){
-                            let img = tt.ui.target[frame];
-                            nob2.drawImage_basic(img,hx*guiScale-img.w/2,(hy-hz)*guiScale-img.h/2);
-                            if(!o.lockOnEn) if(pressOnce("q")){
-                                o.lockOnEn = en;
-                                o.lockOnHb = hb;
-                            }
-                        }
-                    }
-                }
-                if(o.lockOnEn){
-                    let en = o.lockOnEn;
-                    let hb = o.lockOnHb;
-                    let hx = en.x+(hb[0]+hb[2])/2;
-                    let hy = en.y+(hb[1]+hb[3])/2;
-                    let hz = en.z+(hb[4]+hb[5])/2;
-                    let dx = hx-o.x;
-                    let dy = hy-o.y;
-                    let dz = hz-o.z;
-                    let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
-                    if(dist <= range){
-                        let img = tt.ui.lockTarget[frame];
-                        nob2.drawImage_basic(img,hx*guiScale-img.w/2,(hy-hz)*guiScale-img.h/2);
-                    }
-                }
-                if(o.lockOnEn) if(pressOnce("q")){
-                    o.lockOnEn = null;
-                    o.lockOnHb = null;
-                }
-            }
-
-            //let hb = [o.x+1,o.y-5,o.x+3,o.y+5];
-            let hb = getHBFromAnim(o);
-            //let hb = aa["swing1"].hb[0];
-            //if(o.anim.f == tt.char.swirl1) hb = aa["swirl1"].hb[o.anim.c];
-            if(false) if(hb){ //hitbox debug
-                nob.drawLine_smart(o.x+hb[0]*(me.isFlipped?-1:1),o.y+hb[1]-o.z,o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[1]-o.z,[255,0,0,255],1);
-                nob.drawLine_smart(o.x+hb[0]*(me.isFlipped?-1:1),o.y+hb[3]-o.z,o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[3]-o.z,[255,0,0,255],1);
-                nob.drawLine_smart(o.x+hb[0]*(me.isFlipped?-1:1),o.y+hb[1]-o.z,o.x+hb[0]*(me.isFlipped?-1:1),o.y+hb[3]-o.z,[255,0,0,255],1);
-                nob.drawLine_smart(o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[1]-o.z,o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[3]-o.z,[255,0,0,255],1);
-
-                nob.drawLine_smart(o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[1]-hb[4]-o.z,o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[1]-hb[5]-o.z,[255,100,100,255],1);
-                nob.drawLine_smart(o.x+hb[0]*(me.isFlipped?-1:1),o.y+hb[1]-hb[5]-o.z,o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[1]-hb[5]-o.z,[255,100,100,255],1);
-                nob.drawLine_smart(o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[1],o.x+hb[2]*(me.isFlipped?-1:1),o.y+hb[1]-hb[4]-o.z,[100,0,0,255],1);
-            }
-
-            //keybinds
-            if(!o.isDead){
-                let cD = classData[o.classId];
-                let w = o.equip.weapon;
-                if(!cD.wasd && (w?!w.ref.wasd:true)){
-                    if(keys.arrowright){
-                        o.vx += 0.1;
-                        o.isFlipped = false;
-                        o.dir = 0;
-                    }
-                    if(keys.arrowleft){
-                        o.vx -= 0.1;
-                        o.isFlipped = true;
-                        o.dir = 1;
-                    }
-                    if(keys.arrowup) o.vy -= 0.1;
-                    if(keys.arrowdown) o.vy += 0.1;
-                }
-                else{
-                    let prevent = false;
-                    if(o.equip.weapon) if(o.equip.weapon.getType() == WeaponType.Sniper) if(o.isAttacking){
-                        prevent = true;
-                        o.vx = 0;
-                        o.vy = 0;
-                    }
-                    if(!prevent){
-                        if(keys.d){
-                            o.vx += 0.1;
-                            o.isFlipped = false;
-                            o.dir = 0;
-                        }
-                        if(keys.a){
-                            o.vx -= 0.1;
-                            o.isFlipped = true;
-                            o.dir = 1;
-                        }
-                        if(keys.w) o.vy -= 0.1;
-                        if(keys.s) o.vy += 0.1;
-                    }
-                }
-    
-                if(keys[" "] && o.grounded){
-                    o.grounded = false;
-                    o.vz += 1;
-                    o.jumpZ = o.z;
-                }
-    
-                if(true){ //(!o.smallInvOpen) || keys.d
-                    let mainW = o.equip.weapon;
-                    if(mainW){
-                        let wd = weaponData[mainW.getType()];
-                        if(!isMenuOpen()) if(wd.keybinds) wd.keybinds(o);
-                    }
-                }
-            }
-        }
-        let max = o.moveMulti;
-        if(o.vx > max) o.vx = max;
-        if(o.vx < -max) o.vx = -max;
-        if(o.vy > max) o.vy = max;
-        if(o.vy < -max) o.vy = -max;
-        nob.flipX = o.isFlipped;
-
-        if(Math.abs(o.vx) < 0.1) o.vx = 0;
-
-        if(!o.static){
-            //o.x += o.vx*o.moveMulti;
-            //o.y += o.vy*o.moveMulti;
-            //o.z += o.vz;
-            moveObj(o,o.vx*o.moveMulti,o.vy*o.moveMulti,o.vz);
-        }
-
-        //drawChar(o);
-        //if(o.z > 0) nob.drawCircle(o.x,o.y,2,black);
-        drawShadow(o.x,o.y,o.z,o);
-        //nob.drawLine_smart(o.x,o.y,o.x,o.y-o.z,[40,40,40,255],1);
-
-        if(!o.noRender){
-            let img;
-            if(!o.isDead){
-                if(o.vx == 0 && o.vy == 0) img = anim.char(o,0);
-                else img = anim.char(o,1);
-            }
-            o.img = img;
-
-            img = runAnimator(o);
-            if(img){
-                nob.drawImage_basic_dep(img,o.x-Math.floor(img.w/2),o.y-o.z-img.h,false,o.y+(o.z+1)*nob.height,2);
-                o.img = img;
-            }
-        }
-
-        if(o.update) o.update();
-
-        //anim.char(o,3);
-        //nob.flipX = !nob.flipX;
-        //anim.char(o,2);
-        nob.flipX = false;
-    }
-
-    //SMART OBJS
-    for(let i = 0; i < objsL.length; i++){
-        let o = objsL[i];
-        if(o.update) o.update();
-    }
-
-    //DOORS
-    for(let i = 0; i < doors.length; i++){
-        let d = doors[i];
-
-        if(frames%20 == 0){
-            let pL = getClosestPlayersInRange(d.x,d.y,0,20)[0];
-            pL = pL.concat(getClosestEnemiesInRange(d.x,d.y,0,20)[0]);
-            if(pL.length != 0){
-                if(d.open == 0) d.open = 1;
-            }
-            else{
-                if(d.open == 3) d.open = 4;
-            }
-        }
-
-        if(d.open == 1){ //open
-            d.open = 2;
-            startAnim(d,tt.env.towns.door,function(o){
-                o.open = 3;
-                if(o.ref.open == 0) o.ref.open = 3;
-            });
-        }
-        else if(d.open == 4){ //close
-            d.open = 2;
-            startAnim(d,tt.env.towns.door.rev,function(o){
-                o.open = 0;
-            });
-        }
-
-        img = runAnimator(d);
-        if(!img) img = tt.env.towns.door[(d.open == 3 ? 3 : 0)];
-        if(img) nob.drawImage_basic_dep(img,d.x-img.w/2,d.y-9,false,d.y-9,2);
-
-        //
-        if(false){
-            if(frames%20 == 0){
-                let pL = getClosestPlayersInRange(this.x,this.y,0,30)[0];
-                if(pL.length != 0){
-                    if(this.doorOpen == 0) this.doorOpen = 1;
-                }
-                else{
-                    if(this.doorOpen == 3) this.doorOpen = 4;
-                }
-            }
-            if(frames%5 == 0) this.closePl = getClosestPlayersInRange(this.x,this.y,0,4)[0];
-            if(this.closePl) for(let i = 0; i < this.closePl.length; i++){
-                let p = this.closePl[i];
-                if(!p.static) if(Math.abs(p.x-this.x) <= 3) if(p.keys.w || p.keys.arrowup){
-                    p.static = true;
-                    this.closePl.splice(this.closePl.indexOf(p),1);
-                    //p.y = this.y+1;
-                    let world = this.myWorld;
-                    subAnim(20,function(i,t){
-                        p.y -= 0.5;
-                        if(i == t-1){
-                            loadChunk(p,world,0,0);
-                            p.static = false;
-                        }
-                    });
-                }
-            }
-
-            let img = tt.env.towns.house[0];
-            if(!img) return;
-            nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-img.h,false,this.y-img.h,2);
-            img = tt.env.towns.house[1];
-            nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-img.h,false,this.y-img.h+(25*nob.height),1);
-
-            if(this.doorOpen == 1){ //open
-                this.doorOpen = 2;
-                startAnim(this,tt.env.towns.door,function(o){
-                    o.doorOpen = 3;
-                });
-            }
-            else if(this.doorOpen == 4){ //close
-                this.doorOpen = 2;
-                startAnim(this,tt.env.towns.door.rev,function(o){
-                    o.doorOpen = 0;
-                });
-            }
-            
-            img = runAnimator(this);
-            if(!img) img = tt.env.towns.door[(this.doorOpen == 3 ? 3 : 0)];
-            if(img) nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-9,false,this.y-9,2);
-        }
-    }
-
-    //GLOBAL BULLETS
-    let bulls = [];
-    for(let i = 0; i < bullets.length; i++){
-        bulls.push(bullets[i]);
-    }
-    for(let i = 0; i < bulls.length; i++){
-        let o = bulls[i];
-        runBullet(o,bullets);
-    }
-    //Player Bullets
-    bulls = [];
-    for(let i = 0; i < pBullets.length; i++){
-        bulls.push(pBullets[i]);
-    }
-    for(let i = 0; i < bulls.length; i++){
-        let o = bulls[i];
-        runBullet(o,pBullets);
-    }
-
-    //GLOBAL OBJS
-    function removeObj(o){
-        objs.splice(objs.indexOf(o),1);
-    }
-    objsL = [];
-    for(let i = 0; i < objs.length; i++){
-        objsL.push(objs[i]);
-    }
-    for(let i = 0; i < objsL.length; i++){
-        let o = objsL[i];
-        let img;
-        if(o.anim) img = runAnimator(o);
-        if(!img) img = o.img;
-        if(o.isFlipped) nob.flipX = true;
-        if(img){
-            if(o.upright){
-                if(!o.col) nob.drawImage_basic_dep(img,o.x-img.w/2,o.y-img.h-o.z,false,o.y+(o.z*nob.height),o.upright);
-                else nob.drawImage_basic_replace_dep(img,o.x-img.w/2,o.y-img.h-o.z,replaceCol,o.col,o.y+(o.z*nob.height),o.upright);
-            }
-            else nob.drawImage_basic(img,o.x-Math.floor(img.w/2),o.y-o.z-Math.floor(img.h/2));
-        }
-        if(o.destroyAfterAnim){
-            if(o.anim.f == null) removeObj(o);
-        }
-        nob.flipX = false;
-    }
 
     updateEvts();
 
@@ -1311,7 +534,6 @@ function update(){
         else if(me.vx < -0.1) me.vx += 0.1;
     }*/
 }
-update();
 
 
 can2.addEventListener("contextmenu",e=>{
@@ -2254,8 +1476,8 @@ function setCamPos_eh(x,y,z){
 function setCamPos(x,y,z){
     mx = mxb+nob.camX;
     my = myb+nob.camY;
+    nob.useCam = me.useCam;
     if(!me.useCam) return;
-    nob.useCam = true;
     nob.camX = x;
     nob.camY = y;
     //nob.camZ = z;
@@ -2428,112 +1650,115 @@ for(let i = 0; i < 20; i++){
 //worldObjs.tree1(nob.centerX-30,nob.centerY-50,0);
 //worldObjs.tree1(nob.centerX-10,nob.centerY-30,0);
 //SPAWN TREES TEST
-if(true){
-    let allowedPixels = [];
-    let times = 0;
-    let ii = 0;
-    for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
-        if(firstChunk.biomeBuf[ii] == 1) allowedPixels.push([i,j]);
-        ii += 4;
-    }
-    times = Math.floor(allowedPixels.length/300);
-    console.log(allowedPixels.length,times);
-    for(let i = 0; i < times; i++){ //24
-        //let x = Math.floor(Math.random()*nob.width);
-        //let y = Math.floor(Math.random()*nob.height);
-        if(Math.random() < 0.6){
-            let i2 = Math.floor(Math.random()*allowedPixels.length);
-            let loc = allowedPixels[i2];
-            let x = loc[0];
-            let y = loc[1];
-            let ind = (x+y*nob.width)*4;
-            let pass = false;
-            if(firstChunk.biomeBuf[ind] == 1) pass = true;
-            if(pass){
-                let l = getNonPassivesInRange(x,y,0,20);
-                if(l.length == 0){
-                    let d = worldObjs.tree1(x,y,10); //10
-                    d.l = Math.ceil(Math.random()*6+4);
-                    d.w = Math.ceil(Math.random()*2);
-                    d.w = 1;
-                    //d.l *= 2;
-                    d.startW = d.w;
-                    d.hp = 10*d.w;
+initChunk(firstChunk);
+function initChunk(chunk){
+    let l_sobjs = sobjs;
+    let l_objs = objs;
+    sobjs = chunk.sobjs;
+    objs = chunk.objs;
+
+    chunk.biomeBuf = new Uint8ClampedArray(nob.size);
+    initChunkPerlin(chunk);
+    if(true){
+        let allowedPixels = [];
+        let times = 0;
+        let ii = 0;
+        for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+            if(chunk.biomeBuf[ii] == 1) allowedPixels.push([i,j]);
+            ii += 4;
+        }
+        times = Math.floor(allowedPixels.length/300);
+        for(let i = 0; i < times; i++){ //24
+            //let x = Math.floor(Math.random()*nob.width);
+            //let y = Math.floor(Math.random()*nob.height);
+            if(Math.random() < 0.6){
+                let i2 = Math.floor(Math.random()*allowedPixels.length);
+                let loc = allowedPixels[i2];
+                let x = loc[0];
+                let y = loc[1];
+                let ind = (x+y*nob.width)*4;
+                let pass = false;
+                if(chunk.biomeBuf[ind] == 1) pass = true;
+                if(pass){
+                    let l = getNonPassivesInRange_c(chunk,x,y,0,20);
+                    if(l.length == 0){
+                        let d = worldObjs.tree1(x,y,10); //10
+                        d.l = Math.ceil(Math.random()*6+4);
+                        d.w = Math.ceil(Math.random()*2);
+                        d.w = 1;
+                        //d.l *= 2;
+                        d.startW = d.w;
+                        d.hp = 10*d.w;
+                    }
                 }
             }
         }
     }
-}
-
-/*subAnim(240,function(i,t){
-    if(i == t-1){
-        for(let i = 0; i < sobjs.length; i++){
-            let s = sobjs[i];
-            if(s.gId == "tree1"){
-                s.breaking = true;
+    
+    for(let i = 0; i < 100; i++){ //24
+        let x = Math.floor(Math.random()*nob.width);
+        let y = Math.floor(Math.random()*nob.height);
+        let ind = (x+y*nob.width)*4;
+        if(chunk.biomeBuf[ind] == 0){
+            let amt = Math.ceil(Math.random()*10);
+            for(let j = 0; j < amt; j++){
+                let offX = (Math.random()-0.5)*10;
+                let offY = (Math.random()-0.5)*10;
+                let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
+                if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
             }
         }
     }
-});*/
+    for(let i = 0; i < 50; i++){ //24
+        let x = Math.floor(Math.random()*nob.width);
+        let y = Math.floor(Math.random()*nob.height);
+        let ind = (x+y*nob.width)*4;
+        if(chunk.biomeBuf[ind] == 0){
+            let amt = Math.ceil(Math.random()*10);
+            for(let j = 0; j < amt; j++){
+                let offX = (Math.random()-0.5)*10;
+                let offY = (Math.random()-0.5)*10;
+                let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
+                if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
+            }
+        }
+    }
+    for(let i = 0; i < 5; i++){ //24
+        let x = Math.floor(Math.random()*nob.width);
+        let y = Math.floor(Math.random()*nob.height);
+        let amt = Math.ceil(Math.random()*3);
+        for(let j = 0; j < amt; j++){
+            let offX = (Math.random()-0.5)*20;
+            let offY = (Math.random()-0.5)*20;
+            let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,15);
+            if(l.length == 0) createObj(tt.env.tent[Math.floor(Math.random()*2)],x+offX,y+offY,0,2);
+        }
+    }
+    for(let i = 0; i < 50; i++){ //24
+        let x = Math.floor(Math.random()*nob.width);
+        let y = Math.floor(Math.random()*nob.height);
+        let ind = (x+y*nob.width)*4;
+        let pass = false;
+        if(chunk.biomeBuf[ind] == 0) pass = true;
+        if(pass){
+            let l = getNonPassivesInRange_c(chunk,x,y,0,30);
+            if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5);
+        }
+    }
+    for(let i = 0; i < 50; i++){ //24
+        let x = Math.floor(Math.random()*nob.width);
+        let y = Math.floor(Math.random()*nob.height);
+        let ind = (x+y*nob.width)*4;
+        let pass = false;
+        if(chunk.biomeBuf[ind] == 0) pass = true;
+        if(pass){
+            let l = getNonPassivesInRange_c(chunk,x,y,0,5);
+            if(l.length == 0) worldObjs.campfire(x,y,0,true);
+        }
+    }
 
-for(let i = 0; i < 100; i++){ //24
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let ind = (x+y*nob.width)*4;
-    if(firstChunk.biomeBuf[ind] == 0){
-        let amt = Math.ceil(Math.random()*10);
-        for(let j = 0; j < amt; j++){
-            let offX = (Math.random()-0.5)*10;
-            let offY = (Math.random()-0.5)*10;
-            worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
-        }
-    }
-}
-for(let i = 0; i < 50; i++){ //24
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let ind = (x+y*nob.width)*4;
-    if(firstChunk.biomeBuf[ind] == 0){
-        let amt = Math.ceil(Math.random()*10);
-        for(let j = 0; j < amt; j++){
-            let offX = (Math.random()-0.5)*10;
-            let offY = (Math.random()-0.5)*10;
-            worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
-        }
-    }
-}
-for(let i = 0; i < 5; i++){ //24
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let amt = Math.ceil(Math.random()*3);
-    for(let j = 0; j < amt; j++){
-        let offX = (Math.random()-0.5)*20;
-        let offY = (Math.random()-0.5)*20;
-        let l = getNonPassivesInRange(x+offX,y+offY,0,15);
-        if(l.length == 0) createObj(tt.env.tent[Math.floor(Math.random()*2)],x+offX,y+offY,0,2);
-    }
-}
-for(let i = 0; i < 50; i++){ //24
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let ind = (x+y*nob.width)*4;
-    let pass = false;
-    if(firstChunk.biomeBuf[ind] == 0) pass = true;
-    if(pass){
-        let l = getNonPassivesInRange(x,y,0,30);
-        if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5);
-    }
-}
-for(let i = 0; i < 50; i++){ //24
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let ind = (x+y*nob.width)*4;
-    let pass = false;
-    if(firstChunk.biomeBuf[ind] == 0) pass = true;
-    if(pass){
-        let l = getNonPassivesInRange(x,y,0,5);
-        if(l.length == 0) worldObjs.campfire(x,y,0,true);
-    }
+    sobjs = l_sobjs;
+    objs = l_objs;
 }
 
 //ALL SCREEN DITCH TEST
@@ -2584,3 +1809,5 @@ subAnim(9999999,(i,t)=>{
 });*/
 
 createParticleAnim(tt.enemies.wolf.walk,30,30,0,false,0);
+
+update();

@@ -261,3 +261,15 @@
     - Fixed biome colors
     - Made only certain objs spawn in certain biomes
     - Only added forest and plains biome
+    - Added Knife weaponType
+
+0.1.24 : 8-27-21
+    - Made tall grass spawn with distance checks so they down spawn over stuff
+    - Fixed camXY movement to work with perlin and all except campfire smoke is broken
+    
+0.2.0 : 8-28-21
+    - Removed camXY movement bc it is too buggy
+    - Moved all loops (ens,players,objs...) to runChunk functions like in CPP edition
+    - Added createNewChunk function to more easily create new chunks
+    - Added feature from CPP edition where you move to the edge of the screen and you generate and move to a new chunk
+    - Possibly more stuff

@@ -597,6 +597,30 @@ function getNonPassivesInRange(x,y,z,r){
     }
     return list;
 }
+function getNonPassivesInRange_c(chunk,x,y,z,r){
+    let list = [];
+    for(let i = 0; i < chunk.sobjs.length; i++){
+        let o = chunk.sobjs[i];
+        if(!o.passive){
+            let dx = o.x-x;
+            let dy = o.y-y;
+            let dz = o.z-z;
+            let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+            if(dist < r) list.push(o);
+        }
+    }
+    for(let i = 0; i < chunk.objs.length; i++){
+        let o = chunk.objs[i];
+        if(!o.passive){
+            let dx = o.x-x;
+            let dy = o.y-y;
+            let dz = o.z-z;
+            let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+            if(dist < r) list.push(o);
+        }
+    }
+    return list;
+}
 function getClosestPlayerInRange(x,y,z,r){
     let p;
     let d = 9999;

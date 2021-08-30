@@ -149,7 +149,7 @@ players.push({
     chunk:firstChunk,
     //
     keys:{},
-    useCam:false,
+    useCam:true,
     //
     selObj:null,
     selLX:0,
