@@ -130,7 +130,8 @@ var tt = {
     objs:{
         survival:{
             campfire:tl.load("objs/campfire.png"),
-            rock:tl.load("objs/rock.png")
+            rock:tl.load("objs/rock.png"),
+            cooking_stand:tl.load("objs/cooking_stand.png")
         }
     }
 };
@@ -289,6 +290,7 @@ function dealDamage(amt,en,who){ //to enemy
     if(en.onHit) en.onHit(amt,who);
     en.hp -= amt;
     if(en.hp <= 0){
+        if(who) if(en.getDrops) giveDrops(en.getDrops(who),who);
         awardEnemyDeath(en);
         destroyEnemyAnim(en);
     }
@@ -328,7 +330,7 @@ function hitHelper(a,o){
                         });
                         let damage = getDamage(o,en,res.box[7]);
                         displayDamage(damage,res.x,res.y,res.z);
-                        dealDamage(damage,en);
+                        dealDamage(damage,en,o);
                     }
                 }
             }
@@ -346,7 +348,7 @@ function hitHelper(a,o){
                     });
                     let damage = getDamage(o,en,res.box[7]);
                     displayDamage(damage,res.x,res.y,res.z);
-                    dealDamage(damage,en);
+                    dealDamage(damage,en,o);
                 }
             }
             break;
@@ -692,7 +694,7 @@ function drawHitBoxPlayer(o,hb,damage=1,func,destroyOnHit=false,exDamage=0){
                         if(r[1]) useWeakness = true;
                     }
                     damage += exDamage;
-                    dealDamage(damage,p,o.ref);
+                    dealDamage(damage,p,o.player);
                     displayDamage(damage,res.x,res.y,res.z,useWeakness?[100,200,255,255]:null);
                 }
                 if(destroyOnHit) removeBullet(pBullets,o.ref,true);
@@ -1287,7 +1289,10 @@ var ENEMIES = {
             action:-1,
             tick:animalTick,
             useWalk:false,
-            imgCat:tt.enemies.cow
+            imgCat:tt.enemies.cow,
+            getDrops(o){
+              return [createItem(items.materials.raw_beef,1)]
+            } //Math.ceil(Math.random()*3)
         },
         pig:{
             type:"pig",
@@ -1304,7 +1309,10 @@ var ENEMIES = {
             action:-1,
             tick:animalTick,
             useWalk:true,
-            imgCat:tt.enemies.pig
+            imgCat:tt.enemies.pig,
+            getDrops(o){
+              return [createItem(items.materials.raw_pork,1)]
+            }
         }
     }
 };
@@ -1900,10 +1908,14 @@ const worldObjs = {
     },
     campfire:function(x,y,z,lit=false){
         let d = {
+            gId:"campfire",
             x,y,z,lit,
+            vhb:[-2,-2,2,0],
+            selected:false,
+            hover:false,
             update:function(){
                 let img = tt.objs.survival.campfire;
-                nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-this.z-img.h,false,this.y+this.z*nob.height,2);
+                drawSelectableImage(img,this.x-img.w/2,this.y-img.h,this.z,this.selected?(this.hover?red:white):null);
                 if(this.lit){
                     if(Math.random() < 0.01){ //0.01
                         particleSims.splash(this.x,this.y-2,0,Math.random()-0.5,Math.random()-0.5,0.5,[Math.floor(Math.random()*255),50,0,255],4);
@@ -1940,11 +1952,30 @@ const worldObjs = {
                         }]);
                     }
                 }
+                this.selected = false;
+                this.hover = false;
             }
         };
         sobjs.push(d);
+    },
+    cooking_stand:function(x,y,z){
+      let d = {
+        gId:"cooking_stand",
+        x,y,z,
+        vhb:[-2,-4,2,0],
+        hp:10,
+        update:function(){
+          let img = tt.objs.survival.cooking_stand;
+          nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-this.z-img.h,this.y+this.z*nob.height,2);
+        }
+      };
+      sobjs.push(d);
     }
 };
+function drawSelectableImage(img,x,y,z,outline){
+  if(!outline) nob.drawImage_basic_dep(img,x,y-z,false,y+z*nob.height,2);
+  else nob.drawImage_basic_tint2_dep(img,x,y-z,[0,0,0,0],[1,1,1,1],y+z*nob.height,2,outline);
+}
 function hitWObj(s,amt,o,dx,dy,ang){
     if(s.onHit) s.onHit(o,dx,dy,ang);
     s.hp -= amt;

@@ -4,11 +4,11 @@
  *
  * AUTHORS: Turbo Nobsin
  *
- * VERSION: a1.1.11
- * DATE: 8-12-21
+ * VERSION: a1.2.0
+ * DATE: 8-30-21
  *
  * WHATS NEW?
- *  - 
+ *  - Started implimentation of compressed image feature
  */
 
 class NobsinCtx{
@@ -86,6 +86,19 @@ class NobsinCtx{
     this.buf[ind+3] = a;
     this.pixelCount++;
     return 1;
+  }
+  setData_dep(ind,col,dep){
+    if(ind == null) return;
+    ind = Math.floor(ind);
+    let i = Math.floor(ind/4);
+    if(this.dep[i] <= dep){
+      this.dep[i] = dep;
+      this.buf[ind] = col[0];
+      this.buf[ind+1] = col[1];
+      this.buf[ind+2] = col[2];
+      this.buf[ind+3] = 255;
+      this.pixelCount++;
+    }
   }
   setPixel(x=0,y=0,col){
     if(this.useCam){
@@ -2129,6 +2142,32 @@ class NobsinCtx{
             this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
             this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
             this.buf[tInd+3] = data.data[ind+3];
+            if(outline){
+              if(i == 0){
+                this.buf[tInd-4] = outline[0];
+                this.buf[tInd-4+1] = outline[1];
+                this.buf[tInd-4+2] = outline[2];
+                this.buf[tInd-4+3] = 255;
+              }
+              if(j == 0){
+                this.buf[tInd-nob.width*4] = outline[0];
+                this.buf[tInd-nob.width*4+1] = outline[1];
+                this.buf[tInd-nob.width*4+2] = outline[2];
+                this.buf[tInd-nob.width*4+3] = 255;
+              }
+              if(i == w-1){
+                this.buf[tInd+4] = outline[0];
+                this.buf[tInd+4+1] = outline[1];
+                this.buf[tInd+4+2] = outline[2];
+                this.buf[tInd+4+3] = 255;
+              }
+              if(j == h-1){
+                this.buf[tInd+nob.width*4] = outline[0];
+                this.buf[tInd+nob.width*4+1] = outline[1];
+                this.buf[tInd+nob.width*4+2] = outline[2];
+                this.buf[tInd+nob.width*4+3] = 255;
+              }
+            }
           }
         }
         else if(outline){
@@ -3039,6 +3078,18 @@ class NobsinCtx{
       this.drawLetter_custom(tData,text[i],x+i*tData.width,y,c,border);
     }
   }
+
+  //Compressed images
+  drawCompressedImage(com,x,y){
+    let ind = (x+y*this.width)*4;
+    let tInd = 0;
+    let ok = Object.keys(com.buf);
+    for(let i = 0; i < ok.length; i++){
+      let k = ok[i];
+      let d = com.buf[k];
+      this.setData_dep(k,d[0],d[1]);
+    }
+  }
 }
 NobsinCtx.prototype.inits = [];
 
@@ -3878,3 +3929,19 @@ var letterData = {
     0,1,0
   ]
 };
+
+function createCompressedImage(nob){
+  let buf = {};
+  for(let i = 0; i < nob.size; i += 4){
+    if(nob.buf[i+3]){
+      if(!buf[i]) buf[i] = [];
+      buf[i].push([[nob.buf[i],nob.buf[i+1],nob.buf[i+2],255],nob.dep[i]]);
+    }
+  }
+  let d = {
+    w:nob.width,
+    h:nob.height,
+    buf
+  };
+  return d;
+}

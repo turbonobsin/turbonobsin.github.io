@@ -17,6 +17,8 @@ const nob3 = new NobsinCtx(ctx3);
 nob3.transparentBg = true;
 nob3.background = [0,0,0,0];
 
+const staticNob = new NobsinCtx(ctx);
+
 var col = [200,20,0,255];
 var frames = 0;
 var playerId = 0;
@@ -270,12 +272,14 @@ function createEnemy(en,x,y,z,data,world,cx,cy){
     return d;
 }
 function initAttack(o){
+    if(o.smallInvOpen) return false;
     o.isAttacking = true;
     o.atkI++;
     if(frames-o.atkLast > 10) o.atkI = 0;
     if(o.atkI > 2) o.atkI = 0;
-    o.smallInvOpen = false;
+    //o.smallInvOpen = false;
     //o.atkLast = frames;
+    return true;
 }
 
 function removeBullet(p,o,anim){
@@ -517,6 +521,8 @@ function update(){
     }
 
     //mask: //nob.drawRect_dep(0,0,nob.width,nob.height,me.world.bgCol,0);
+
+    //nob.drawImage_basic(fromNob(staticNob),0,0);
 
     //GUI
     renderHUD(me);

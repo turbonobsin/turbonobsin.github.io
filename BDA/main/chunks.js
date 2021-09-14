@@ -472,7 +472,6 @@ function runChunk(chunk,world){
         for(let j = 0; j < h; j++) for(let i = 0; i < w; i++){
             let ind = (i+j*w)*4;
             let biome = chunk.biomeBuf[ind];
-            biome = 1;
             let c = biomeData[biome].c;
 
             let check = true;

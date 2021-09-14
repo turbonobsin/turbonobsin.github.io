@@ -31,17 +31,20 @@ const weaponData = {
         keybinds:function(o){
             if(!o.isAttacking){
                 if(o.ep >= 2) if(keys.s){
-                    initAttack(o);
-                    startAnim(o,tt.char.swirl1,1);
-                    o.ep -= 2;
+                    if(initAttack(o)){
+                        startAnim(o,tt.char.swirl1,1);
+                        o.ep -= 2;
+                    }
                 }
                 if(keys.d){
-                    initAttack(o);
-                    startAnim(o,tt.char["swing"+(o.atkI+1)],1);
+                    if(initAttack(o)){
+                        startAnim(o,tt.char["swing"+(o.atkI+1)],1);
+                    }            
                 }
                 if(keys.a){
-                    initAttack(o);
-                    startAnim(o,tt.char.stab1,1);
+                    if(initAttack(o)){
+                        startAnim(o,tt.char.stab1,1);
+                    }
                 }
             }
         }
@@ -2026,6 +2029,26 @@ var items = {
             name:"Wood",
             amt:1,
             info:"A CRAFTING MATERIAL. USEFUL FOR BUILDING"
+        },
+        "raw_pork":{
+          name:"Raw Pork",
+          amt:1,
+          info:"RAW FOOD. DROPS FROM PIGS"
+        },
+        "raw_beef":{
+          name:"Raw Beef",
+          amt:1,
+          info:"RAW FOOD. DROPS FROM COWS"
+        },
+        "cooked_pork":{
+          name:"Cooked Pork",
+          amt:1,
+          info:"COOKED FOOD"
+        },
+        "cooked_beef":{
+          name:"Cooked Beef",
+          amt:1,
+          info:"COOKED BEEF"
         }
     }
 };
@@ -2724,10 +2747,12 @@ const controlInfo = [
 
         - "D" Does normal attack that does not take energy, it does 3 different attacks in a row. <br>
         - "S" Does swirl attack to hit enemies around, takes 2 energy per use. <br>
-        - "A" Does rushing attack, not implimented yet. <br>
+        - "A" Does rushing penetrating attack, not implimented yet. <br><br>
+
+        - Normal attacks and special attacks can be chained, for example: Holding "S" for swirl twice then imidiately pressing "D" for a slash will skip to the 3rd normal attack which is more powerful and can reach slightly behind you.
     `,
     `
-    A class for long range attacks focused on doing constant damage to enemies.<br><br>
+    A class for long range attacks focused on doing consistant damage to enemies.<br><br>
     Controls for Gunman Class:<br><br>
         - Move with <span style='color:green'>WASD</span> keys. <br>
         - Jump with spacebar. <br><br>
@@ -2751,14 +2776,30 @@ const controlInfo = [
     `
     A class for combat magic use. Used for attacks of all kinds and stunning or freezing<br>
     the enemy. Some defence capabilities.<br><br>
-    Mage has not been implimented yet. WIP`,
+    <span style='text-decoration:underline'>Mage has not fully been completed yet. WIP</span><br>
+        - Move with <span style='color:green'>WASD</span> keys. <br>
+        - Jump with spacebar. <br><br>
+
+        - Open/Close quick inventory with "Enter" and cycle<br>
+        with "Up Arrow" or "Down Arrow". <br><br>
+
+        - Aim with mouse and hold left mouse button for a bit to charge up spell, once the white indicator at your mouse position is gone, it will display a guide of where the attack will happen and then let go to execute spell.<br><br>
+
+        (With the quick inventory closed)<br>
+        <div style='margin-left:20px'>
+              - press up or down arrow to cycle through spell element types.<br><br> 
+              - press right or left arrow to bring up the spell menu and use the arrow keys to cycle through spells. Press "Enter" to close.</div>
+    `,
     `
     A class for support magic use. Used for healing, bufs, and superior defence such<br>
     as making barriers and walls.<br><br>
     Sage has not been implimented yet. WIP`,
     `
-    A class for bringing the dead back to life and using the enemy against themselves.<br><br>
-    Necroman has not been implimented yet.`
+    A class focused on dark magic and bringing the dead back to life and using the enemy against themselves.<br><br>
+    Necroman has not been implimented yet.`,
+    `
+    A class for mobbing, tracking fast moving enemies, and doing "damage over time" attacks by manipulating bugs.<br><br>
+    Bugman has not been implimented yet.`
 ];
 
 document.getElementById("cont").style.marginTop = (can.offsetHeight+10)+"px";

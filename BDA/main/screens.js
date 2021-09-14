@@ -59,6 +59,11 @@ const classData = [
         name:"Necroman",
         allowedWeapons:[WeaponType.Knife],
         wasd:true
+    },
+    {
+        name:"Bugman",
+        allowedWeapons:[WeaponType.Knife],
+        wasd:true
     }
 ];
 const CLASSES = Object.freeze({
@@ -66,7 +71,8 @@ const CLASSES = Object.freeze({
     Gunman:1,
     Mage:2,
     Sage:3,
-    Necromancer:4
+    Necromancer:4,
+    Bugman:5
 });
 players.push({
     x:150,
@@ -126,13 +132,15 @@ players.push({
         7,
         8,
         9,
+        1
     ],
     exp:[
         0,
         4,
         40,
         200,
-        300
+        300,
+        8
     ],
     targZ:0,
     locks:[],
@@ -149,7 +157,7 @@ players.push({
     chunk:firstChunk,
     //
     keys:{},
-    useCam:true,
+    useCam:false,
     //
     selObj:null,
     selLX:0,
@@ -354,6 +362,8 @@ function changeClass(o,classRef){
     o.anim.d = 0;
     document.getElementById("controlInfo").innerHTML = controlInfo[o.classId];
     //console.warn("CHANGED CLASS SUCCESS");
+
+    o.ep = getMaxEP(o);
 }
 
 //GUI
@@ -497,12 +507,13 @@ function renderHUD(o){
 
     //INV
     if(o.smallInvOpen){
-        if(pressOnce("arrowright")){
+        let cD = classData[o.classId];
+        if(!cD.wasd?pressOnce("d"):pressOnce("arrowright")){
             o.smallInvCat++;
             if(o.smallInvCat >= catList.length) o.smallInvCat = 0;
             o.equip.hI = 0;
         }
-        else if(pressOnce("arrowleft")){
+        else if(!cD.wasd?pressOnce("a"):pressOnce("arrowleft")){
             o.smallInvCat--;
             if(o.smallInvCat < 0) o.smallInvCat = catList.length-1;
             o.equip.hI = 0;
@@ -596,7 +607,6 @@ function renderHUD(o){
 
 
         //if(pressOnce("shift") || pressOnce("c")){
-        let cD = classData[o.classId];
         if(!cD.wasd?pressOnce("s"):pressOnce("arrowdown")){
             if(o.smallInvCat <= 1){
                 let wI = cat.indexOf(o.equip.weapon);
@@ -1361,30 +1371,57 @@ function renderHUD(o){
         }
         if(!hover) nob3.drawText(n,x2,y2+10,colors.plant,black,false,false);
         else nob3.drawText(n,x2,y2+10,black,colors.plant,false,false);
+
+        let ref = o.craftingMenu.obj;
+        if(ref.dependentBy){
+            for(let i = 0; i < sobjs.length; i++){
+                let s = sobjs[i];
+                if(ref.dependentBy.includes(s.gId)){
+                    s.selected = true;
+                    if(s.vhb) if(mx >= s.x+s.vhb[0]-1 && mx < s.x+s.vhb[2]+1 && my >= s.y+s.vhb[1]-1 && my < s.y+s.vhb[3]+1){
+                        s.hover = true;
+                        if(mouseDown[0]){
+                          o.craftingMenu.pickX = s.x;
+                          o.craftingMenu.pickY = s.y;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 let RCAList = [
     "CRAFT HERE"
 ];
+document.addEventListener("error",e=>{
+  alert(e.message);
+})
 let craftingCatList = [
     {
         name:"SURVIVAL",
         list:[
             {
                 name:"CAMPFIRE",
-                info:"CAN BE USED TO COOK MEAT OR SOUPS, OR PRODUCE LIGHT",
+                info:"CAN BE USED TO COOK MEAT OR SOUPS, OR PRODUCE LIGHT n n RELATED: COOKING STAND",
                 reqMat:[items.materials.stick],
-                reqAmt:[3],
+                reqAmt:[0],
+                //reqMat:[items.materials.stick],
+                //reqAmt:[3],
                 build:function(x,y,z){
-                    let d = {
-                        x,y,z,
-                        update:function(){
-                            let img = tt.objs.survival.campfire;
-                            nob.drawImage_basic(img,this.x-img.w/2,this.y-this.z-img.h/2);
-                        }
-                    };
-                    sobjs.push(d);
+                  worldObjs.campfire(x,y,z,true);
                 }
+            },
+            {
+              name:"COOKING STAND",
+              info:"RELATED: CAMPFIRE",
+              reqMat:[items.materials.stick],
+              reqAmt:[0],
+              //reqMat:[items.materials.wood,items.materials.stick],
+              //reqAmt:[2,2],
+              build:function(x,y,z){
+                worldObjs.cooking_stand(x,y,z);
+              },
+              dependentBy:["campfire"]
             },
             {
                 name:"BARREL",

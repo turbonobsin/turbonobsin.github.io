@@ -273,3 +273,6 @@
     - Added createNewChunk function to more easily create new chunks
     - Added feature from CPP edition where you move to the edge of the screen and you generate and move to a new chunk
     - Possibly more stuff
+
+0.2.1 : Many days 
+    - Lots of stuff from chromebook, raw meat, spit, added Label for bugman, lots of stuff
