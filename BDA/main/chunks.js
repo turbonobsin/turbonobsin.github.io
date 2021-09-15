@@ -164,7 +164,122 @@ function dayEnd(w){
     });
 }
 
-function createEmptyChunk(cx,cy){
+function initChunk(chunk){
+    let l_sobjs = sobjs;
+    let l_objs = objs;
+    sobjs = chunk.sobjs;
+    objs = chunk.objs;
+
+    if(!chunk.inside){
+        chunk.biomeBuf = new Uint8ClampedArray(nob.size);
+        initChunkPerlin(chunk);
+        if(true){
+            let allowedPixels = [];
+            let times = 0;
+            let ii = 0;
+            for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
+                if(chunk.biomeBuf[ii] == 1) allowedPixels.push([i,j]);
+                ii += 4;
+            }
+            times = Math.floor(allowedPixels.length/300);
+            for(let i = 0; i < times; i++){ //24
+                //let x = Math.floor(Math.random()*nob.width);
+                //let y = Math.floor(Math.random()*nob.height);
+                if(Math.random() < 0.6){
+                    let i2 = Math.floor(Math.random()*allowedPixels.length);
+                    let loc = allowedPixels[i2];
+                    let x = loc[0];
+                    let y = loc[1];
+                    let ind = (x+y*nob.width)*4;
+                    let pass = false;
+                    if(chunk.biomeBuf[ind] == 1) pass = true;
+                    if(pass){
+                        let l = getNonPassivesInRange_c(chunk,x,y,0,20);
+                        if(l.length == 0){
+                            let d = worldObjs.tree1(x,y,10); //10
+                            d.l = Math.ceil(Math.random()*6+4);
+                            d.w = Math.ceil(Math.random()*2);
+                            d.w = 1;
+                            //d.l *= 2;
+                            d.startW = d.w;
+                            d.hp = 10*d.w;
+                        }
+                    }
+                }
+            }
+        }
+        
+        for(let i = 0; i < 100; i++){ //24
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let ind = (x+y*nob.width)*4;
+            if(chunk.biomeBuf[ind] == 0){
+                let amt = Math.ceil(Math.random()*10);
+                for(let j = 0; j < amt; j++){
+                    let offX = (Math.random()-0.5)*10;
+                    let offY = (Math.random()-0.5)*10;
+                    let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
+                    if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
+                }
+            }
+        }
+        for(let i = 0; i < 50; i++){ //24
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let ind = (x+y*nob.width)*4;
+            if(chunk.biomeBuf[ind] == 0){
+                let amt = Math.ceil(Math.random()*10);
+                for(let j = 0; j < amt; j++){
+                    let offX = (Math.random()-0.5)*10;
+                    let offY = (Math.random()-0.5)*10;
+                    let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
+                    if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
+                }
+            }
+        }
+        for(let i = 0; i < 5; i++){ //24
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let amt = Math.ceil(Math.random()*3)+2;
+            for(let j = 0; j < amt; j++){
+                let offX = (Math.random()-0.5)*20;
+                let offY = (Math.random()-0.5)*20;
+                let isFire = false;
+                if(j == 1) isFire = true;
+                let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,isFire?4:15);
+                if(l.length == 0){
+                    if(isFire) worldObjs.campfire(x+offX,y+offY,0,true);
+                    else createObj(tt.env.tent[Math.floor(Math.random()*2)],x+offX,y+offY,0,2);
+                }
+            }
+        }
+        for(let i = 0; i < 50; i++){ //24
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let ind = (x+y*nob.width)*4;
+            let pass = false;
+            if(chunk.biomeBuf[ind] == 0) pass = true;
+            if(pass){
+                let l = getNonPassivesInRange_c(chunk,x,y,0,30);
+                if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5);
+            }
+        }
+        /*for(let i = 0; i < 50; i++){ //24
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let ind = (x+y*nob.width)*4;
+            let pass = false;
+            if(chunk.biomeBuf[ind] == 0) pass = true;
+            if(pass){
+                let l = getNonPassivesInRange_c(chunk,x,y,0,5);
+                if(l.length == 0) worldObjs.campfire(x,y,0,true);
+            }
+        }*/
+    }
+    sobjs = l_sobjs;
+    objs = l_objs;
+}
+function createEmptyChunk(cx,cy,inside=false){
     return {
         cx,cy,
         id:cx+","+cy,
@@ -177,29 +292,29 @@ function createEmptyChunk(cx,cy){
         players:[],
         doors:[],
         //Biomes
-        biomeBuf:null
+        biomeBuf:null,
+        inside
     };
 }
-function createEmptyWorld(){
-    let d = {
-        bg:"black",
-        bgCol:[0,0,0,255],
-        chunks:{
-            "0,0":createEmptyChunk(0,0)
-        },
-        id:allWorlds.length
-    };
-    allWorlds.push(d);
-    return d;
-}
-function createNewChunk(world,cx,cy){
+function createNewChunk(world,cx,cy,inside=false){
     if(!world.chunks[cx+","+cy]){
-        let chunk = createEmptyChunk(cx,cy);
+        let chunk = createEmptyChunk(cx,cy,inside);
         world.chunks[cx+","+cy] = chunk;
         initChunk(chunk);
         return chunk;
     }
     else return world.chunks[cx+","+cy];
+}
+function createEmptyWorld(inside=false){
+    let d = {
+        bg:"black",
+        bgCol:[0,0,0,255],
+        chunks:{},
+        id:allWorlds.length
+    };
+    createNewChunk(d,0,0,inside);
+    allWorlds.push(d);
+    return d;
 }
 
 let centerX = 150;
@@ -287,11 +402,11 @@ function createDoor(world,chunk,x,y,toWorld,toChunk,tx,ty,dir=0){ //0 up 1 down 
     d.ref = d2;
     d2.ref = d;
 }
-let testWorld = createEmptyWorld();
+/*let testWorld = createEmptyWorld();
 testWorld.bg = "goldenrod";
 testWorld.chunks["0,0"].update = function(){
     nob.drawCircle(20,20,10,[255,0,0,255]);
-};
+};*/
 //createDoor(mainWorld,mainWorld.chunks["0,0"],centerX+40,centerY*1.75,testWorld,testWorld.chunks["0,0"],centerX,centerY);
 
 let a = 10;
@@ -359,7 +474,7 @@ function transitionTest_enter(){
             }
         }
         if(i == t-1){
-            console.log("TIME! : ",performance.now()-timeStart);
+            //console.log("TIME! : ",performance.now()-timeStart);
             transitionTest_exit();
         }
     });
@@ -469,20 +584,22 @@ function runChunk(chunk,world){
         if(w == 0) return;
         if(h == 0) return;
 
-        for(let j = 0; j < h; j++) for(let i = 0; i < w; i++){
-            let ind = (i+j*w)*4;
-            let biome = chunk.biomeBuf[ind];
-            let c = biomeData[biome].c;
-
-            let check = true;
-            let xx = x+i;
-            if(xx < 0) check = false;
-            else if(xx >= nob.width) check = false;
-            if(check){
-                let tInd = (xx+(y+j)*nob.width)*4;
-                nob.buf[tInd] = c[0];
-                nob.buf[tInd+1] = c[1];
-                nob.buf[tInd+2] = c[2];
+        if(!chunk.inside){
+            for(let j = 0; j < h; j++) for(let i = 0; i < w; i++){
+                let ind = (i+j*w)*4;
+                let biome = chunk.biomeBuf[ind];
+                let c = biomeData[biome].c;
+    
+                let check = true;
+                let xx = x+i;
+                if(xx < 0) check = false;
+                else if(xx >= nob.width) check = false;
+                if(check){
+                    let tInd = (xx+(y+j)*nob.width)*4;
+                    nob.buf[tInd] = c[0];
+                    nob.buf[tInd+1] = c[1];
+                    nob.buf[tInd+2] = c[2];
+                }
             }
         }
     }
@@ -668,6 +785,20 @@ function runChunk(chunk,world){
             if(chunk){
                 loadChunk(o,o.world,chunk.cx,chunk.cy);
                 o.x = 1
+            }
+        }
+        if(o.y <= 4){
+            let chunk = createNewChunk(o.world,o.chunk.cx,o.chunk.cy-1);
+            if(chunk){
+                loadChunk(o,o.world,chunk.cx,chunk.cy);
+                o.y = nob.bottom+1;
+            }
+        }
+        else if(o.y >= nob.bottom+3){
+            let chunk = createNewChunk(o.world,o.chunk.cx,o.chunk.cy+1);
+            if(chunk){
+                loadChunk(o,o.world,chunk.cx,chunk.cy);
+                o.y = 4;
             }
         }
 

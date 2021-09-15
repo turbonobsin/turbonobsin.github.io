@@ -19,8 +19,11 @@
                 <button onclick="spawnDebug(ENEMIES.gollum)">Spawn Gollum</button>
                 <button onclick="spawnDebug(ENEMIES.gollum,10)">10x</button>
                 <button onclick="spawnDebug(ENEMIES.speedRoller)">Spawn SpeedRoller</button>
-                <button onclick="spawnDebug(ENEMIES.speedRoller,10)">10x</button><br>
-                <button onclick="debugRevive()">Revive</button>
+                <button onclick="spawnDebug(ENEMIES.speedRoller,10)">10x</button>
+                <button onclick="spawnDebug(ENEMIES.wolf)">Spawn Mutant Wolf</button>
+                <button onclick="spawnDebug(ENEMIES.wolf,10)">10x</button><br>
+                <button onclick="debugRevive()" style="background-color:salmon">Revive / Reset Health</button>
+                <button onclick="me.useFlashlight = !me.useFlashlight">Toggle Flashlight</button>
             </div>
             <div id="classDiv">
                 <button onclick="changeClass(me,0)">Swordman</button>
@@ -31,6 +34,7 @@
                 <button onclick="changeClass(me,5)">Bugman</button>
             </div>
             <br><br>
+            <div style="margin-top:20px">
             <div class="cont" id="useBgDiv">
                 Use Background?<input type="checkbox" onclick="useBackground = !useBackground" checked="true"><br><br>
                 Bg Color?<input type="color" oninput="can.style.backgroundColor = this.value">
@@ -41,6 +45,7 @@
                 <input id="cwd_input" type="range" min="0" max="4" step="1" oninput="createWepDiv_input(this)"><br>
                 <span id="cwd_output"></span><br>
                 <button onclick="cwd_create()">Create</button>
+            </div>
             </div>
         </div>
 

@@ -179,7 +179,8 @@ players.push({
         sel:0,
         recipeSel:0,
         amt:1
-    }
+    },
+    useFlashlight:false
 });
 var me = players[0];
 //loadChunk(me,mainWorld,0,0);
@@ -203,7 +204,7 @@ me.inv.tools.push(createItem(items.hoe.rusty));
 let bag = createItem(items.seedbag.basic);
 bag.amt[0] = 50;
 me.inv.tools.push(bag);
-me.inv.tools.push(createItem(items.wateringcan.small));
+//me.inv.tools.push(createItem(items.wateringcan.small));
 me.inv.tools.push(createItem(items.bucket.small));
 me.inv.tools.push(createItem(items.sickle.small));
 me.inv.tools.push(createItem(items.seedbag.basic));

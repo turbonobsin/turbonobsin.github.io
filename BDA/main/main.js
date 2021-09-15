@@ -389,7 +389,7 @@ function update(){
     }
 
     runChunk(me.chunk,me.world);
-    if(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy]) runChunk(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy],me.world);
+    //if(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy]) runChunk(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy],me.world);
 
     setCamPos(me.x-nob.centerX,me.y-nob.centerY,me.z);
 
@@ -398,8 +398,8 @@ function update(){
     runTime(me.world);
 
     //LIGHTS
-    {
-        //nob.drawCircle_other(lights,nob.width,4,x,y,20,white);
+    if(me.useFlashlight){
+        nob.drawCircle_other(lights,nob.width,4,me.x,me.y,20,white);
         /*for(let j = 0; j < r; j++) for(let i = 0; i < r; i++){
             let xx = x+i;
             let yy = y+j;
@@ -1494,7 +1494,7 @@ function setCamPos(x,y,z){
 
 //VILLAGES
 let env = tt.env;
-sobjs.push({
+let villageObj = {
     x:nob.centerX+30,
     y:nob.centerY,
     z:0,
@@ -1509,7 +1509,7 @@ sobjs.push({
     world:mainWorld,
     cx:0,
     cy:0,
-    myWorld:createEmptyWorld(),
+    myWorld:createEmptyWorld(true),
     doorOpen:0,
     closePl:null,
     update:function(){
@@ -1622,7 +1622,8 @@ sobjs.push({
         //createObj(env.towns.medium_barrel,x-15,y-4,0,2,false,null,colors.water);
         //createObj(env.towns.medium_barrel,x-15,y-9,0,2,false,null,colors.water);
     }
-});
+};
+sobjs.push(villageObj);
 sobjs[sobjs.length-1].init();
 worldObjs.water_well(nob.centerX,nob.centerY-20,1);
 //createObj(env.towns.waterwell,nob.centerX,nob.centerY-20,0,2,false,[-8,-7,8,0,0,10,0]);
@@ -1657,115 +1658,6 @@ for(let i = 0; i < 20; i++){
 //worldObjs.tree1(nob.centerX-10,nob.centerY-30,0);
 //SPAWN TREES TEST
 initChunk(firstChunk);
-function initChunk(chunk){
-    let l_sobjs = sobjs;
-    let l_objs = objs;
-    sobjs = chunk.sobjs;
-    objs = chunk.objs;
-
-    chunk.biomeBuf = new Uint8ClampedArray(nob.size);
-    initChunkPerlin(chunk);
-    if(true){
-        let allowedPixels = [];
-        let times = 0;
-        let ii = 0;
-        for(let j = 0; j < nob.height; j++) for(let i = 0; i < nob.width; i++){
-            if(chunk.biomeBuf[ii] == 1) allowedPixels.push([i,j]);
-            ii += 4;
-        }
-        times = Math.floor(allowedPixels.length/300);
-        for(let i = 0; i < times; i++){ //24
-            //let x = Math.floor(Math.random()*nob.width);
-            //let y = Math.floor(Math.random()*nob.height);
-            if(Math.random() < 0.6){
-                let i2 = Math.floor(Math.random()*allowedPixels.length);
-                let loc = allowedPixels[i2];
-                let x = loc[0];
-                let y = loc[1];
-                let ind = (x+y*nob.width)*4;
-                let pass = false;
-                if(chunk.biomeBuf[ind] == 1) pass = true;
-                if(pass){
-                    let l = getNonPassivesInRange_c(chunk,x,y,0,20);
-                    if(l.length == 0){
-                        let d = worldObjs.tree1(x,y,10); //10
-                        d.l = Math.ceil(Math.random()*6+4);
-                        d.w = Math.ceil(Math.random()*2);
-                        d.w = 1;
-                        //d.l *= 2;
-                        d.startW = d.w;
-                        d.hp = 10*d.w;
-                    }
-                }
-            }
-        }
-    }
-    
-    for(let i = 0; i < 100; i++){ //24
-        let x = Math.floor(Math.random()*nob.width);
-        let y = Math.floor(Math.random()*nob.height);
-        let ind = (x+y*nob.width)*4;
-        if(chunk.biomeBuf[ind] == 0){
-            let amt = Math.ceil(Math.random()*10);
-            for(let j = 0; j < amt; j++){
-                let offX = (Math.random()-0.5)*10;
-                let offY = (Math.random()-0.5)*10;
-                let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
-                if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
-            }
-        }
-    }
-    for(let i = 0; i < 50; i++){ //24
-        let x = Math.floor(Math.random()*nob.width);
-        let y = Math.floor(Math.random()*nob.height);
-        let ind = (x+y*nob.width)*4;
-        if(chunk.biomeBuf[ind] == 0){
-            let amt = Math.ceil(Math.random()*10);
-            for(let j = 0; j < amt; j++){
-                let offX = (Math.random()-0.5)*10;
-                let offY = (Math.random()-0.5)*10;
-                let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
-                if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
-            }
-        }
-    }
-    for(let i = 0; i < 5; i++){ //24
-        let x = Math.floor(Math.random()*nob.width);
-        let y = Math.floor(Math.random()*nob.height);
-        let amt = Math.ceil(Math.random()*3);
-        for(let j = 0; j < amt; j++){
-            let offX = (Math.random()-0.5)*20;
-            let offY = (Math.random()-0.5)*20;
-            let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,15);
-            if(l.length == 0) createObj(tt.env.tent[Math.floor(Math.random()*2)],x+offX,y+offY,0,2);
-        }
-    }
-    for(let i = 0; i < 50; i++){ //24
-        let x = Math.floor(Math.random()*nob.width);
-        let y = Math.floor(Math.random()*nob.height);
-        let ind = (x+y*nob.width)*4;
-        let pass = false;
-        if(chunk.biomeBuf[ind] == 0) pass = true;
-        if(pass){
-            let l = getNonPassivesInRange_c(chunk,x,y,0,30);
-            if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5);
-        }
-    }
-    for(let i = 0; i < 50; i++){ //24
-        let x = Math.floor(Math.random()*nob.width);
-        let y = Math.floor(Math.random()*nob.height);
-        let ind = (x+y*nob.width)*4;
-        let pass = false;
-        if(chunk.biomeBuf[ind] == 0) pass = true;
-        if(pass){
-            let l = getNonPassivesInRange_c(chunk,x,y,0,5);
-            if(l.length == 0) worldObjs.campfire(x,y,0,true);
-        }
-    }
-
-    sobjs = l_sobjs;
-    objs = l_objs;
-}
 
 //ALL SCREEN DITCH TEST
 /*for(let y = 0; y < nob.width; y += 3){
