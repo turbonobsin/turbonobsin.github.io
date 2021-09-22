@@ -1,0 +1,73 @@
+<html>
+    <head>
+        <title>BDA development</title>
+        <link rel="stylesheet" href="main.css">
+    </head>
+    <body>
+        <span id="pauseSpan">PAUSED</span>
+        <iframe id="guide" src="guide/index.html" frameborder="0"></iframe>  
+        <canvas id="can"></canvas>
+        <canvas id="b_can"></canvas>
+        <canvas id="can3"></canvas>
+
+        <div id="cont">
+            <div style="float:right;padding:2px" class="cont2"><button class="guideButton" onclick="toggleGuide()">Help / Guide</button><button onclick="document.getElementById('guide').src = 'guide/index.html'">Guide Home</button><br>
+            <span style="float:right;padding2px;margin:5px;color:darkgray">Version: WEB_0.3.0 (9-22-21)</span>
+            </div>
+            <div class="cont2" style="display:inline-block">Settings / Controls</div>
+            <span class="cont2" style="display:inline-block" id="demo"></span>
+            <div class="cont2">Time: <input id="timeInp" oninput="setTime(this.value)" value="0" type="range" min="0" max="33000" step="1"> <span id="curTime">0</span></div>
+            <div id="controlsDiv">
+                Control Info<br><br>
+                <span id="controlInfo"></span>
+            </div>
+            <div id="enDiv">
+                <button onclick="spawnDebug(ENEMIES.gollum)">Spawn Gollum</button>
+                <button onclick="spawnDebug(ENEMIES.gollum,10)">10x</button>
+                <button onclick="spawnDebug(ENEMIES.speedRoller)">Spawn SpeedRoller</button>
+                <button onclick="spawnDebug(ENEMIES.speedRoller,10)">10x</button>
+                <button onclick="spawnDebug(ENEMIES.wolf)">Spawn Mutant Wolf</button>
+                <button onclick="spawnDebug(ENEMIES.wolf,10)">10x</button><br>
+                <button onclick="debugRevive()" style="background-color:salmon">Revive / Reset Health</button>
+                <button onclick="me.useFlashlight = !me.useFlashlight">Toggle Flashlight</button>
+                <button onclick="DebugActions(3)">Toggle Rain</button>
+                <button onclick="DebugActions(2)">Remove Decor to Reduce Lag</button>
+                <button onclick="DebugActions(5)">Load Physics Playground</button><br>
+                <button onclick="DebugActions(0)">Debug: Add Health</button>
+                <button onclick="DebugActions(1)">Debug: Add Energy</button>
+                <button onclick="DebugActions(4)">Rare Item Animation</button>
+            </div>
+            <div id="classDiv">
+                <button onclick="changeClass(me,0)">Swordman</button>
+                <button onclick="changeClass(me,1)">Gunman</button>
+                <button onclick="changeClass(me,2)">Mage</button>
+                <button onclick="changeClass(me,3)">Sage</button>
+                <button onclick="changeClass(me,4)">Necroman</button>
+                <button onclick="changeClass(me,5)">Bugman</button>
+            </div>
+            <br><br>
+            <div style="margin-top:210px">
+            <div class="cont" id="useBgDiv">
+                Use Background?<input type="checkbox" onclick="useBackground = !useBackground" checked="true"><br><br>
+                Bg Color?<input type="color" oninput="can.style.backgroundColor = this.value">
+            </div>
+            <div id="createWepDiv">
+                <input id="cwd_name" placeholder="Weapon Name"><br>
+                <input id="cwd_damage" type="number" placeholder="Damage"><br>
+                <input id="cwd_input" type="range" min="0" max="4" step="1" oninput="createWepDiv_input(this)"><br>
+                <span id="cwd_output"></span><br>
+                <button onclick="cwd_create()">Create</button>
+            </div>
+            </div>
+        </div>
+
+        <script src="perlin.js"></script>
+        <script src="NobsinEngine.js"></script>
+        <script src="biomes.js"></script>
+        <script src="tt.js"></script>
+        <script src="weapons.js"></script>
+        <script src="chunks.js"></script>
+        <script src="screens.js"></script>
+        <script src="main.js"></script>
+    </body>
+</html>
