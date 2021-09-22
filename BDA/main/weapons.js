@@ -54,7 +54,8 @@ const weaponData = {
             if(o.gunCooldown > 0) o.gunCooldown--;
             if(o.gunCooldown < 0) o.gunCooldown = 0;
             if(mouseDown[0]) if(o.gunCooldown == 0){
-                if(!o.lockOnEn){
+                //if(!o.lockOnEn){
+                if(true){
                     let speed = 2;
                     let coolMax = o.gunMaxCooldown;
                     if(keys.shift) if(o.ep >= 1){
@@ -69,14 +70,36 @@ const weaponData = {
                     coolMax = Math.floor(coolMax);
                     o.gunCooldown = coolMax;
                     o.isAttacking = true;
-                    let dx = mx-o.x;
-                    let dy = my-o.y;
-                    let a = Math.atan2(dy,dx);
-                    let tx = Math.cos(a)*speed;
-                    let ty = Math.sin(a)*speed;
+                    let tx = 0;
+                    let ty = 0;
+                    let tz = 0;
+                    if(!o.lockOnEn){
+                      let dx = mx-o.x;
+                      let dy = my-o.y;
+                      let a = Math.atan2(dy,dx);
+                      tx = Math.cos(a)*speed;
+                      ty = Math.sin(a)*speed;
+                      tz = 0;
+                    }
+                    else{
+                      let hb = me.lockOnHb;
+                      let en = me.lockOnEn;
+                      let tax = en.x+(hb[0]+hb[2])/2;
+                      let tay = en.y+(hb[1]+hb[3])/2;
+                      let taz = en.z+(hb[4]+hb[5])/2;
+                      let dx = tax-me.x;
+                      let dy = tay-me.y;
+                      let dz = taz-(me.z+4);
+                      let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+                      tx = dx/dist*speed;
+                      ty = dy/dist*speed;
+                      tz = dz/dist*speed;
+                    }
+                    
                     //bullets.push([o.x,o.y,o.z,tx,ty,o.targZ||0,tt.bullets.small]);
-                    pBullets.push([o.x,o.y,o.z,tx,ty,o.targZ,tt.bullets.small,function(o2){
-                        let hb = [-1,-1,1,1,-1,1,"bullet"];
+                    //tz = o.targZ; //OLD SYSTEM LETS YOU AIM UP OR DOWN
+                    pBullets.push([o.x,o.y,o.z+4,tx,ty,tz,tt.bullets.small,function(o2){
+                        /*let hb = [-1,-1,1,1,-1,1,"bullet"];
                         drawHitBoxPlayer({
                             x:o2[0],
                             y:o2[1],
@@ -84,16 +107,28 @@ const weaponData = {
                             ref:o2,
                             player:o,
                             hitboxes:[hb]
-                        },hb,"a",null,true);
+                        },hb,"a",null,true);*/
+                        drawShadow(o2[0],o2[1],o2[2],null);
 
-                        let dx = o2[0]-o2[8].sx;
-                        let dy = o2[1]-o2[8].sy;
-                        let dz = o2[2]-o2[8].sz;
-                        let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
-                        if(dist > 70) removeBullet(pBullets,o2,false);
-                    },{sx:o.x,sy:o.y,sz:o.z}]);
+                        //let dx = o2[0]-o2[8].sx;
+                        //let dy = o2[1]-o2[8].sy;
+                        //let dz = o2[2]-o2[8].sz;
+                        //let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
+                        //if(dist > 70) removeBullet(pBullets,o2,false);
+                    },{
+                      sx:o.x,sy:o.y,sz:o.z+4,
+                      noShadow:true,
+                      hb:[-1,-1,1,1,-1,1,"bullet"],
+                      player:o,
+                      h:(!o.lockOnEn?4:0),
+                      element:0,
+                      onDeathAnim:function(o){
+                        //particleSims.spark(o[0],o[1],o[2],0,0,1,black,2);
+                        particleSims.spark(o[0],o[1],o[2],0,0,1,[255,150,0,255],3);
+                      }
+                    }]);
                 }
-                else{
+                else if(false){
                     o.isAttacking = true;
                     let coolMax = o.gunMaxCooldown;
                     o.gunCooldown = coolMax;
@@ -223,7 +258,7 @@ const weaponData = {
             if(mouseDown[0]) if(o.gunCooldown == 0){
                 let speed = 4;
                 let exDamage = 0;
-                let coolMax = o.gunMaxCooldown*6;
+                let coolMax = 10*6; //o.gunMaxCooldown
                 if(keys.shift) if(o.ep >= 1){
                     o.ep--;
                     coolMax /= 2;
@@ -367,6 +402,7 @@ const weaponData = {
                                     o.ep -= 9;
                                     let vx = 0;
                                     let vy = 0;
+                                    let vz = 0;
                                     let ang = 0;
                                     let ttx = 0;
                                     let tty = 0;
@@ -375,15 +411,19 @@ const weaponData = {
                                         let en = o.lockOnEn;
                                         let tx = en.x+(hb[0]+hb[2])/2;
                                         let ty = en.y+(hb[1]+hb[3])/2;
+                                        let tz = en.z+(hb[4]+hb[5])/2;
                                         let dx = tx-o.x;
                                         let dy = ty-o.y;
-                                        let dist = Math.sqrt(dx*dx+dy*dy);
+                                        let dz = tz-o.z;
+
+                                        let dist = Math.sqrt(dx*dx+dy*dy+dz*dz);
                                         let speed = 1.5;
                                         vx = dx/dist*speed;
                                         vy = dy/dist*speed;
-                                        ang = Math.atan2(vy,vx);
-                                        ttx = Math.cos(ang)*1.5;
-                                        tty = Math.sin(ang)*1.5;
+                                        vz = dz/dist*speed;
+                                        //ang = Math.atan2(vy,vx);
+                                        //ttx = Math.cos(ang)*1.5;
+                                        //tty = Math.sin(ang)*1.5;
                                     }
                                     else{
                                         let dx = mx-o.x;
@@ -404,7 +444,7 @@ const weaponData = {
                                     let player = o;
                                     o.cooldown = 0;
                                     o.isAttacking = true;
-                                    let b = [x,y,0,vx,vy,0,black,function(o){
+                                    let b = [x,y,0,vx,vy,vz,black,function(o){
                                         let dx = o[0]-sx;
                                         let dy = o[1]-sy;
                                         let dist = Math.sqrt(dx*dx+dy*dy);
@@ -796,7 +836,8 @@ const weaponData = {
             if(o.maxCooldown == null) o.maxCooldown = 120;
             let idY = o.spellY;
             let idX = o.spellX;
-            let mD = magicData[idY][idX];
+            let list1 = magicData[idY];
+            let mD = list1[Math.min(idX,list1.length-1)];
             if(o.cooldown == 0){
                 if(mouseDown[0]){
                     o.chargeTime--;
@@ -1848,9 +1889,9 @@ const weaponData = {
         }
     }
 };
-setTimeout(function(){
+/*setTimeout(function(){
     changeClass(me,3);
-},20);
+},20);*/
 
 var items = {
     katana:{
@@ -2440,12 +2481,12 @@ function createShield(x,y,hp){
     players.push(d);
 }
 
-document.addEventListener("wheel",e=>{
+/*document.addEventListener("wheel",e=>{
     let v = (e.deltaY < 0 ? 0.1 : -0.1);
     if(me.classId == CLASSES.Gunman){
         me.targZ += v;
     }
-});
+});*/
 
 //MAGIC
 const magicData = [
@@ -2476,10 +2517,10 @@ const magicData = [
             }
         },
         {
-            name:"Fire Blanket"
+            name:"Dragon's Breath"
         },
         {
-            name:"Enormous Flame"
+            name:"Flame Prison"
         },
         {
             name:"Fireball"
@@ -2594,7 +2635,10 @@ const magicData = [
             col:convert("lightsteelblue")
         },
         {
-            name:"Whirlwind"
+            name:"Tornado"
+        },
+        {
+            name:"Air Push"
         }
     ],
     [ //Energy
@@ -2764,14 +2808,7 @@ const controlInfo = [
         - Hold left mouse button to shoot with normal attack, does not take energy. <br>
         - Hold "Shift" while shooting for a 2x faster shot that takes 1 energy per shot. <br>
         - Hold "C" while shooting for a 4x faster shot and 2x faster bullet that<br>
-        takes 4 energy per shot. <br><br>
-        - Scroll mouse wheel to aim up or down. Click in scroll wheel to reset vertical aim.<br><br>
-        
-        - Holding right mouse button will show available hitboxes in range, ones hovered<br>
-        over will turn red and when mouse let go will shoot bullets to those places.<br>
-        - Holding "Q" will show available hitboxes in range and you can click with left mouse button<br>
-        to select or deselect hitboxes. Clicking in free space while "Q" held will deselect.<br>
-        Upon normal attack, it will aim at selected hitbox.
+        takes 4 energy per shot.
     `,
     `
     A class for combat magic use. Used for attacks of all kinds and stunning or freezing<br>
@@ -2793,7 +2830,7 @@ const controlInfo = [
     `
     A class for support magic use. Used for healing, bufs, and superior defence such<br>
     as making barriers and walls.<br><br>
-    Sage has not been implimented yet. WIP`,
+    Sage has not been implimented yet.`,
     `
     A class focused on dark magic and bringing the dead back to life and using the enemy against themselves.<br><br>
     Necroman has not been implimented yet.`,
@@ -2834,3 +2871,139 @@ const recipes = [
         amts:[1]
     }
 ];
+
+function DebugActions(id=0){
+  switch(id){
+  case 0: //Add health
+    me.hp += 2;
+    break;
+  case 1: //Add energy
+    me.ep += 2;
+    break;
+  case 2: //Remove decor
+    for(let i = 0; i < sobjs.length; i++){
+      let s = sobjs[i];
+      if(s.gId == "tall_grass"){
+        sobjs.splice(i,1);
+        i--;
+      }
+    }
+    for(let i = 0; i < objs.length; i++){
+      let o = objs[i];
+      if(!o.getDrops){
+        objs.splice(i,1);
+        i--;
+      }
+    }
+    break;
+  case 3: //Toggle rain
+    if(!me.world.isRaining){
+        startRain(me.world);
+        if(Math.random() < 0.3) me.world.rainAmt = Math.floor(Math.random()*4)+1;
+        else me.world.rainAmt = 1;
+    }
+    else stopRain(me.world);
+    me.world.lastRainTime = frames;
+    break;
+  case 4: //Rare drop anim
+    window.scrollTo(0,0)
+    setTimeout(function(){
+      rareDrop_start();
+    },500);
+    break;
+  case 5: //Load physics playground
+    for(let i = 0; i < sobjs.length; i++){
+      let s = sobjs[i];
+      if(s.gId == "tree1"){
+        removeSObj(s);
+        i--;
+      }
+    }
+    //MOVING COLLIDER TEST
+    var cx = nob.centerX;
+    var cy = nob.centerY;
+    var movingCube = [cx+20,cy+20,cx+25,cy+25,0,5,null,null,function(o,box){
+        let e = box[9];
+        if(o.z >= box[5]) moveObj(o,e.fx,e.fy,0);
+    },{
+        lx:0,
+        ly:0,
+        fx:0,
+        fy:0
+    }];
+    colls.push(movingCube);
+    subAnim(9999999,(i,t)=>{
+        let x = cx+40;
+        let y = cy+40;
+        let r = 10;
+        let a = (i%90)/90*Math.PI*2;
+        let tx = Math.floor(Math.cos(a)*r+x);
+        let ty = Math.floor(Math.sin(a)*r+y);
+        movingCube[0] = tx;
+        movingCube[1] = ty;
+        movingCube[2] = tx+35;
+        movingCube[3] = ty+15;
+        let d = movingCube[9];
+        d.fx = tx-d.lx;
+        d.fy = ty-d.ly;
+        d.lx = tx;
+        d.ly = ty;
+    });
+    //STAIRS 3
+    colls.push([96,100,98,120,0,1]);
+    colls.push([94,100,96,120,0,2]);
+    colls.push([92,100,94,120,0,3]);
+    colls.push([90,100,92,120,0,4]);
+    colls.push([88,100,90,120,0,5]);
+    //FIRST
+    colls.push([30,30,40,40,0,5]); //left,top,right,bottom,down,up, rot, upHeightMap
+    colls.push([43,30,53,40,11,15]);
+    colls.push([60,40,100,40,0,10]);
+    colls.push([80,20,81,60,0,10]);
+    /*colls.push([40,70,50,80,-4,1,null,[
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9
+    ]]);*/
+    colls.push([30,100,32,120,0,1]);
+    colls.push([32,100,34,120,0,2]);
+    colls.push([34,100,36,120,0,3]);
+    colls.push([36,100,38,120,0,4]);
+    colls.push([38,100,40,120,0,5]);
+    //stairs2
+    colls.push([60,136,80,138,0,1]);
+    colls.push([60,134,80,136,0,2]);
+    colls.push([60,132,80,134,0,3]);
+    colls.push([60,130,80,132,0,4]);
+    colls.push([60,128,80,130,0,5]);
+    colls.push([60,126,80,128,0,6]);
+    colls.push([60,124,80,126,0,7]);
+    colls.push([60,122,80,124,0,8]);
+    colls.push([60,120,80,122,0,9]);
+    //stairs3
+    colls.push([86,100,88,120,0,6]);
+    colls.push([84,100,86,120,0,7]);
+    colls.push([82,100,84,120,0,8]);
+    colls.push([80,100,82,120,0,9]);
+    //
+    colls.push([40,100,60,120,0,6]);
+    colls.push([60,100,80,120,0,10]);
+    colls.push([45,70,50,75,0,6]);
+    break;
+  }
+}
+let curTime_l = document.getElementById("curTime");
+let time_i = document.getElementById("timeInp");
+function setTime(a){
+  a = parseInt(a);
+  me.world.time = a;
+  curTime_l.innerHTML = a;
+  time_i.value = a;
+}

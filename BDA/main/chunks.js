@@ -71,6 +71,7 @@ function loadChunk(o,world,cx,cy){
         players = chunk.players;
         doors = chunk.doors;
     }
+    fireflies = [];
 
     //world.bgCol = convert(world.bg);
 }
@@ -114,12 +115,17 @@ var dawnLength = 12000; //6000
 var ddScale = 1; //0.5
 var startingDay = false;
 function runTime(w){
+    if(me.chunk.inside) return;
     w.time += 1;
-    if(w.time >= dayLength && w.time < dayLength+nightLength) dayEnd(w);
+    curTime_l.innerHTML = w.time;
+    time_i.value = w.time;
+    dayStart(w);
+    dayEnd(w);
+    /*if(w.time >= dayLength && w.time < dayLength+nightLength) dayEnd(w);
     else if(!startingDay) if(w.time >= dayLength+Math.floor(duskLength*ddScale)+1000+nightLength){
         dayStart(w);
         startingDay = true;
-    }
+    }*/
 }
 function startRain(w){
     w.isRaining = true;
@@ -138,6 +144,21 @@ function stopRain(w){
     });
 }
 function dayStart(w){
+  let f = dayLength+Math.floor(duskLength*ddScale)+1000+nightLength;
+  let t = w.time;
+  if(t < f) return;
+  if(t == 0){
+    console.log("day start (new)");
+    w.lightCast = 20;
+  }
+  let i = t-f;
+  let a = 20-(i/dawnLength*20);
+  w.lightCast = a;
+  if(t >= f+dawnLength-1){
+    w.time = 0;
+  }
+}
+function dayStart_old(w){
     console.log("day start");
     w.lightCast = 20;
     let start = w.time;
@@ -153,6 +174,16 @@ function dayStart(w){
     });
 }
 function dayEnd(w){
+  let f = dayLength;
+  let t = w.time;
+  if(t < f) return;
+  if(t >= f+duskLength) return;
+  if(t == 0) w.lightCast = 0;
+  let i = t-f;
+  let a = i/duskLength*20;
+  w.lightCast = a;
+}
+function dayEnd_old(w){
     w.lightCast = 0;
     let start = w.time;
     subAnim(duskLength,function(i2,t){
@@ -162,6 +193,11 @@ function dayEnd(w){
         let a = i/t*20;
         w.lightCast = a;
     });
+}
+
+function createFlower(x,y){
+  let o = createObj(tt.env.plantsL[8+Math.round(Math.random())],x,y,0,2,Math.random()<0.5,null,convert("hsl("+Math.floor(Math.random()*360)+",100%,75%)"));
+  o.isPassive = true;
 }
 
 function initChunk(chunk){
@@ -200,7 +236,10 @@ function initChunk(chunk){
                             d.l = Math.ceil(Math.random()*6+4);
                             d.w = Math.ceil(Math.random()*2);
                             d.w = 1;
-                            //d.l *= 2;
+                            if(Math.random() < 0.03){
+                              d.w = 2;
+                              d.l *= 3;
+                            }
                             d.startW = d.w;
                             d.hp = 10*d.w;
                         }
@@ -208,18 +247,34 @@ function initChunk(chunk){
                 }
             }
         }
+        //Animals Test
+        for(let i = 0; i < 10; i++){
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let l = getNonPassivesInRange(x,y,0,15);
+            if(l.length == 0) createEnemy(ENEMIES.animals.cow,x,y,0);
+        }
+        for(let i = 0; i < 10; i++){
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let l = getNonPassivesInRange(x,y,0,15);
+            if(l.length == 0) createEnemy(ENEMIES.animals.pig,x,y,0);
+        }
         
         for(let i = 0; i < 100; i++){ //24
             let x = Math.floor(Math.random()*nob.width);
             let y = Math.floor(Math.random()*nob.height);
             let ind = (x+y*nob.width)*4;
-            if(chunk.biomeBuf[ind] == 0){
+            if(chunk.biomeBuf[ind] == 0 || chunk.biomeBuf[ind] == 1){
                 let amt = Math.ceil(Math.random()*10);
                 for(let j = 0; j < amt; j++){
                     let offX = (Math.random()-0.5)*10;
                     let offY = (Math.random()-0.5)*10;
                     let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
-                    if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
+                    if(l.length == 0){
+                      if(Math.random() < 0.98) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2);
+                      else createFlower(x+offX,y+offY,chunk);
+                    }
                 }
             }
         }
@@ -227,13 +282,16 @@ function initChunk(chunk){
             let x = Math.floor(Math.random()*nob.width);
             let y = Math.floor(Math.random()*nob.height);
             let ind = (x+y*nob.width)*4;
-            if(chunk.biomeBuf[ind] == 0){
+            if(chunk.biomeBuf[ind] == 0 || chunk.biomeBuf[ind] == 1){
                 let amt = Math.ceil(Math.random()*10);
                 for(let j = 0; j < amt; j++){
                     let offX = (Math.random()-0.5)*10;
                     let offY = (Math.random()-0.5)*10;
                     let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
-                    if(l.length == 0) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
+                    if(l.length == 0){
+                      if(Math.random() < 0.98) worldObjs.tall_grass(x+offX,y+offY,0,Math.floor(Math.random()*4)+2,[60,76,33]);
+                      else createFlower(x+offX,y+offY,chunk);
+                    }
                 }
             }
         }
@@ -249,11 +307,11 @@ function initChunk(chunk){
                 let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,isFire?4:15);
                 if(l.length == 0){
                     if(isFire) worldObjs.campfire(x+offX,y+offY,0,true);
-                    else createObj(tt.env.tent[Math.floor(Math.random()*2)],x+offX,y+offY,0,2);
+                    else createObj(tt.env.tent[Math.floor(Math.random()*2)],x+offX,y+offY,0,2,false,[-5,-5,5,0,0,8,"tent"],null,chunk);
                 }
             }
         }
-        for(let i = 0; i < 50; i++){ //24
+        for(let i = 0; i < 20; i++){ //24
             let x = Math.floor(Math.random()*nob.width);
             let y = Math.floor(Math.random()*nob.height);
             let ind = (x+y*nob.width)*4;
@@ -261,7 +319,37 @@ function initChunk(chunk){
             if(chunk.biomeBuf[ind] == 0) pass = true;
             if(pass){
                 let l = getNonPassivesInRange_c(chunk,x,y,0,30);
-                if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5);
+                if(l.length == 0) createObj(tt.env.rock[0],x,y,0,2,Math.random()<0.5,[-8,-8,8,-1,0,7,"boulder"],null,chunk);
+            }
+        }
+
+        //ROCKS AND STICKS
+        for(let i = 0; i < 20; i++){ //24
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let ind = (x+y*nob.width)*4;
+            if(chunk.biomeBuf[ind] == 0 || chunk.biomeBuf[ind] == 1){
+                let amt = Math.ceil(Math.random()*10);
+                for(let j = 0; j < amt; j++){
+                    let offX = (Math.random()-0.5)*10;
+                    let offY = (Math.random()-0.5)*10;
+                    let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
+                    if(l.length == 0) worldObjs.stick(x+offX,y+offY,0);
+                }
+            }
+        }
+        for(let i = 0; i < 50; i++){ //24
+            let x = Math.floor(Math.random()*nob.width);
+            let y = Math.floor(Math.random()*nob.height);
+            let ind = (x+y*nob.width)*4;
+            if(chunk.biomeBuf[ind] == 0 || chunk.biomeBuf[ind] == 1){
+                let amt = Math.ceil(Math.random()*10);
+                for(let j = 0; j < amt; j++){
+                    let offX = (Math.random()-0.5)*10;
+                    let offY = (Math.random()-0.5)*10;
+                    let l = getNonPassivesInRange_c(chunk,x+offX,y+offY,0,10);
+                    if(l.length == 0) worldObjs.rock(x+offX,y+offY,0);
+                }
             }
         }
         /*for(let i = 0; i < 50; i++){ //24
@@ -296,11 +384,15 @@ function createEmptyChunk(cx,cy,inside=false){
         inside
     };
 }
-function createNewChunk(world,cx,cy,inside=false){
+function createNewChunk(world,cx,cy,inside=false,isMe=true){
     if(!world.chunks[cx+","+cy]){
+        let temp = me.chunk;
         let chunk = createEmptyChunk(cx,cy,inside);
+        if(isMe) me.chunk = chunk;
         world.chunks[cx+","+cy] = chunk;
+        console.log(me.chunk.ens);
         initChunk(chunk);
+        if(isMe) me.chunk = temp;
         return chunk;
     }
     else return world.chunks[cx+","+cy];
@@ -310,7 +402,13 @@ function createEmptyWorld(inside=false){
         bg:"black",
         bgCol:[0,0,0,255],
         chunks:{},
-        id:allWorlds.length
+        id:allWorlds.length,
+        time:0,
+        lightCast:0,
+        rainCast:0,
+        isRaining:false,
+        lastRainTime:0,
+        rainAmt:1
     };
     createNewChunk(d,0,0,inside);
     allWorlds.push(d);
@@ -524,7 +622,7 @@ function createPlant(img,x,y,z=0,isFlipped=false,col){
     }
     objs.push(o);
 }
-function createObj(img,x,y,z=0,upright=1,isFlipped=false,coll,col){ //col will replace the color [254,254,254] with col
+function createObj(img,x,y,z=0,upright=1,isFlipped=false,coll,col,chunk){ //col will replace the color [254,254,254] with col
     let o = {
         x,
         y,
@@ -544,7 +642,8 @@ function createObj(img,x,y,z=0,upright=1,isFlipped=false,coll,col){ //col will r
         };
         startAnim(o,img,null,0);
     }
-    objs.push(o);
+    if(!chunk) chunk = me.chunk;
+    chunk.objs.push(o);
     if(coll){
         coll[0] += x;
         coll[2] += x;
@@ -552,15 +651,15 @@ function createObj(img,x,y,z=0,upright=1,isFlipped=false,coll,col){ //col will r
         coll[3] += y;
         coll[4] += z;
         coll[5] += z;
-        colls.push(coll);
+        chunk.colls.push(coll);
     }
     return o;
 }
 
 
 ///////
-
-function runChunk(chunk,world){
+let fireflies = [];
+function runChunk(chunk,world,cx=0,cy=0){
     let ocx = chunk.cx-me.chunk.cx;
     let ocy = chunk.cy-me.chunk.cy;
     let sCamX = nob.camX;
@@ -605,9 +704,6 @@ function runChunk(chunk,world){
     }
     //
 
-    //TEST TEXT
-    nob2.drawText("ROCK GOLLUM",0,3,white,black,false,false);
-
     for(let i = 0; i < chunk.colls.length; i++){
         let c = chunk.colls[i];
         if(c[6] == null){
@@ -624,32 +720,93 @@ function runChunk(chunk,world){
 
 
     //RANDOM FIREFLIES
-    if(false) if(Math.random() < 0.05) pBullets.push([Math.random()*nob.width,Math.random()*nob.height,Math.random()*10,Math.random()-0.5,Math.random()-0.5,0,null,function(o){
-        draw4PSurround(o[0],o[1],o[2]);
-        nob.setPixel(o[0],o[1],black);
-        nob.setPixel(o[0],o[1]-o[2],convert("lime"));
+    let ffChance = 0.01;
+    if(me.world.time > 15000 && me.world.time < 21000){
+      if(!me.world.isRaining) if(me.world.time > 17000 && me.world.time < 20000) ffChance = 0.05;
+      if(Math.random() < ffChance) fireflies.push([Math.random()*nob.width,Math.random()*nob.height,-5,Math.random()-0.5,Math.random()-0.5,0,null,function(o){
+        //nob.setPixel(o[0],o[1],black);
+        //nob.setPixel(o[0],o[1]-o[2],convert("lime"));
+        //subAnim(1,function(i,t){
+          let ind = Math.floor((o[0]+o[1]*nob.width)*4);
+          let col = [0,0,0,255];
+          if(o[8].count%90 > 60){
+            col[0] = nob.buf[ind]+80;
+            col[1] = nob.buf[ind+1]+150;
+            col[2] = nob.buf[ind+2]+50;
+          }
+          nob.setPixel(o[0],o[1]-o[2],col);
+        //});
         //o[3] += Math.random()-0.5;
         //o[4] += Math.random()-0.5;
-        o[5] += 0.005;
+        o[5] += Math.cos(o[8].count/360*Math.PI*2)*0.002;
         let max = 0.2;
         if(o[3] > max) o[3] = max;
         else if(o[3] < -max) o[3] = -max;
         if(o[4] > max) o[4] = max;
         else if(o[4] < -max) o[4] = -max;
-        if(o[5] > max) o[3] = max;
+        if(o[5] > max) o[5] = max;
         else if(o[5] < -max) o[5] = -max;
         let e = o[8];
         e.count++;
-        if(e.count > 40) removeBullet(pBullets,o);
+        if(e.count > 360) removeBullet(fireflies,o); //40
     },{
         count:0
     }]);
+  }
     //
     
     //enemies
     let isTick = false;
     if(frames%3 == 0) isTick = true;
     let enL = [];
+    let hitObjs = [];
+    let hitObj = null;
+    for(let i = 0; i < chunk.ens.length; i++){
+      let o = chunk.ens[i];
+      o.hover = false;
+      let hit = false;
+      let img = runAnimator(o,0);
+      if(!img){
+          if(o.oimg) img = o.oimg;
+          else img = o.img.img;
+      }
+      switch(o.origin){
+          case "bm":
+              if(mx >= o.x-img.w/2 && mx <= o.x+img.w/2 && my >= o.y-img.h && my <= o.y) hit = true;
+              break;
+          default:
+              if(mx >= o.x-img.w/2 && mx <= o.x+img.w/2 && my >= o.y-img.h/2 && my <= o.y+img.h/2) hit = true;
+      }
+      if(hit) hitObjs.push(o);
+    }
+    {
+      let cO = null;
+      let cD = 99999;
+      for(let i = 0; i < hitObjs.length; i++){
+        let o = hitObjs[i];
+        let dx = o.x-mx;
+        let dy = o.y-my;
+        let dist = Math.sqrt(dx*dx+dy*dy);
+        if(dist < cD){
+          cD = dist;
+          cO = o;
+        }
+      }
+      hitObj = cO;
+      if(!keys.q) if(hitObj){
+        hitObj.hover = true;
+        if(mouseOnce(2)){
+          if(me.lockOnEn != hitObj){
+            me.lockOnEn = hitObj;
+            me.lockOnHb = hitObj.hitboxes[0];
+          }
+          else{
+            me.lockOnEn = null;
+            me.lockOnHb = null;
+          }
+        }
+      }
+    }
     for(let i = 0; i < chunk.ens.length; i++){
         enL.push(chunk.ens[i]);
     }
@@ -673,6 +830,7 @@ function runChunk(chunk,world){
             if(o.z <= 0){
                 o.z = 0;
                 o.vz = 0;
+                playerHitGround(o);
                 o.grounded = true;
             }
             o.vz -= 0.04;
@@ -707,6 +865,7 @@ function runChunk(chunk,world){
             if(o.z < 0){
                 o.z = 0;
                 o.vz = 0;
+                playerHitGround(o);
                 o.grounded = true;
             }
 
@@ -729,15 +888,16 @@ function runChunk(chunk,world){
 
             //SELECTION
             let outline = null;
-            let hit = false;
-            switch(o.origin){
+            //let hit = false;
+            /*switch(o.origin){
                 case "bm":
                     if(mx >= o.x-img.w/2 && mx <= o.x+img.w/2 && my >= o.y-img.h && my <= o.y) hit = true;
                     break;
                 default:
                     if(mx >= o.x-img.w/2 && mx <= o.x+img.w/2 && my >= o.y-img.h/2 && my <= o.y+img.h/2) hit = true;
             }
-            if(hit) outline = white;
+            if(hit) outline = white;*/
+            if(hitObj == o) outline = white;
 
             if(o.origin == "bm") nob.drawImage_basic_tint2_dep(img,en.x-img.w/2,en.y-img.h-en.z,en.tint,en.tint2,en.y+(en.z)*nob.height,2,outline);
             else nob.drawImage_basic_tint2_dep(img,en.x-Math.floor(img.w/2),en.y-Math.floor(img.h/2)-en.z,en.tint,en.tint2,en.y+(en.z)*nob.height,2,outline);
@@ -774,28 +934,28 @@ function runChunk(chunk,world){
 
         //SIDE CHUNKS
         if(o.x <= 1){
-            let chunk = createNewChunk(o.world,o.chunk.cx-1,o.chunk.cy);
+            let chunk = createNewChunk(o.world,o.chunk.cx-1,o.chunk.cy,false,true);
             if(chunk){
                 loadChunk(o,o.world,chunk.cx,chunk.cy);
                 o.x = nob.right-1;
             }
         }
         else if(o.x >= nob.right){
-            let chunk = createNewChunk(o.world,o.chunk.cx+1,o.chunk.cy);
+            let chunk = createNewChunk(o.world,o.chunk.cx+1,o.chunk.cy,false,true);
             if(chunk){
                 loadChunk(o,o.world,chunk.cx,chunk.cy);
                 o.x = 1
             }
         }
         if(o.y <= 4){
-            let chunk = createNewChunk(o.world,o.chunk.cx,o.chunk.cy-1);
+            let chunk = createNewChunk(o.world,o.chunk.cx,o.chunk.cy-1,false,true);
             if(chunk){
                 loadChunk(o,o.world,chunk.cx,chunk.cy);
                 o.y = nob.bottom+1;
             }
         }
         else if(o.y >= nob.bottom+3){
-            let chunk = createNewChunk(o.world,o.chunk.cx,o.chunk.cy+1);
+            let chunk = createNewChunk(o.world,o.chunk.cx,o.chunk.cy+1,false,true);
             if(chunk){
                 loadChunk(o,o.world,chunk.cx,chunk.cy);
                 o.y = 4;
@@ -815,6 +975,7 @@ function runChunk(chunk,world){
         if(o.z <= 0){
             o.z = 0;
             o.vz = 0;
+            playerHitGround(o);
             o.grounded = true;
             o.jumpZ = 0;
         }
@@ -945,9 +1106,9 @@ function runChunk(chunk,world){
             }
             //
 
-            if(mainW) if((mouseDown[2] && mainW.getType() == WeaponType.Pistol) || keys.q){ // && mainW.getType() == WeaponType.Pistol
+            if(mainW) if(keys.q){ // && mainW.getType() == WeaponType.Pistol
                 let range = 20;
-                let click = (mainW.getType == WeaponType.Pistol ? mouseOnce(0) : mouseOnce(2));
+                let click = (mainW.getType == WeaponType.Pistol ? mouseOnce(0) : mouseOnce(0));
                 let isMagic = (mainW.getType() != WeaponType.Pistol);
                 let amtHovered = 0;
                 let select = mouseDown[2];
@@ -983,14 +1144,14 @@ function runChunk(chunk,world){
                             let ind = o.locks.indexOf(hb);
                             if(mx2 >= xx-pad && mx2 < xx+8+pad && my2 >= yy-pad && my2 < yy+8+pad){
                                 if(click){
-                                    if(o.lockOnHb == hb){
+                                    /*if(o.lockOnHb == hb){
                                         o.lockOnHb = null;
                                         o.lockOnEn = null;
-                                    }
-                                    else{
+                                    }*/
+                                    //else{
                                         o.lockOnHb = hb;
                                         o.lockOnEn = en;
-                                    }
+                                    //}
                                 }
                                 if(select) if(ind == -1){
                                     o.locks.push(hb);
@@ -1165,7 +1326,7 @@ function runChunk(chunk,world){
 
             img = runAnimator(o);
             if(img){
-                nob.drawImage_basic_dep(img,o.x-Math.floor(img.w/2),o.y-o.z-img.h,false,o.y+(o.z+1)*nob.height,2);
+                nob.drawImage_basic_dep(img,o.x-Math.floor(img.w/2),o.y-o.z-img.h+1,false,o.y+(o.z+2)*nob.height,2);
                 o.img = img;
             }
         }
@@ -1319,4 +1480,175 @@ function runChunk(chunk,world){
 
     nob.camX = sCamX;
     nob.camY = sCamY;
+}
+function runChunkAfter(chunk,world,cx,cy){
+  //LIGHTS
+    if(!me.flashlightAlt) if(me.useFlashlight){
+        nob.drawCircle_other(lights,nob.width,4,me.x,me.y,20,white);
+        /*for(let j = 0; j < r; j++) for(let i = 0; i < r; i++){
+            let xx = x+i;
+            let yy = y+j;
+            let ind = (xx+yy*nob.width)*4;
+            /*nob.buf[ind] *= 4;
+            nob.buf[ind] += 40;
+            nob.buf[ind+1] *= 4;
+            nob.buf[ind+1] += 40;
+            nob.buf[ind+2] *= 4;
+            nob.buf[ind+2] += 40;*/
+            //lights[ind] = Math.floor((lights[ind]+255)/2);
+            //lights[ind+1] = Math.floor((lights[ind+1]+255)/2);
+            //lights[ind+2] = Math.floor((lights[ind+2]+255)/2);
+            //lights[ind+3] += 20;
+        //}*/
+    }
+
+    //WEATHER EFFECTS
+    let light = world.lightCast;
+    let cast = light;
+    let raining = world.isRaining;
+    //cast += me.world.rainCast;
+    for(let i = 0; i < nob.size; i += 4){
+        if(lights[i+3] != 0){
+            let isBlack = (!nob.buf[i] && !nob.buf[i+1] && !nob.buf[i+2]);
+
+            nob.buf[i] -= (cast>=10?(20*(cast-10)):0);
+            nob.buf[i] += (cast<=10?Math.sin(cast/10*Math.PI)*30:0);
+            nob.buf[i+1] -= (cast>=10?(20*(cast-10)):0);
+            nob.buf[i+2] += (cast>=20?(70/cast):0);
+
+            if(!isBlack){
+                nob.buf[i] += light*4;
+                nob.buf[i+1] += light*4;
+                nob.buf[i+2] += light*4;
+            }
+        }
+        else{
+            if(raining){ //raining
+                //nob.buf[i] -= 20*cast;
+                
+                //nob.buf[i] -= (cast>=10?(20*(cast-10)):0);
+                //nob.buf[i] += (cast<=10?Math.sin(cast/10*Math.PI)*30:0);
+                //nob.buf[i+1] -= (cast>=10?(20*(cast-10)):0);
+                
+                //nob.buf[i+1] -= 20*cast;
+                //nob.buf[i+2] += (cast>=1?(50/cast):50*cast); //50
+                /*if(cast <= 10){
+                    nob.buf[i+2] += (cast>=20?(70/cast):0)+me.world.rainCast*10;
+                    nob.buf[i] -= me.world.rainCast*5;
+                    nob.buf[i+1] -= me.world.rainCast*5;
+                }
+                else*/{
+                    nob.buf[i] -= world.rainCast*5;
+                    nob.buf[i+1] += world.rainCast;
+                    nob.buf[i+2] += world.rainCast*10;
+                }
+            }
+            { //else
+                nob.buf[i] -= (cast>=10?(20*(cast-10)):0);
+                nob.buf[i] += (cast<=10?Math.sin(cast/10*Math.PI)*30:0);
+                nob.buf[i+1] -= (cast>=10?(20*(cast-10)):0);
+                nob.buf[i+2] += (cast>=20?(70/cast):0);
+            }
+        }
+    }
+    if(world.isRaining){
+        //let chance = 1; //0.5 //0.3 good normal rain
+        let amt = world.rainAmt; //1
+        //let cast = 4; //20 scary //4 night //2 storm //1 normal rain
+        //if(Math.random() < chance){ //0.5
+            for(let j = 0; j < amt; j++) pBullets.push([Math.random()*nob.width,Math.random()*nob.height,nob.height+10,0,0,-2,gray,function(o){ //100 z
+                o[3] -= 0.005; //RAIN SKEW //0.01
+                let remove = false;
+                if(o[2] < 0) remove = true;
+                if(remove){
+                    removeBullet(pBullets,o);
+                    for(let i = -1; i <= 1; i += 2){
+                        let sz = o[2];
+                        pBullets.push([o[0],o[1],sz,(Math.random()-0.5)/3,(Math.random()-0.5)/3,0.8,lightgray,function(o){ //4 //1 //way?(i/6):0,!way?(i/6):0
+                            o[5] -= 0.1;
+                            if(o[2] < o[8].sz) removeBullet(pBullets,o);
+                        },{sz}]);
+                    }
+                }
+            }]);
+        //}
+    }
+    if(world.isRaining) if((frames-world.lastRainTime) % 1000 == 0) if(Math.random() < 0.5) world.rainAmt = Math.floor(Math.random()*4)+1;
+    if(frames-world.lastRainTime > (!world.isRaining?3000:6000)) if(frames%60 == 0) if(Math.random() < 0.1){
+        if(!world.isRaining){
+            startRain(world);
+            if(Math.random() < 0.3) world.rainAmt = Math.floor(Math.random()*4)+1;
+            else world.rainAmt = 1;
+        }
+        else stopRain(world);
+        world.lastRainTime = frames;
+    }
+
+    //LIGHTS
+    {
+        let x = 30;
+        let y = 30;
+        let r = 20;
+        if(false) for(let j = 0; j < r; j++) for(let i = 0; i < r; i++){
+            let xx = x+i;
+            let yy = y+j;
+            let ind = (xx+yy*nob.width)*4;
+            nob.buf[ind] *= 4;
+            nob.buf[ind] += 40;
+            nob.buf[ind+1] *= 4;
+            nob.buf[ind+1] += 40;
+            nob.buf[ind+2] *= 4;
+            nob.buf[ind+2] += 40;
+            //lights[ind] = Math.floor((lights[ind]+255)/2);
+            //lights[ind+1] = Math.floor((lights[ind+1]+255)/2);
+            //lights[ind+2] = Math.floor((lights[ind+2]+255)/2);
+            //lights[ind+3] += 20;
+        }
+    }
+    if(me.flashlightAlt) if(me.useFlashlight){
+      let x = me.x;
+      let y = me.y;
+      let z = me.z;
+      let rad = 20;
+      /*nob.drawCircle_custom(x,y,rad,white,
+      function(n,x,y,ind,x1,y1,r,col,l,arg){
+        let dx = x-x1;
+        let dy = y-y1;
+        let dist = Math.sqrt(dx*dx+dy*dy);
+        let ang = Math.atan2(dy,dx);
+        let f = frames;
+        let r2 = 0;
+        if(dist == 0) r2 = dist+(((Math.sin(f/50)*rad+rad)));
+        else r2 = dist+(((Math.sin(f/50)*rad+rad)/dist)); //zoom
+
+        let tx = Math.floor(Math.cos(ang)*r2+x1);
+        let ty = Math.floor(Math.sin(ang)*r2+y1);
+        let i2 = (tx+ty*n.width)*4;
+        let dd = (rad*3)-dist*3;//(dist*2/40);
+        n.setPixel(x-x1+r,y-y1+r,[n.buf[i2]+dd,n.buf[i2+1]+dd,n.buf[i2+2]+dd,255]);
+      });*/ //MINIMAP
+      let n2 = registerNob(null,rad*2,rad*2).nob;
+      nob.drawCircle_custom(x,y-z,rad,white,
+      function(n,x,y,ind,x1,y1,r,col,l,arg){
+        let dx = x-x1;
+        let dy = y-y1;
+        let dist = Math.sqrt(dx*dx+dy*dy);
+        let dd = (rad*3)-dist*3;
+        n2.setPixel(x-x1+r,y-y1+r,[n.buf[ind]+dd,n.buf[ind+1]+dd,n.buf[ind+2]+dd,255]);
+      });
+      nob.drawImage_basic(fromNob(n2),x-rad,y-rad-z);
+    }
+
+    //FIREFLIES
+    for(let i = 0; i < fireflies.length; i++){
+      let o = fireflies[i];
+      runBullet(o,fireflies);
+      if(o[4] == null) i--;
+    }
+}
+
+function playerHitGround(o){
+  if(o.hp == null) return;
+  if(o.z != o.jumpZ) return;
+  if(!o.grounded) particleSims.splash(o.x,o.y,o.z,(Math.random()-0.5),(Math.random()-0.5),0.5,black,8);
 }

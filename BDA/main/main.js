@@ -216,11 +216,16 @@ function runEffect(o){
 }
 
 function createEnemy(en,x,y,z,data,world,cx,cy){
-    if(!world) world = mainWorld;
-    if(cx == null) cx = 0;
-    if(cy == null) cy = 0;
+    if(!world){
+      world = me.world;
+    }
+    let chunk;
+    //if(cx == null) cx = me.chunk.cx;
+    //if(cy == null) cy = me.chunk.cy;
+    if(cx == null) chunk = me.chunk;
+    else chunk = world[cx+","+cy];
     let d = {
-        world,cx,cy,chunk:world[cx+","+cy],
+        world,cx,cy,chunk,
         x,y,z,
         vx:0,vy:0,vz:0,
         visible:true,
@@ -267,7 +272,7 @@ function createEnemy(en,x,y,z,data,world,cx,cy){
         d[c] = data[c];
     });
     d.hitboxes = deepClone(d.hitboxes);
-    ens.push(d);
+    chunk.ens.push(d);
     if(d.init) d.init();
     return d;
 }
@@ -388,8 +393,8 @@ function update(){
         }
     }
 
-    runChunk(me.chunk,me.world);
-    //if(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy]) runChunk(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy],me.world);
+    runChunk(me.chunk,me.world,0,0);
+    //if(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy]) runChunk(me.world.chunks[me.chunk.cx-1+","+me.chunk.cy],me.world,-1,0);
 
     setCamPos(me.x-nob.centerX,me.y-nob.centerY,me.z);
 
@@ -397,128 +402,27 @@ function update(){
 
     runTime(me.world);
 
-    //LIGHTS
-    if(me.useFlashlight){
-        nob.drawCircle_other(lights,nob.width,4,me.x,me.y,20,white);
-        /*for(let j = 0; j < r; j++) for(let i = 0; i < r; i++){
-            let xx = x+i;
-            let yy = y+j;
-            let ind = (xx+yy*nob.width)*4;
-            /*nob.buf[ind] *= 4;
-            nob.buf[ind] += 40;
-            nob.buf[ind+1] *= 4;
-            nob.buf[ind+1] += 40;
-            nob.buf[ind+2] *= 4;
-            nob.buf[ind+2] += 40;*/
-            //lights[ind] = Math.floor((lights[ind]+255)/2);
-            //lights[ind+1] = Math.floor((lights[ind+1]+255)/2);
-            //lights[ind+2] = Math.floor((lights[ind+2]+255)/2);
-            //lights[ind+3] += 20;
-        //}*/
+    runChunkAfter(me.chunk,me.world,0,0);
+
+    
+
+    /////////VIEWS
+
+    if(me.view == 1){
+      /*let n2 = registerNob(null,nob.width,nob.height).nob;
+      for(let i = 0; i < nob.size; i += 4){
+        n2.buf[i] = nob.buf[i];
+        n2.buf[i+1] = nob.buf[i+1];
+        n2.buf[i+2] = nob.buf[i+2];
+        n2.buf[i+3] = nob.buf[i+3];
+      }
+      nob.buf = new Uint8ClampedArray(nob.size);
+      nob.drawImage_basic(fromNob(n2),-me.x+nob.centerX,-me.y+nob.centerY);*/
+      can.style.marginLeft = ((-me.x+nob.centerX)*(can.offsetWidth/can.width))+"px";
+      can.style.marginTop = ((-me.y+nob.centerY)*(can.offsetHeight/can.height))+"px";
     }
 
-    //WEATHER EFFECTS
-    let light = me.world.lightCast;
-    let cast = light;
-    let raining = me.world.isRaining;
-    //cast += me.world.rainCast;
-    for(let i = 0; i < nob.size; i += 4){
-        if(lights[i+3] != 0){
-            let isBlack = (!nob.buf[i] && !nob.buf[i+1] && !nob.buf[i+2]);
-
-            nob.buf[i] -= (cast>=10?(20*(cast-10)):0);
-            nob.buf[i] += (cast<=10?Math.sin(cast/10*Math.PI)*30:0);
-            nob.buf[i+1] -= (cast>=10?(20*(cast-10)):0);
-            nob.buf[i+2] += (cast>=20?(70/cast):0);
-
-            if(!isBlack){
-                nob.buf[i] += light*4;
-                nob.buf[i+1] += light*4;
-                nob.buf[i+2] += light*4;
-            }
-        }
-        else{
-            if(raining){ //raining
-                //nob.buf[i] -= 20*cast;
-                
-                //nob.buf[i] -= (cast>=10?(20*(cast-10)):0);
-                //nob.buf[i] += (cast<=10?Math.sin(cast/10*Math.PI)*30:0);
-                //nob.buf[i+1] -= (cast>=10?(20*(cast-10)):0);
-                
-                //nob.buf[i+1] -= 20*cast;
-                //nob.buf[i+2] += (cast>=1?(50/cast):50*cast); //50
-                /*if(cast <= 10){
-                    nob.buf[i+2] += (cast>=20?(70/cast):0)+me.world.rainCast*10;
-                    nob.buf[i] -= me.world.rainCast*5;
-                    nob.buf[i+1] -= me.world.rainCast*5;
-                }
-                else*/{
-                    nob.buf[i] -= me.world.rainCast*5;
-                    nob.buf[i+1] += me.world.rainCast;
-                    nob.buf[i+2] += me.world.rainCast*10;
-                }
-            }
-            { //else
-                nob.buf[i] -= (cast>=10?(20*(cast-10)):0);
-                nob.buf[i] += (cast<=10?Math.sin(cast/10*Math.PI)*30:0);
-                nob.buf[i+1] -= (cast>=10?(20*(cast-10)):0);
-                nob.buf[i+2] += (cast>=20?(70/cast):0);
-            }
-        }
-    }
-    if(me.world.isRaining){
-        let chance = 1; //0.5 //0.3 good normal rain
-        let amt = me.world.rainAmt; //1
-        //let cast = 4; //20 scary //4 night //2 storm //1 normal rain
-        if(Math.random() < chance){ //0.5
-            for(let j = 0; j < amt; j++) pBullets.push([Math.random()*nob.width,Math.random()*nob.height,nob.height+10,0,0,-2,gray,function(o){ //100 z
-                o[3] -= 0.01;
-                let remove = false;
-                if(o[2] < 0) remove = true;
-                if(remove){
-                    removeBullet(pBullets,o);
-                    for(let i = -1; i <= 1; i += 2){
-                        let sz = o[2];
-                        pBullets.push([o[0],o[1],sz,(Math.random()-0.5)/3,(Math.random()-0.5)/3,0.8,lightgray,function(o){ //4 //1 //way?(i/6):0,!way?(i/6):0
-                            o[5] -= 0.1;
-                            if(o[2] < o[8].sz) removeBullet(pBullets,o);
-                        },{sz}]);
-                    }
-                }
-            }]);
-        }
-    }
-    if(frames-me.world.lastRainTime > (!me.world.isRaining?1000:3000)) if(frames%60 == 0) if(Math.random() < 0.1){
-        if(!me.world.isRaining){
-            startRain(me.world);
-            if(Math.random() < 0.3) me.world.rainAmt = Math.floor(Math.random()*4)+1;
-            else me.world.rainAmt = 1;
-        }
-        else stopRain(me.world);
-        me.world.lastRainTime = frames;
-    }
-
-    //LIGHTS
-    {
-        let x = 30;
-        let y = 30;
-        let r = 20;
-        if(false) for(let j = 0; j < r; j++) for(let i = 0; i < r; i++){
-            let xx = x+i;
-            let yy = y+j;
-            let ind = (xx+yy*nob.width)*4;
-            nob.buf[ind] *= 4;
-            nob.buf[ind] += 40;
-            nob.buf[ind+1] *= 4;
-            nob.buf[ind+1] += 40;
-            nob.buf[ind+2] *= 4;
-            nob.buf[ind+2] += 40;
-            //lights[ind] = Math.floor((lights[ind]+255)/2);
-            //lights[ind+1] = Math.floor((lights[ind+1]+255)/2);
-            //lights[ind+2] = Math.floor((lights[ind+2]+255)/2);
-            //lights[ind+3] += 20;
-        }
-    }
+    /////////
 
     //mask: //nob.drawRect_dep(0,0,nob.width,nob.height,me.world.bgCol,0);
 
@@ -634,11 +538,11 @@ function runBullet(o,p){
             if(o[8]) if(o[8].noShadow) renderShadow = false;
             if(renderShadow) if(o[2] > 0) nob.drawCircle(o[0],o[1],2,black); 
             if(Math.floor(o[2]) < 0) removeBullet(p,o,true);
-            else nob.drawImage_basic(o[6],o[0]-Math.floor(o[6].w/2),o[1]-o[2]-Math.floor(o[6].h/2));
+            else nob.drawImage_basic_dep(o[6],o[0]-Math.floor(o[6].w/2),o[1]-o[2]-Math.floor(o[6].h/2),o[1]+o[2]*nob.height,1);
         }
         else{
             //nob.setPixel(o[0],o[1],black);
-            nob.setPixel(o[0],o[1]-o[2],o[6]);
+            nob.setPixel_dep(o[0],o[1]-o[2],o[6],o[1]+(o[2])*nob.height);
         }
     }
 
@@ -651,6 +555,10 @@ function runBullet(o,p){
         else if(o[1] < -20) removeBullet(p,o);
         else if(o[0] >= nob.width+20) removeBullet(p,o);
         else if(o[1] >= nob.height+20) removeBullet(p,o);
+    }
+
+    if(o[8]) if(o[8].groundColl){
+      if(Math.floor(o[2]) < 0) removeBullet(p,o,true);
     }
 
     //coll collision
@@ -1520,13 +1428,14 @@ let villageObj = {
         nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-img.h,false,this.y-img.h+(25*nob.height),1);
 
         //chimney smoke
-        if(Math.random() < 0.1){
+        particleSims.smoke(this.x-9+(Math.random()*3),this.y-16,this.z+22,-0.01,0.02,0.1);
+        /*if(Math.random() < 0.1){
             let f = null;
             let img = black;
             let e = null;
             let vz = 0.2;
             pBullets.push([this.x-9+(Math.random()*3),this.y-16,this.z+22,-0.05,-0.05,vz,img,f,e]);
-        }
+        }*/
 
         //water on roof
         if(me.world.isRaining){
@@ -1566,7 +1475,7 @@ let villageObj = {
                         removeBullet(pBullets,o);
                     }
 
-                    nob.setPixel(o[0],o[1]-o[2],col);
+                    nob.setPixel_dep(o[0],o[1]-o[2],col,o[1]+(26)*nob.height);
                 },{
                     lx:sx+offx,
                     ly:yy,
@@ -1617,8 +1526,8 @@ let villageObj = {
         
         //barrels
 
-        worldObjs.large_barrel(x-15,y-4,0,colors.water);
-        worldObjs.large_barrel(x-15,y-9,0,colors.water);
+        worldObjs.medium_barrel(x-15,y-4,0,colors.water);
+        worldObjs.medium_barrel(x-15,y-9,0,colors.water);
         //createObj(env.towns.medium_barrel,x-15,y-4,0,2,false,null,colors.water);
         //createObj(env.towns.medium_barrel,x-15,y-9,0,2,false,null,colors.water);
     }
@@ -1637,20 +1546,6 @@ worldObjs.rock(nob.centerX-30,nob.centerY-20,0);
 worldObjs.rock(nob.centerX-25,nob.centerY-23,0);
 worldObjs.rock(nob.centerX-32,nob.centerY-26,0);
 worldObjs.rock(nob.centerX-35,nob.centerY-18,0);
-
-//Animals Test
-for(let i = 0; i < 20; i++){
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let l = getNonPassivesInRange(x,y,0,15);
-    if(l.length == 0) createEnemy(ENEMIES.animals.cow,x,y,0);
-}
-for(let i = 0; i < 20; i++){
-    let x = Math.floor(Math.random()*nob.width);
-    let y = Math.floor(Math.random()*nob.height);
-    let l = getNonPassivesInRange(x,y,0,15);
-    if(l.length == 0) createEnemy(ENEMIES.animals.pig,x,y,0);
-}
 
 //worldObjs.tree1(nob.centerX-50,nob.centerY-20,0);
 //worldObjs.tree1(nob.centerX-60,nob.centerY-40,0);
@@ -1706,6 +1601,17 @@ subAnim(9999999,(i,t)=>{
     d.ly = ty;
 });*/
 
-createParticleAnim(tt.enemies.wolf.walk,30,30,0,false,0);
+//ICONIC WOLF:
+//createParticleAnim(tt.enemies.wolf.walk,30,30,0,false,0);
 
 update();
+
+window.addEventListener("resize",e=>{
+  document.getElementById("guide").height = (can.offsetHeight-3)+"px";
+});
+document.getElementById("guide").height = (can.offsetHeight-3)+"px";
+const b_guide = document.getElementById("guide");
+function toggleGuide(){
+  if(b_guide.style.visibility == "hidden" || b_guide.style.visibility == "") b_guide.style.visibility = "visible";
+  else b_guide.style.visibility = "hidden";
+}

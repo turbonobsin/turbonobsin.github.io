@@ -87,7 +87,7 @@ players.push({
     ep:60,
     maxEp:60,
     epGenCooldown:0,
-    classId:CLASSES.Swordman,
+    classId:CLASSES.Mage,
     atkI:2,
     atkLast:-999,
     robeCol:[0,0,0,255],
@@ -180,9 +180,12 @@ players.push({
         recipeSel:0,
         amt:1
     },
-    useFlashlight:false
+    useFlashlight:false,
+    flashlightAlt:false,
+    view:0
 });
 var me = players[0];
+changeClass(me,CLASSES.Mage);
 //loadChunk(me,mainWorld,0,0);
 me.inv.weapons.push(createItem(items.katana.dull));
 me.inv.weapons.push(createItem(items.katana.steel));
@@ -353,7 +356,7 @@ function changeClass(o,classRef){
         case CLASSES.Gunman:
             o.targZ = 0;
             o.gunCooldown = 0;
-            o.gunMaxCooldown = 10;
+            o.gunMaxCooldown = 30;
             break;
     }
     o.isAttacking = false;
@@ -1404,10 +1407,10 @@ let craftingCatList = [
             {
                 name:"CAMPFIRE",
                 info:"CAN BE USED TO COOK MEAT OR SOUPS, OR PRODUCE LIGHT n n RELATED: COOKING STAND",
-                reqMat:[items.materials.stick],
-                reqAmt:[0],
                 //reqMat:[items.materials.stick],
-                //reqAmt:[3],
+                //reqAmt:[0],
+                reqMat:[items.materials.stick],
+                reqAmt:[3],
                 build:function(x,y,z){
                   worldObjs.campfire(x,y,z,true);
                 }
@@ -1415,30 +1418,30 @@ let craftingCatList = [
             {
               name:"COOKING STAND",
               info:"RELATED: CAMPFIRE",
-              reqMat:[items.materials.stick],
-              reqAmt:[0],
-              //reqMat:[items.materials.wood,items.materials.stick],
-              //reqAmt:[2,2],
+              //reqMat:[items.materials.stick],
+              //reqAmt:[0],
+              reqMat:[items.materials.wood,items.materials.stick],
+              reqAmt:[2,2],
               build:function(x,y,z){
                 worldObjs.cooking_stand(x,y,z);
               },
               dependentBy:["campfire"]
             },
             {
-                name:"BARREL",
-                info:"LARGE STORAGE FOR ONE ITEM, WHETHER IT'S WATER, SEEDS, OR FOOD",
-                reqMat:[items.materials.wheat],
-                reqAmt:[10],
+                name:"MEDIUM BARREL",
+                info:"LARGE STORAGE FOR ONE THING, WHETHER IT'S WATER, SEEDS, OR FOOD. HAS A SPOUT TO HOOK UP TO A DITCH FOR IRRIGATION",
+                reqMat:[items.materials.wood,items.materials.stick],
+                reqAmt:[10,4],
                 build:function(x,y,z){
-                    worldObjs.large_barrel(x,y,z,white);
+                    worldObjs.medium_barrel(x,y,z,white,1,0);
                 }
             },
-            {
+            /*{
                 name:"LARGE BARREL",
                 info:"VERY LARGE STORAGE FOR ONE ITEM, WHETHER IT'S WATER, SEEDS, OR FOOD. HAS A SPOUT TO HOOK UP TO A DITCH FOR IRRIGATION",
                 reqMat:[items.materials.wheat],
                 reqAmt:[50]
-            }
+            }*/
         ]
     },
     {
@@ -1486,7 +1489,7 @@ var mx = 0;
 var my = 0;
 document.addEventListener("mousemove",e=>{
     mxb = e.x/can.offsetWidth*nob.width;//+nob.camX;
-    myb = e.y/can.offsetHeight*nob.height;//-nob.camY+nob.camZ;
+    myb = (e.y+window.scrollY)/can.offsetHeight*nob.height;//-nob.camY+nob.camZ;
 });
 document.addEventListener("mouseup",e=>{
     if(regInputData) if(!regInputData.click){
@@ -1567,7 +1570,7 @@ function rareDrop(){
     let n = registerNob(null,35,7).nob;
     subAnim(120,function(i,t){
         n.drawRect(0,0,35,7,black);
-        n.drawText("RARE DROP",19,2,lightgray,black);
+        n.drawText("RARE ITEM",19,2,lightgray,black);
         let x3 = Math.floor(x2);
         n.drawLine_smart(0,6,x3,6,red,1);
         

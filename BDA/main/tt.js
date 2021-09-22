@@ -131,6 +131,8 @@ var tt = {
         survival:{
             campfire:tl.load("objs/campfire.png"),
             rock:tl.load("objs/rock.png"),
+            rock2:tl.load("objs/rock2.png"),
+            med_rock:tl.load("objs/med_rock.png"),
             cooking_stand:tl.load("objs/cooking_stand.png")
         }
     }
@@ -720,7 +722,7 @@ var ENEMIES = {
         type:"gollum",
         origin:"bm",
         hp:50,
-        hitboxes:[[-5,-7,5,0,0,5,"body"],[-3,-4,3,0,6,10,"head",20]],
+        hitboxes:[[-5,-7,5,0,0,4,"body"],[-3,-4,3,0,4,10,"head",5]],
         gray:convert("gray"),
         img:cloneWhenLoaded(tt.gollum.main),
         viewRad:100,
@@ -1143,6 +1145,8 @@ var ENEMIES = {
         startActionI:0,
         startActionT:0,
         rotDir:1,
+        weakElements:[0],
+        weakMultis:[2],
         ai:function(){
             if(this.startActionT != 0){
                 this.startActionI++;
@@ -1470,13 +1474,59 @@ const worldObjs = {
         sobjs.push(d);
     },
     rock:function(x,y,z){
+      let id = 0;
+      if(Math.random() < 0.1) id = 1;
+      let d = {
+        gId:"rock",
+        x,y,z,
+        vhb:[-1,-3,1,0],
+        hp:2,
+        img:tt.objs.survival.rock,
+        update:function(){
+            let img = this.img;
+            nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-img.h,true,this.y+(this.z)*nob.height,2);
+        },
+        getDrops:function(o){
+            return [createItem(items.materials.small_rock,1)];
+        },
+        onHit:function(o,dx,dy,ang,amt=1){
+            for(let i = 0; i < amt; i++){
+                pBullets.push([this.x,this.y,this.z,(Math.random()-0.5+dx)/4,(Math.random()-0.5+dy)/4,0.5,black,function(o){
+                    o[5] -= 0.05;
+                    if(o[2] < 0){
+                        subAnim(50+Math.floor(Math.random()*20),function(i,t){
+                            nob.setPixel_dep(o[0],o[1]-o[2],black,0);
+                        });
+                        removeBullet(pBullets,o);
+                    }
+                }]);
+            }
+        },
+        onDestroy:function(o,dx,dy,ang){
+            this.onHit(o,dx,dy,ang,4);
+        }
+      };
+      switch(id){
+        case 1:
+        d.hp = 4;
+        d.img = tt.objs.survival.med_rock;
+        d.getDrops = function(o){
+          return [createItem(items.materials.small_rock,3)];
+        };
+        break;
+      }
+      sobjs.push(d);
+      return d;
+    },
+    rock_og:function(x,y,z){
         let d = {
             gId:"rock",
             x,y,z,
             vhb:[-1,-3,1,0],
             hp:2,
+            img:(Math.random()<0.5?tt.objs.survival.rock:tt.objs.survival.rock2),
             update:function(){
-                let img = tt.objs.survival.rock;
+                let img = this.img;
                 nob.drawImage_basic_dep(img,this.x-img.w/2,this.y-img.h,true,this.y+(this.z)*nob.height,2);
             },
             getDrops:function(o){
@@ -1501,9 +1551,9 @@ const worldObjs = {
         };
         sobjs.push(d);
     },
-    large_barrel:function(x,y,z,col,fluid=1,cap=4){
+    medium_barrel:function(x,y,z,col,fluid=1,cap=4){
         let d = {
-            gId:"large_barrel",
+            gId:"medium_barrel",
             x,y,z,
             col,
             vhb:[-3,-3,3,3], //view hitbox
@@ -1526,6 +1576,8 @@ const worldObjs = {
                     this.col = white;
                     col2 = white;
                 }
+                if(!this.col) this.col = colors.hole;
+                if(!col2) col2 = colors.hole;
                 let img = env.towns.medium_barrel;
                 nob.drawImage_basic_replace2_dep(img,this.x-img.w/2,this.y-this.z-img.h,replaceCol,col2,replaceCol2,this.col,this.y+(this.z)*nob.height,2);
             },
@@ -1677,9 +1729,10 @@ const worldObjs = {
                     this.break = false;
                     this.breaking = false;
                     this.done = true;
-                    console.log(this.breakObjs.length);
-                    console.log(sobjs.length-amt);
-                    console.log(this.branchCnt,this.pushCnt,this.pushCnt2);
+                    this.destroy = null;
+                    //console.log(this.breakObjs.length);
+                    //console.log(sobjs.length-amt);
+                    //console.log(this.branchCnt,this.pushCnt,this.pushCnt2);
                 }
                 if(this.done){
                     if(this.a > 0){
@@ -1754,8 +1807,32 @@ const worldObjs = {
                     
                     if(true) if(this.w < 1){
                         let ww = this.w*6+3; //6+4 //2+4
-                        nob.drawCircle(tx,y-tz,ww+1,black);
-                        nob.drawCircle(tx,y-tz,ww,colors.darkPlant);
+                        let dep = Math.floor(this.y+tz*nob.height);
+                        nob.drawCircle(tx,y-tz,ww+1,black,dep,2);
+                        nob.drawCircle(tx,y-tz,ww,colors.darkPlant,dep+nob.height,2);
+                        if(Math.random() < 0.0001){
+                          pBullets.push([tx,y+(Math.random()-0.5)*6,tz,(Math.random()-0.5)*0.05,0,-0.05,false,function(o){
+                            let dep = o[1]+o[2]*nob.height;
+                            nob.setPixel_dep(o[0],o[1]-o[2],colors.darkPlant,dep);
+                            nob.setPixel_dep(o[0]-1,o[1]-o[2],black,dep);
+                            nob.setPixel_dep(o[0]+1,o[1]-o[2],black,dep);
+                            nob.setPixel_dep(o[0],o[1]-o[2]-1,black,dep);
+                            nob.setPixel_dep(o[0],o[1]-o[2]+1,black,dep);
+
+                            //nob.setPixel_dep(o[0],o[1],black,o[1]);
+                          },{
+                            groundColl:true,
+                            onDeath:function(o){
+                              subAnim(50+Math.floor(Math.random()*20),function(i,t){
+                                  nob.setPixel_dep(o[0]-1,o[1],black,o[1]);
+                                  nob.setPixel_dep(o[0]+1,o[1],black,o[1]);
+                                  nob.setPixel_dep(o[0],o[1]-1,black,o[1]);
+                                  nob.setPixel_dep(o[0],o[1]+1,black,o[1]);
+                                  nob.setPixel_dep(o[0],o[1],colors.darkPlant,o[1]);
+                              });
+                            }
+                          }]);
+                        }
                         //nob.drawCircle(tx,y-tz,ww+1,black);
                         //nob.drawCircle(tx,y-tz,ww,tint(colors.plant,[0.8,0.8,0.8]));
                         //nob.drawCircle(tx,y-tz,ww-1,black);
@@ -1894,14 +1971,25 @@ const worldObjs = {
             x,y,z,
             h,
             c:(!col?[115,145,63,255]:[col[0],col[1],col[2],255]),
+            windShift:false,
             update:function(){
                 nob.setPixel_dep(this.x,this.y-this.z,black,this.y+(this.z)*nob.height);
+                let hh = Math.ceil(this.h/2);
+                let shift = 0;
+                //let windShift = false;
+                if(Math.random() < 0.002) this.windShift = !this.windShift;
+                //let f = frames%nob.width;
+                //let v = this.x+this.y;
+                //if(f >= v && f < v+60) windShift = true;
                 for(let i = 1; i < this.h; i++){
-                    nob.setPixel_dep(this.x,this.y-this.z-i,this.c,this.y+(this.z+i)*nob.height);
-                    nob.setPixel_dep(this.x-1,this.y-this.z-i,black,this.y+(this.z+i)*nob.height);
-                    nob.setPixel_dep(this.x+1,this.y-this.z-i,black,this.y+(this.z+i)*nob.height);
+                    if(i >= hh) if(this.windShift){
+                      shift = 1;
+                    }
+                    nob.setPixel_dep(this.x+shift,this.y-this.z-i,this.c,this.y+(this.z+i)*nob.height);
+                    nob.setPixel_dep(this.x-1+shift,this.y-this.z-i,black,this.y+(this.z+i)*nob.height);
+                    nob.setPixel_dep(this.x+1+shift,this.y-this.z-i,black,this.y+(this.z+i)*nob.height);
                 }
-                nob.setPixel_dep(this.x,this.y-this.z-this.h,black,this.y+(this.z+this.h)*nob.height);
+                nob.setPixel_dep(this.x+shift,this.y-this.z-this.h,black,this.y+(this.z+this.h)*nob.height);
             }
         };
         sobjs.push(d);
@@ -2000,6 +2088,22 @@ const particleSims = {
             }]);
         }
     },
+    spark:function(x,y,z,dx,dy,dz,col,amt){ //dz usually 0.5
+        for(let i = 0; i < amt; i++){
+            pBullets.push([x,y,z,(Math.random()-0.5+dx)/2,(Math.random()-0.5+dy)/2,dz,col,function(o){
+                o[5] -= 0.05;
+                o[6][0] *= 0.95;
+                o[6][1] *= 0.95;
+                o[6][2] *= 0.95;
+                if(o[2] < 0){
+                    subAnim(50+Math.floor(Math.random()*20),function(i,t){
+                        nob.setPixel_dep(o[0],o[1]-o[2],col,0);
+                    });
+                    removeBullet(pBullets,o);
+                }
+            }]);
+        }
+    },
     rain_spash:function(x,y,z){
         for(let i = -1; i <= 1; i += 2){
             let sz = z;
@@ -2008,6 +2112,28 @@ const particleSims = {
                 if(o[2] < o[8].sz) removeBullet(pBullets,o);
             },{sz}]);
         }
+    },
+    smoke:function(x,y,z,vx=-0.05,chance=0.01,vz=0.2){
+      let scale = 1; //0.8
+      let add = 50; //80
+      if(Math.random()<chance) pBullets.push([x+(Math.random()-0.5)*2,y-2-z,0,vx*Math.random()*3,-vz,0,false,function(o){
+          let rad = Math.ceil(o[8].r);
+          let a = o[8].a;
+          a -= 1;
+          subAnim(1,function(){
+              nob.drawCircle_custom(o[0],o[1],rad,white,
+                  function(n,x,y,ind,x1,y1,r,col,l,arg){
+                      let i2 = (x+y*n.width)*4;
+                      nob.setPixel(x,y,[n.buf[i2]*scale+add,n.buf[i2+1]*scale+add,n.buf[i2+2]*scale+add,255]);
+                  });
+          });
+          o[8].r *= 0.995;
+          if(o[8].r < 1 || o[2] > 60) removeBullet(pBullets,o);
+      },{
+          r:3,
+          a:255,
+          keepAlive:true
+      }]);
     }
 };
 

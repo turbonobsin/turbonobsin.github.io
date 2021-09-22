@@ -4,13 +4,19 @@
         <link rel="stylesheet" href="main.css">
     </head>
     <body>
-        <span id="pauseSpan">PAUSED</span>  
+        <span id="pauseSpan">PAUSED</span>
+        <iframe id="guide" src="guide/index.html" frameborder="0"></iframe>  
         <canvas id="can"></canvas>
         <canvas id="b_can"></canvas>
         <canvas id="can3"></canvas>
 
         <div id="cont">
-            <div class="cont2">Settings / Controls</div>
+            <div style="float:right;padding:2px" class="cont2"><button class="guideButton" onclick="toggleGuide()">Help / Guide</button><button onclick="document.getElementById('guide').src = 'guide/index.html'">Guide Home</button><br>
+            <span style="float:right;padding2px;margin:5px">Version: WEB_0.3.0 (9-22-21)</span>
+            </div>
+            <div class="cont2" style="display:inline-block">Settings / Controls</div>
+            <span class="cont2" style="display:inline-block" id="demo"></span>
+            <div class="cont2">Time: <input id="timeInp" oninput="setTime(this.value)" value="0" type="range" min="0" max="33000" step="1"> <span id="curTime">0</span></div>
             <div id="controlsDiv">
                 Control Info<br><br>
                 <span id="controlInfo"></span>
@@ -24,6 +30,12 @@
                 <button onclick="spawnDebug(ENEMIES.wolf,10)">10x</button><br>
                 <button onclick="debugRevive()" style="background-color:salmon">Revive / Reset Health</button>
                 <button onclick="me.useFlashlight = !me.useFlashlight">Toggle Flashlight</button>
+                <button onclick="DebugActions(3)">Toggle Rain</button>
+                <button onclick="DebugActions(2)">Remove Decor to Reduce Lag</button>
+                <button onclick="DebugActions(5)">Load Physics Playground</button><br>
+                <button onclick="DebugActions(0)">Debug: Add Health</button>
+                <button onclick="DebugActions(1)">Debug: Add Energy</button>
+                <button onclick="DebugActions(4)">Rare Item Animation</button>
             </div>
             <div id="classDiv">
                 <button onclick="changeClass(me,0)">Swordman</button>
@@ -34,7 +46,7 @@
                 <button onclick="changeClass(me,5)">Bugman</button>
             </div>
             <br><br>
-            <div style="margin-top:20px">
+            <div style="margin-top:210px">
             <div class="cont" id="useBgDiv">
                 Use Background?<input type="checkbox" onclick="useBackground = !useBackground" checked="true"><br><br>
                 Bg Color?<input type="color" oninput="can.style.backgroundColor = this.value">
@@ -48,9 +60,6 @@
             </div>
             </div>
         </div>
-
-        <br>
-        <p id="demo"></p>
 
         <script src="perlin.js"></script>
         <script src="NobsinEngine.js"></script>

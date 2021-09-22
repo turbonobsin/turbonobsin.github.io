@@ -57,10 +57,11 @@ button:active{
 }
 #controlsDiv{
     position:absolute;
-    margin-left:350px;
+    right:10px;
     padding:10px;
     background-color:black;
     width:fit-content;
+    max-width:40%;
 }
 #enDiv{
     position:absolute;
@@ -91,4 +92,19 @@ button:active{
 
 #can3{
     pointer-events:none;
+}
+
+#guide{
+  position:absolute;
+  top:0px;
+  z-index:1000;
+  width:50%;
+  left:25%;
+  visibility:hidden;
+  border-left:solid 2px black;
+  border-right:solid 2px black;
+}
+.guideButton{
+  background-color:wheat;
+  border:solid 2px goldenrod;
 }

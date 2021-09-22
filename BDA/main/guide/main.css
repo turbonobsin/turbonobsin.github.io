@@ -1,0 +1,39 @@
+body{
+  background-color:rgba(255, 250, 240, 0.904);
+  margin:15px;
+  backdrop-filter:blur(0px);
+}
+#back{
+  background-color:black;
+  color:white;
+  padding:3px;
+  float:right;
+}
+#back:hover{
+  background-color:lightgray;
+  color:black;
+}
+#back:active{
+  background-color:gray;
+}
+img{
+  width:12px;
+  image-rendering:pixelated;
+  padding:4px;
+  background-color:black;
+  margin-left:20px;
+  margin-top:-3px;
+  position:absolute;
+}
+.smallImg{
+  width:9px;
+  margin-top:1px;
+  position:unset;
+  float:right;
+}
+.spacedList{
+  line-height:25px; 
+}
+.spacedList > li{
+  width:80px;  
+}

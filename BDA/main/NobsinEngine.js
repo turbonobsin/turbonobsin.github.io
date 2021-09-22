@@ -593,6 +593,48 @@ class NobsinCtx{
       ind += (this.width*4-shiftX*4);
     }
   }
+  drawCircle_dep(x1,y1,r,col,dep=0,upright=0){
+    //if(Math.ceil(r) <= 0) return;
+    if(this.useCam){
+      x1 -= this.camX;
+      y1 -= this.camY;
+      y1 += this.camZ;
+    }
+    if(Math.floor(r) <= 1){
+      this.setPixel(x1,y1,col);
+      return;
+    }
+    r = Math.floor(r);
+    x1 = Math.floor(x1);
+    y1 = Math.floor(y1);
+    let x = x1-r;
+    let y = y1-r;
+    let ind = (x+y*this.width)*4;
+    let d = r+r;
+    for(let j = 0; j < d; j++){
+      let j2 = j-r;
+      let l;
+      if(r < 6) l = Math.floor(Math.abs(Math.sqrt(r*r-j2*j2)));
+      else l = Math.round(Math.abs(Math.sqrt(r*r-j2*j2)));
+      x += (r-l);
+      ind += (r-l)*4;
+      for(let i = r-l; i < r+l; i++){
+        let pass = true;
+        if(x < 0) pass = false;
+        else if(x >= this.width) pass = false;
+        if(pass){
+          let dd = (upright==2?(dep+(d-j)*this.height):upright?(dep+(d-j)):dep)
+          this.setData_dep(ind,col,dd);
+        }
+        x++;
+        ind += 4;
+      }
+      y++;
+      let shiftX = (l+l+(r-l));
+      x -= shiftX;
+      ind += (this.width*4-shiftX*4);
+    }
+  }
   drawCircle_ex(x1,y1,r,col){ //ex suffix for functions that use setpixel_ex
     if(Math.floor(r) <= 1){
       this.setPixel_ex((x1+y1*this.width)*4,col);
