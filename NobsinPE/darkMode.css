@@ -1,0 +1,198 @@
+:root{
+    --button-background:#0A0A0A;
+    --button-hover:#232323;
+    --button-active:#565656;
+
+    --background:#232323;
+    --foreground:#0A0A0A;
+
+    --menu-background:var(--foreground);
+    --menu-header-background:var(--background);
+
+    --text-color:white;
+    
+    --menubar-button-color:var(--foreground);
+    --menubar-button-hover:#565656;
+    --toolbar-color:var(--background);
+    --toolbar-text-color:#CDCDCD;
+
+    /*--ctx-color:var(--foreground);
+    --ctx-text-color:darkgray;
+    --ctx-item-border:gray;
+    --ctx-item-hover:var(--background);*/
+    --ctx-color:#7a5656;
+    --ctx-text-color:darkgray;
+    --ctx-item-border:gray;
+    --ctx-item-hover:#976f6f;
+
+    --ctx-item-disabled:#583c3c;
+    --ctx-text-disabled:gray;
+}
+
+body{
+    color-scheme:dark;
+    background-color:#232323;
+    --grid:url("images/grid_dark.png") !important;
+}
+/*.menuBar{
+    background-color:#232323;
+}
+.menuBar > div{
+    background-color:#0A0A0A;
+}
+.menuBar > div:hover{
+    background-color:#232323;
+}
+.vr{
+    background-color:#232323;
+}
+#toolBar{
+    filter:invert(0);
+    background-color:#232323;
+    color:darkgray;
+}
+#toolBar span{
+    color:#CDCDCD;
+}*/
+
+input{
+    background-color:#0A0A0A !important;
+}
+button{
+    background-color:#0A0A0A !important;
+}
+button:hover{
+    background-color:#232323 !important;
+}
+button:active{
+    background-color:#565656 !important;
+}
+
+.menuBar > div.material-icons{
+    color:#D0B0B0 !important;
+}
+
+/*.ctxList{*/
+    /*background-color:#7a5656;*/
+    /*background-color:#0A0A0A !important;*/
+/*}*/
+/*.ctxList > div{
+    color:darkgray;
+    border-color:gray;
+}
+.ctxList > div:hover{
+    background-color:#232323;
+}*/
+
+.cont{
+    background-color:rgba(20,20,20,0.7);
+}
+.cont .title{
+    color:lightgray;
+}
+
+#frameList > div{
+    background-color:#232323 !important;
+}
+
+#frameOptions > .material-icons{
+    background-color:#565656;
+    border-color:darkgray;
+}
+#frameOptions > .material-icons:nth-child(2){
+    color:white !important;
+}
+#frameOptions > .material-icons:nth-child(3){
+    color:white !important;
+}
+#frameOptions > .material-icons:nth-child(4){
+    color:cadetblue !important;
+}
+#frameOptions > .material-icons:nth-child(5){
+    color:orchid !important;
+}
+#frameOptions > .material-icons:nth-child(1)[style*="color: olivedrab"]{
+    color:limegreen !important;
+}
+
+#layerOptions > div{
+    background-color:#565656 !important;
+    color:white;
+    border-color:darkgray;
+}
+#layerList > div{
+    background-color:#232323;
+    color:white;
+}
+#layerList .dlayer:hover{
+    background-color:#565656;
+}
+#layerList > div.sel > .dset{
+    background-color:darkslategray !important;
+    color:white;
+}
+#layerList > div > .dset{
+    background-color:black;
+    color:gray;
+}
+
+#color div{
+    border-color:darkgray !important;
+}
+
+/*.menu{
+    background-color:#232323;
+    color:white;
+}
+.menuHeader{
+    background-color:#0A0A0A;
+}*/
+
+.d_keys > div > div{
+    background-color:#535353;
+}
+.d_keys > div > div.key_sel{
+    border-color:darkorchid;
+    background-color:darkorchid;
+}
+
+#histList > span{
+    background-color:black !important;
+    color:gray !important;
+    border-color:gray;
+}
+#histList > span.cur{
+    background-color:darkslategray !important;
+    color:lightgray !important;
+}
+#histList > span.after{
+    background-color:#535353 !important;
+    color:gray !important;
+}
+
+#statusBar{
+    background-color:darkslateblue;
+}
+
+#tools > div{
+    background-color:black;
+    color:darkgray;
+}
+#tools > div.sel{
+    background-color:green;
+}
+
+#nameDiv{
+    background-color:#232323;
+}
+#nameDiv > div{
+    background-color:#0A0A0A;
+}
+#nameDiv > div:hover{
+    background-color:#232323;
+}
+
+#fileName{
+    background-color:#535353;
+    color:darkgray;
+}
