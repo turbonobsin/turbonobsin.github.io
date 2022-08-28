@@ -10,7 +10,6 @@
   </head>
   <body>
     <div id="back"></div>
-		<div id="label">Test Label</div>
     <div id="messages"></div>
     <div id="ctxes"></div>
     <div class="menuBar">
@@ -24,8 +23,6 @@
       <div id="settings_b" class="material-icons" onclick="" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">settings</div>
       <div id="keybinds_b" class="material-icons" onclick="openMenu('keys')" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">keyboard</div>
       <div id="darkMode_b" class="material-icons" onclick="toggleContrastMode()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">wb_sunny</div>
-      <div class="ex" id="l_ver">...</div>
-      <div id="b_chan" class="ex material-icons" style="margin:0px;color:gray !important;padding:0px;margin-top:4px" name="info" info="Show Channelog">help</div>
 
       <div style="margin-left:auto" id="fileName" name="info" info="File Name: The current open file's name."></div>
       <span style="border-right:none" class="vr"></span>
@@ -47,15 +44,6 @@
       <div id="info_l" name="info" info="Info Box: Displays info of hovered parts of the editor.">No info.</div><div id="coordsStart_l" name="info" info="Start Coords: Displays the last position you clicked in pixels.">Start (0,0)</div><div id="coords_l" name="info" info="Cursor Coords: Displays the current cursor position in pixels.">Cursor (0,0)</div>
     </div>
     <div id="menus">
-      <div class="menu" id="menu_log">
-        <div class="menuHeader"><span class="menuTitle">Channelog</span><button class="closeWindow_b">X</button></div>
-        <div>
-          <div>ver.</div>
-          <div class="tabc">
-            <table></table>
-          </div>
-        </div>
-      </div>
       <div class="menu" id="menu_new">
         <div class="menuHeader"><span class="menuTitle">New File</span><button class="closeWindow_b">X</button></div>
         <p>Name:</p>
@@ -192,59 +180,37 @@
       <div alt="eyeDropper" name="info" info="
         Eye Dropper: Left click on pixel to reassign it to color 1 on the pallet and right click for color 2.
       "><div class="material-icons">colorize</div></div>
-      <div alt="eraser" name="info" info="
-        Eraser Tool:
-      "><div class="material-icons">backspace</div></div>
     </div>
     <div class="cont" id="hist">
       <span class="title" style="border-bottom:solid 1px darkgray">History</span>
       <div id="histList"></div>
     </div>
     <div class="cont" id="layers">
-      <div id="layerOptions">
-				<div>
-					<span class="material-icons" id="bi" onclick="moveLayer(img.curLayer.ind,img.curLayer.ind+1)">arrow_upward</span>
-				</div>
-				<div>
-					<span class="material-icons" id="bi" onclick="moveLayer(img.curLayer.ind,img.curLayer.ind-1)">arrow_downward</span>
-				</div>
-				<div>
-					<span class="material-icons" id="bi">add_box</span>
-				</div>
-				<div style="border-right:solid 1px black;margin-left:0px">
-					<span class="material-icons" id="bi" onclick="cloneLayer(img.curLayer.ind)">library_add</span>
-				</div>
-				</div>
-			<span class="title">Layer</span>
+      <div id="layerOptions"><div>
+        <span class="material-icons" id="bi" onclick="moveLayer(img.curLayer.ind,img.curLayer.ind+1)">arrow_upward</span>
+      </div><div>
+        <span class="material-icons" id="bi" onclick="moveLayer(img.curLayer.ind,img.curLayer.ind-1)">arrow_downward</span>
+      </div><div>+</div></div><span class="title">Layers</span>
       <div id="layerList"></div>
     </div>
     <div class="cont" id="frames">
       <span class="title">Frames</span>
       <div id="frameOptions">
-        <div style="padding-right:10px;margin-right:10px;border-right:solid 1px gray;display:flex;align-items:center">
-          <span name="info" pos="u" info="Hold [Shift] and click frames to highlight and de-highlight them" style="margin-right:5px;font-size:13px">(Selection?)</span>
-          <button name="info" pos="u" info="Clone Highlighted" style="height:100%" id="sel2_clone">Clone >></button>
-          <button name="info" pos="u" info="Clone Highlighted (Reversed)" style="height:100%" id="sel2_cloneR">Clone <<</button>
-        </div>
-        <div style="display:flex;align-items:center">
-          <span style="font-size:13px;margin-right:5px">Shelves:</span>
-          <input id="i_shelves" type="number" style="width:40px;margin-right:5px" value="1">
-        </div>
-        <!--<div class="icon-div">--><div class="material-icons onionSkin" onclick="" style="color:gray;margin-right:5px" name="info" info="
+        <!--<div class="icon-div">--><div class="material-icons" onclick="" style="color:gray" name="info" info="
           Onion Skinning: Displays a blue tinted previous frame and a green tinted next frame in the viewport.
-        " pos="u">join_inner</div>
-        <!--<div style="margin-right:0px;border-right:none" class="icon-div">--><div style="margin-right:0px;border-right:none" class="material-icons navLeft" onclick="" name="info" info="
+        ">join_inner</div>
+        <!--<div style="margin-right:0px;border-right:none" class="icon-div">--><div style="margin-right:0px;border-right:none" class="material-icons" onclick="" name="info" info="
           Frame Navigation Left: Navigates you to the previous frame.
-        " pos="u">chevron_left</div>
-        <!--<div class="icon-div">--><div class="material-icons navRight" style="margin-right:5px" onclick="" name="info" info="
+        ">chevron_left</div>
+        <!--<div class="icon-div">--><div class="material-icons" onclick="" name="info" info="
           Frame Navigation Right: Navigates you to the next frame.
-        " pos="u">chevron_right</div>
-        <!--<div style="margin-left:4px;border-right:none;margin-right:0px" class="icon-div">--><div style="border-right:none;margin-right:0px;color:darkslateblue" class="material-icons newFrame" onclick="" name="info" info="
+        ">chevron_right</div>
+        <!--<div style="margin-left:4px;border-right:none;margin-right:0px" class="icon-div">--><div style="margin-left:4px;border-right:none;margin-right:0px;color:darkslateblue" class="material-icons" onclick="" name="info" info="
           Add Frame: Adds an empty frame to the right of your current frame.
-        " pos="u">add_box</div>
-        <!--<div class="icon-div">--><div class="material-icons cloneFrame" onclick="" style="color:darkslategray" name="info" info="
+        ">add_box</div>
+        <!--<div class="icon-div">--><div class="material-icons" onclick="" style="color:darkslategray" name="info" info="
           Clone Frame: Clones the current frame and adds it to the right.
-        " pos="u">library_add</div>
+        ">library_add</div>
       </div>
       <div id="frameList">
         <!--<div>
@@ -255,99 +221,21 @@
         </div>-->
       </div>
     </div>
-    <div class="cont" id="preview">
-      <div class="title" style="display:flex;justify-content:space-between">
-        <div>Preview</div>
-        <div id="prev_play" class="material-icons" name="info" info="Pause/Play Previewer" kb="preview.togglePlay">play_arrow</div>
-      </div>
-      <canvas id="prevCan"></canvas>
-      <input type="range" id="prev_scale" style="width:85px" value="0">
-      <div style="display:flex">
-        <input type="range" id="prev_speed" style="width:85px" value="1" min="1" max="60" step="1">
-        <span style="width:20px">0</span>
-      </div>
-    </div>
     <div class="cont" id="color">
-      <span class="title" style="border-bottom:solid 1px darkgray;border-right:solid 1px darkgray;margin-top:-2px">Color</span>
+      <span class="title" style="border-bottom:solid 1px darkgray;width:fit-content;border-right:solid 1px darkgray;margin-top:-2px">Color</span>
       <div id="colorDiv">
         <div id="colorCur"></div>
         <canvas id="colorArea"></canvas>
         <div id="colBox"><div id="col1"><div></div></div><div id="col2"><div></div></div></div>
-        <div style="margin-left:4px;font-size:6px;width:75px"><button onclick="switchColorArea(0)" style="width:100%">Radial</button><br><button onclick="switchColorArea(1)" style="width:100%">Linear</button></div>
+        <div style="margin-left: 15px;font-size:6px"><button onclick="switchColorArea(0)">Radial</button><br><button onclick="switchColorArea(1)">Linear</button></div>
         <div id="sliders">
-            <div>
-              <div class="ccont"><div class="cur"></div><div class="back"></div></div>
-              <input class="slider_i" type="number" value="255">
-              <div class="slider_l" name="info1" info="Hue (HSL)">H</div>
-            </div>
-            <div>
-              <div class="ccont"><div class="cur"></div><div class="back"></div></div>
-              <input class="slider_i" type="number" value="255">
-              <div class="slider_l" name="info1" info="Saturation (HSL)">S</div>
-            </div>
-            <div>
-              <div class="ccont"><div class="cur"></div><div class="back"></div></div>
-              <input class="slider_i" type="number" value="255">
-              <div class="slider_l" name="info1" info="Lightness (HSL)">L</div>
-            </div>
-            <div>
-              <div class="ccont"><div class="cur"></div><div class="back"></div></div>
-              <input class="slider_i" type="number" value="255">
-              <div class="slider_l" name="info1" info="Red (RGB)">R</div>
-            </div>
-            <div>
-              <div class="ccont"><div class="cur"></div><div class="back"></div></div>
-              <input class="slider_i" type="number" value="255">
-              <div class="slider_l" name="info1" info="Green (RGB)">G</div>
-            </div>
-            <div>
-              <div class="ccont"><div class="cur"></div><div class="back"></div></div>
-              <input class="slider_i" type="number" value="255">
-              <div class="slider_l" name="info1" info="Blue (RGB)">B</div>
-            </div>
-            <div>
-              <div class="ccont"><div class="cur"></div><div class="back"></div></div>
-              <input class="slider_i" type="number" value="255">
-              <div class="slider_l" name="info1" info="Alpha / Opacity">A</div>
-          </div>
-        </div>
-        <div id="slider_hex">
-          <div>Hex 1</div>
-          <input id="hex0" class="hex" type="text">
-          <div style="margin-left:20px">Hex 2</div>
-          <input id="hex1" class="hex" type="text">
-        </div>
-        <div class="material-icons" id="b_swapCur" name="info" info="asd" pos="u" kb="color.swapCur">swap_horiz</div>
-        <div class="material-icons" id="b_swapPallet" name="info"  info="asd" pos="u" kb="color.swap">swap_horizontal_circle</div>
-        <div id="swatches" name="info" info="Color History">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-        <div id="sw2" name="info" info="Color Palette">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
+          <div><div class="cur"></div><div class="back"></div></div>
+          <div><div class="cur"></div><div class="back"></div></div>
+          <div><div class="cur"></div><div class="back"></div></div>
+          <div><div class="cur"></div><div class="back"></div></div>
+          <div><div class="cur"></div><div class="back"></div></div>
+          <div><div class="cur"></div><div class="back"></div></div>
+          <div><div class="cur"></div><div class="back"></div></div>
         </div>
       </div>
     </div>
@@ -356,12 +244,8 @@
       <canvas id="prev"></canvas>
       <div id="overlay"></div>
     </div>
-    <script src="util.js"></script>
     <script src="pre.js"></script>
-    <script src="conversions.js"></script>
-    <script src="NobsinEngine.js"></script>
-    <script src="script.js"></script>
-    <!-- <script src="debugger.js"></script> -->
+    <script src="debugger.js"></script>
     <!--<script src="conversions.js"></script>
     <script src="NobsinEngine.js"></script>
     <script src="script.js"></script>-->

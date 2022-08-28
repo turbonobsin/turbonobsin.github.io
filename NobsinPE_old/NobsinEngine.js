@@ -478,8 +478,7 @@
           if(x < 0) pass = false;
           else if(x >= this.width) pass = false;
           if(pass){
-            this.drawPixel_ind(ind,col[0],col[1],col[2],col[3]);
-            // this.drawPixel_ind(ind,col[0],col[1],col[2],col[3],true);
+            this.drawPixel_ind(ind,col[0],col[1],col[2],col[3],true);
             /*this.buf[ind] = col[0];
             this.buf[ind+1] = col[1];
             this.buf[ind+2] = col[2];
@@ -494,8 +493,6 @@
       }
     }
     drawRect_dep(x1,y1,wr,hr,col,dep=0,upright=false){
-      let replace = false;
-      if(col == clear) replace = true;
       if(this.useCam){
         x1 -= this.camX;
         y1 -= this.camY;
@@ -1610,7 +1607,6 @@
       }
     }
     drawLine_smart_dep(x0,y0,x1,y1,c,w,dep=0){
-      if(!this.dep) return;
       //posibly temp
       let hw = Math.floor(w/2); //half width
   
@@ -4416,5 +4412,3 @@
     };
     return d;
   }
-
-  var clear = [0,0,0,0];

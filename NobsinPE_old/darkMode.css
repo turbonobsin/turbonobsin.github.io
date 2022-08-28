@@ -10,7 +10,7 @@
     --menu-header-background:var(--background);
 
     --text-color:white;
-
+    
     --menubar-button-color:var(--foreground);
     --menubar-button-hover:#565656;
     --toolbar-color:var(--background);
@@ -27,16 +27,6 @@
 
     --ctx-item-disabled:#583c3c;
     --ctx-text-disabled:gray;
-
-    --tint:brightness(1.8);
-    --tintA:rgba(255,255,255,0.2);
-
-    --frameHeader:var(--background);
-    --frameHeaderSel:#ccc;
-    --frameColor:#666;
-    --frameColorSel:#222;
-    --darkHover:brightness(2);
-    --lightHover:brightness(1.5);
 }
 
 body{
@@ -101,23 +91,27 @@ button:active{
     color:lightgray;
 }
 
+#frameList > div{
+    background-color:#232323 !important;
+}
+
 #frameOptions > .material-icons{
     background-color:#565656;
     border-color:darkgray;
 }
-#frameOptions > .material-icons.navLeft{
+#frameOptions > .material-icons:nth-child(2){
     color:white !important;
 }
-#frameOptions > .material-icons.navRight{
+#frameOptions > .material-icons:nth-child(3){
     color:white !important;
 }
-#frameOptions > .material-icons.newFrame{
+#frameOptions > .material-icons:nth-child(4){
     color:cadetblue !important;
 }
-#frameOptions > .material-icons.cloneFrame{
+#frameOptions > .material-icons:nth-child(5){
     color:orchid !important;
 }
-#frameOptions > .material-icons.onionSkin[style*="color: olivedrab"]{
+#frameOptions > .material-icons:nth-child(1)[style*="color: olivedrab"]{
     color:limegreen !important;
 }
 

@@ -36,12 +36,10 @@
       this.checkColArr = [];
       //this.background = [128,128,128,255];
       this.background = [48,48,48,255];
-      //this.data = new ImageData(this.width,this.height);
     }
     ctx;
     buf;
     dep;
-    data;
     size;
     ssize;
     width;
@@ -478,8 +476,7 @@
           if(x < 0) pass = false;
           else if(x >= this.width) pass = false;
           if(pass){
-            this.drawPixel_ind(ind,col[0],col[1],col[2],col[3]);
-            // this.drawPixel_ind(ind,col[0],col[1],col[2],col[3],true);
+            this.drawPixel_ind(ind,col[0],col[1],col[2],col[3],true);
             /*this.buf[ind] = col[0];
             this.buf[ind+1] = col[1];
             this.buf[ind+2] = col[2];
@@ -494,8 +491,6 @@
       }
     }
     drawRect_dep(x1,y1,wr,hr,col,dep=0,upright=false){
-      let replace = false;
-      if(col == clear) replace = true;
       if(this.useCam){
         x1 -= this.camX;
         y1 -= this.camY;
@@ -1610,7 +1605,6 @@
       }
     }
     drawLine_smart_dep(x0,y0,x1,y1,c,w,dep=0){
-      if(!this.dep) return;
       //posibly temp
       let hw = Math.floor(w/2); //half width
   
@@ -2173,34 +2167,6 @@
       }
       this.pixelCount++;
     }
-    drawImage_basic_skip(data,x=0,y=0,skip=1){
-      if(!data) return;
-      x = Math.floor(x);
-      y = Math.floor(y);
-      let w = data.w;
-      let h = data.h;
-      if(w == 0) return;
-      if(h == 0) return;
-      if(!data.data) return;
-      if(data.data.length == 0) return;
-  
-      for(let j = 0; j < h; j += skip){
-        for(let i = 0; i < w; i += skip){
-          let ind = (i+j*w)*4;
-          if(data.data[ind+3]){
-            let check = true;
-            let xx = x+(i/skip);
-            if(xx < 0) check = false;
-            else if(xx >= this.width) check = false;
-            if(check){
-              let tInd = (xx+(y+(j/skip))*this.width)*4;
-              this.drawPixel_ind(tInd,data.data[ind],data.data[ind+1],data.data[ind+2],data.data[ind+3]);
-            }
-          }
-        }
-      }
-      return 1;
-    }
     drawImage_basic(data,x=0,y=0,camera=false){
       if(!data) return;
       if(this.useCam || camera){
@@ -2417,7 +2383,7 @@
               this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
               this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
               this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
-              this.buf[tInd+3] = Math.floor((data.data[ind+3]+t1[3])*t2[3])
+              this.buf[tInd+3] = data.data[ind+3];
             }
           }
         }
@@ -2436,7 +2402,7 @@
                 this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
                 this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
                 this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
-                this.buf[tInd+3] = Math.floor((data.data[ind+3]+t1[3])*t2[3]);
+                this.buf[tInd+3] = data.data[ind+3];
               }
             }
           }
@@ -2966,32 +2932,7 @@
       return 1;
     }
     sqrt2 = Math.sqrt(2);
-    drawImage_basic_scale(data,x=0,y=0,sx=1,sy=1){
-      x = Math.floor(x);
-      y = Math.floor(y);
-      let w = data.w;
-      let h = data.h;
-      if(w == 0) return;
-      if(h == 0) return;
-      if(!data.data) return;
-      if(data.data.length == 0) return;
-
-      let right = Math.min(x+w*sx,this.width);
-      let bottom = Math.min(y+h*sy,this.height);
-
-      for(let j = Math.max(y,0); j < bottom; j++){
-        for(let i = Math.max(x,0); i < right; i++){
-          let ax = Math.floor((i-x)/sx);
-          let ay = Math.floor((j-y)/sy);
-          let aInd = (ax+ay*w)*4;
-          if(data.data[aInd+3]){
-            let ind = (i+j*this.width)*4;
-            this.drawPixel_ind(ind,data.data[aInd],data.data[aInd+1],data.data[aInd+2],data.data[aInd+3],false);
-          }
-        }
-      }
-    }
-    drawImage_basic_rot(data,x=0,y=0,a=0,dep=0,srx=0,sry=0){
+    drawImage_warp2(data,x=0,y=0,sx=1,sy=1,a=0,dep=0,srx=0,sry=0){
       x = Math.floor(x);
       y = Math.floor(y);
       let w = data.w;
@@ -3004,45 +2945,45 @@
       let srx2 = 1-srx;
       let sry2 = 1-sry;
 
-      let ox = x+w*srx-0.5;
-      let oy = y+h*sry-0.5;
+      let ox = x+w*srx+0.5;
+      let oy = y+h*sry+0.5;
 
       let lar = (Math.abs(w)>Math.abs(h)?w:h)*this.sqrt2;
       let larSx = (srx<0.5?srx2:srx);
       let larSy = (sry<0.5?sry2:sry);
-      let larS = (Math.abs(larSx)>Math.abs(larSy)?larSx:larSy);
-      let left = Math.round(ox-lar*larS);
-      let right = Math.round(ox+lar*larS);
-      let top = Math.round(oy-lar*larS);
-      let bottom = Math.round(oy+lar*larS);
+      let left = Math.floor(ox-lar*larSx*sx);
+      let right = Math.floor(ox+lar*larSx*sx);
+      let top = Math.floor(oy-lar*larSy*sy);
+      let bottom = Math.floor(oy+lar*larSy*sy);
 
       //if(a < Math.PI/2 && a >= 0) left += w*(larSx-0.5)*2;
       //left += Math.floor((Math.cos(a-Math.PI/2)+0.5)*w*(larSx-0.5));
       
       for(let j = Math.max(top,0); j < Math.min(bottom,this.height); j++){
         for(let i = Math.max(left,0); i < Math.min(right,this.width); i++){
-          //let li = i-ox;
-          //let ji = j-oy;
-          //let sx2 = sx;
-          //let sy2 = sy;
-          let fi = Math.floor(i);
-          let fj = Math.floor(j);
+          let li = i-ox;
+          let ji = j-oy;
+          let sx2 = Math.cos(a)*sx;
+          let sy2 = Math.sin(a)*sy;
+          let fi = Math.floor(li/sx2+ox);
+          let fj = Math.floor(ji/sy2+oy);
           let ax = Math.round(Math.cos(a)*(fi-ox)-Math.sin(a)*(fj-oy)+ox-x);
           let ay = Math.round(Math.sin(a)*(fi-ox)+Math.cos(a)*(fj-oy)+oy-y);
-          //this.setData(ind,[255,0,0,255]);
+          let ind = (i+j*this.width)*4;
+          this.setData(ind,[255,0,0,255]);
           if(ax < 0) continue;
           if(ay < 0) continue;
           if(ax >= w) continue;
           if(ay >= h) continue;
           let aInd = (ax+ay*w)*4;
-          
+
           //aInd = ((i-left)+(j-top)*w)*4;
           //if(Math.floor(Math.floor(performance.now())%100) <= 20) console.log("draw: ",ax,ay);
           //this.drawPixel_ind(ind,255,0,0,255,false);
-          if(data.data[aInd+3]){
-            let ind = (i+j*this.width)*4;
+          //if(data.data[aInd+3]){
+            //let ind = (i+j*this.width)*4;
             this.drawPixel_ind(ind,data.data[aInd],data.data[aInd+1],data.data[aInd+2],data.data[aInd+3],false);
-          }
+          //}
         }
       }
     }
@@ -4416,5 +4357,3 @@
     };
     return d;
   }
-
-  var clear = [0,0,0,0];

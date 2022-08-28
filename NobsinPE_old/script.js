@@ -1,38 +1,3 @@
-const _ver = "1.0.2";
-const _date = "8-27-22";
-document.getElementById("l_ver").textContent = "Quick Surface - version: "+_ver+" ("+_date+")";
-const _chnlog = [
-  "Added version label",
-  "Added Channelog Menu",
-  "Added info-labels for Color Palette and Color History",
-  "Added toolbar GUI options to change MirrorX, MirrorY, and LineMirrorMode on the pen tool",
-  "Added darkened screen tint and when opening menus and preventing the clicking on other buttons when a menu is open",
-  "Added a border shadow around menus so they stand out more",
-  "Changed the close window button so it was red and easier to see",
-  "Changed selecting frames to mousedown event rather than mouseup so it feels faster and more responsive",
-  "Changed the preview label to have a border and box-shadow so it's easier to see, especially in dark mode",
-  "Fixed Bug: when clicking from the color palette with right click, the old color wouldn't go into the color history",
-  "Added the ability to highlight select multiple frames",
-  "Added Clone >> and Clone << with undo-redo support",
-  "Changed frame cards so that they are easier to distingusish from the selected ones",
-  "Added shelves mechanic to change the amount of frames you can see",
-  "Changed frames and layers to visually start at 1 instead of 0 to make it less confusing",
-  "Fixed Bug: when drawing with translucent colors, it wouldn't layer but replace colors with the translucent one",
-  "Changed layer settings button into 'layer actions' with settings under an option",
-  "Fixed Bug: Deleting layers apparently was majorly broken and would crash the program when you hit undo after deleting. There still may be bugs but the general use cases are good and smooth.",
-  "Added the ability to change the orientation in which info labels are displayed",
-  "Fixed Bug: If you selected the first frame and then deleted it, it would crash the program",
-];
-const b_chan = document.getElementById("b_chan");
-b_chan.onclick = function(){
-  let d = openMenu("log");
-  let r = this.getBoundingClientRect();
-  d.style.transform = "translateX(-50%)";
-  // d.style.marginLeft = (r.left)+"px";
-  d.style.marginTop = (r.top+r.height-5)+"px";
-  console.log(d);
-};
-
 const canvas = document.getElementById("canvas");
 const can = document.getElementById("can");
 const ctx = can.getContext("2d");
@@ -42,11 +7,6 @@ const overlay = document.getElementById("overlay");
 const back = document.getElementById("back");
 const nob = new NobsinCtx(ctx);
 const pNob = new NobsinCtx(pCtx);
-/**@type {HTMLCanvasElement} */
-const prevCan = document.getElementById("prevCan");
-prevCan.width = 16;
-prevCan.height = 16;
-const prevCtx = prevCan.getContext("2d");
 var cw_xy = {
   x:0,
   y:0
@@ -56,8 +16,6 @@ var draggingColor = false;
 var dragLayer = null;
 var dragSlider = -1;
 var colorArea = null;
-let penMirrorX = false;
-let penMirrorY = false;
 function createEmptyImage(w,h){
   let data = {
     name:"image",
@@ -101,11 +59,8 @@ function createNewProject(name,w,h){
   };
   return data;
 }
-HTMLElement.prototype.byClass = function(c){
-  return this.getElementsByClassName(c)[0];
-};
 var frames_d = document.getElementById("frameList");
-var frameOps = document.getElementById("frameOptions");
+var frameOps = document.getElementById("frameOptions").children;
 function goBackFrame(){
   project.frameI--;
   if(project.frameI < 0) project.frameI = project.frames.length-1;
@@ -116,7 +71,7 @@ function goForwardFrame(){
   if(project.frameI >= project.frames.length) project.frameI = 0;
   loadFrame(project.frames[project.frameI],true);
 }
-frameOps.byClass("onionSkin").onclick = function(){
+frameOps[0].onclick = function(){
   project.onionSkin = !project.onionSkin;
   let l = this;
   l.innerHTML = (project.onionSkin?"join_full":"join_inner");
@@ -127,16 +82,16 @@ frameOps.byClass("onionSkin").onclick = function(){
     l.style.color = "gray";
   }
 };
-frameOps.byClass("navLeft").onclick = function(){
+frameOps[1].onclick = function(){
   goBackFrame();
 };
-frameOps.byClass("navRight").onclick = function(){
+frameOps[2].onclick = function(){
   goForwardFrame();
 };
-frameOps.byClass("newFrame").onclick = function(){
+frameOps[3].onclick = function(){
   createFrame(project.frameI+1);
 };
-frameOps.byClass("cloneFrame").onclick = function(){
+frameOps[4].onclick = function(){
   cloneFrame(project.frameI,project.frameI+1);
 };
 function moveFrame(i,toI,bare=false){
@@ -171,7 +126,7 @@ function createFrame_html(i){
   let head = document.createElement("div");
   head.className = "header";
   let num = document.createElement("span");
-  num.innerHTML = i+1;
+  num.innerHTML = i;
   head.appendChild(num);
   d.appendChild(head);
   let cont = document.createElement("div");
@@ -332,26 +287,14 @@ function createLayer(i,name){
     i,name
   });
 }
-function cloneLayer(i){
-  let layer = img.layers[i];
-  if(!layer){
-    console.warn("no layer found");
-    return;
-  }
-  let l = createLayer_bare(i+1,layer.name);
-  l.nob.buf = cloneBuf(layer.nob.buf,layer.nob.size);
-  selectLayer_bare(i+1);
-  _histAdd(HistIds.full,null,"Clone Layer"); //to-do - make this dedicated
-}
 function deleteLayer(i){
   //let name = img.layers[i].name;
   deleteLayer_bare(i);
-  if(img.layers[i-1]) selectLayer_bare(i-1);
-  else selectLayer_bare(0);
+  if(img.layers[i-1]) selectLayer(i-1);
   //histAdd_all("Delete-layer: "+i);
   if(img.layers.length == 0){
     let l = createLayer_bare(0,"Layer 0",true);
-    selectLayer_bare(0);
+    selectLayer(0);
     _histAdd(HistIds.full,null,"Clear layer");
   }
   else _histAdd(HistIds.deleteLayer,i);
@@ -377,7 +320,7 @@ function createLayer_html(i,name){
   dset.className = "dset";
   let num = document.createElement("div");
   num.className = "lnum";
-  num.innerHTML = i+1;
+  num.innerHTML = i;
   dset.appendChild(num);
   let vis = document.createElement("div");
   vis.innerHTML = "visibility";
@@ -490,6 +433,7 @@ var pink = [255,150,150,150];
 var gray = [100,100,100,255];
 var lightgray = [150,150,150,255];
 var black = [0,0,0,255];
+var clear = [0,0,0,0];
 var prevSelect = [100,100,100,160];
 var delPrevSelect = [200,0,0,160];
 var color = [
@@ -549,8 +493,7 @@ var toolData = [
   }, //fill
   {},
   {},
-  {}, //transform
-  {}
+  {} //transform
 ];
 var tools = [
   {
@@ -583,7 +526,10 @@ var tools = [
     name:"Eye Dropper"
   },
   {
-    name:"Simple Eraser"
+    name:"Color Select"
+  },
+  {
+    name:"Transform"
   }
 ];
 var Tools = {
@@ -596,7 +542,8 @@ var Tools = {
   pointer:6,
   fill:7,
   eyeDropper:8,
-  eraser:9
+  colSelect:9,
+  transform:10
 };
 var selTool = 0;
 var tempTool = -1;
@@ -613,7 +560,7 @@ function updateLayersDiv(){
     let l = img.layers[i];
     let ll = layers_d.children[img.layers.length-i-1];
     ll.children[1].children[0].innerHTML = l.name;
-    ll.children[0].children[0].innerHTML = i+1;
+    ll.children[0].children[0].innerHTML = i;
     ll.children[1].onclick = function(){
       selectLayer(l.ind);
     };
@@ -623,29 +570,8 @@ function updateLayersDiv(){
     if(false) ll.children[0].getElementsByClassName("ldel")[0].onclick = function(){
       deleteLayer(l.ind);
     };
-    let aa = ll.children[0].getElementsByClassName("settings")[0];
-    aa.onopen = function(){
-      aa.style.transition = "all 0.2s";
-      aa.style.transform = "rotate(45deg)";
-    };
-    aa.onclose = function(){
-      aa.style.transform = "";
-    };
-    let l2 = ["Close","Merge Down","Add To Highlighted Frames","Settings","Delete"];
-    createDropdown(0,l2,null,(j,a)=>{
-      let l1 = l2[j];
-      if(j == 1){
-
-      }
-      if(j == 2){
-        
-      }
-      if(l1 == "Settings") openMenu("layerSettings",l.ind);
-      if(l1 == "Delete") deleteLayer(i);
-    },aa,true);
-    if(false) ll.children[0].getElementsByClassName("settings")[0].onclick = function(){
-      //openMenu("layerSettings",l.ind);
-      
+    ll.children[0].getElementsByClassName("settings")[0].onclick = function(){
+      openMenu("layerSettings",l.ind);
     };
     if(l == img.curLayer) ll.scrollIntoView(false);
   }
@@ -699,25 +625,16 @@ function reconstructHistDiv(){
   }
   updateHistDiv();
 }
-function getImg(){
-  if(!img){
-    if(project.frameI == -1) project.frameI = 0;
-    img = project.frames[project.frameI];
-  }
-  return img;
-}
 function reconstructLayersDiv(){
   layers_d.innerHTML = "";
-  let im = getImg();
-  for(let i = 0; i < im.layers.length; i++){
-    createLayer_html(i,im.layers[i].name);
+  for(let i = 0; i < img.layers.length; i++){
+    createLayer_html(i,img.layers[i].name);
   }
-  selectLayer_bare(im.curLayer.ind);
+  selectLayer_bare(img.curLayer.ind);
   updateLayersDiv();
 }
 function reconstructFramesDiv(){
   frames_d.innerHTML = "";
-  sel2Frames = [];
   for(let i = 0; i < project.frames.length; i++){
     createFrame_html(i);
   }
@@ -1088,7 +1005,6 @@ function _runHist(){
         project.frameI = e.f;
         loadFrame(project.frames[project.frameI]);
       }
-      if(!img.curLayer) img.curLayer = img.layers[0];
       if(img) if(img.curLayer.ind != e.l) if(img.layers.length >= e.l){
         selectLayer_bare(e.l);
       }
@@ -1163,7 +1079,6 @@ function _runHist(){
 
   reconstructHistDiv_new();
   previewUpdateTimer = 0;
-  if(!img.curLayer) img.curLayer = img.layers[0];
   resetDep();
   updateUndoCtxB();
   updateRedoCtxB();
@@ -1281,7 +1196,6 @@ function registerInfo(l,inf){
   l.onmouseleave = function(){
     info_l.innerHTML = "No info.";
   };
-  regNewLabel(l);
 }
 var infos = document.getElementsByName("info");
 var info_l = document.getElementById("info_l");
@@ -1308,10 +1222,7 @@ var toolSettings = [
   {
     size:1,
     drawMode:DrawMode.color,
-    blendMode:BlendMode.normal,
-    mirrorX:false,
-    mirrorY:false,
-    lineMirrorMode:false
+    blendMode:BlendMode.normal
   },
   {
     size:1,
@@ -1335,9 +1246,11 @@ var toolSettings = [
     blendMode:BlendMode.normal
   }, //fill,
   {},
+  {},
   {
-    size:1
-  }
+    move_sx:1,
+    move_sy:1
+  } //transform
 ];
 function drawPixel(n,x,y,c,dep){
   let dm = toolSettings[curTool].drawMode;
@@ -1492,37 +1405,31 @@ function getOffset(a){
   }*/
   //return [x,y];
 }
-function createDropdown(i,l,desc,f,b,fixed=false){
+function createDropdown(i,l,desc,f,b){
   if(!b) b = document.createElement("button");
-  if(!fixed) b.innerHTML = l[i];
+  b.innerHTML = l[i];
   b.onmousedown = function(){
     if(img.curLayer.nob.pixelCount != 0) return;
-    if(this.onopen)  this.onopen();
     let rect = getOffset(this);
     let main = this;
     //let l = ["Flood","Global"];
-    this.ctxRef = _loadCtx("dd",l,[],function(j,d,lvl){
+    _loadCtx("dd",l,[],function(j,d,lvl){
       d.i = j;
       d.onclick = function(){
         main.index = this.i;
-        if(!fixed) main.innerHTML = l[this.i];
+        main.innerHTML = l[this.i];
         if(f) f(this.i,this);
         closeAllCtxMenus();
       };
-      if(desc) registerInfo(d,desc[j]);
+      registerInfo(d,desc[j]);
       //if(i == 0) registerInfo(d,"Fill Mode (Flood): Pixels will keep filling from the cursor position until they hit a different pixel color.");
       //else if(i == 1) registerInfo(d,"Fill Mode (Global): All the pixels in the image with the same color as what you clicked on will be replaced with your palet color.");
     },rect[0]-1,rect[1]+this.offsetHeight-1,true,0);
-    if(this.ctxRef) this.ctxRef.onclose = this.onclose;
-    else if(this.onclose) this.onclose();
   };
   b.load = function(i){
     f(i,this);
   };
   return b;
-}
-function getCurTool(){
-  return toolData[curTool];
 }
 function genToolSettings(i){
   let td = toolData[curTool];
@@ -1737,39 +1644,6 @@ function genToolSettings(i){
         d.appendChild(inp);
         d.appendChild(b1);
         td_d.appendChild(d);
-      } break;
-      case "mirrorX":{
-        let d = document.createElement("div");
-        d.style = "display:inline-flex;justify-content:space-between"; //align-items:center
-        td_d.appendChild(d);
-        d.innerHTML = `<span>Mirror X:</span><input type="checkbox" style="margin:-7px;margin-top:0px;height:15px">`;
-        let cb = d.children[1];
-        cb.onclick = function(){
-          td.mirrorX = this.checked;
-        };
-        cb.checked = td.mirrorX;
-      } break;
-      case "mirrorY":{
-        let d = document.createElement("div");
-        d.style = "display:inline-flex;justify-content:space-between"; //align-items:center
-        td_d.appendChild(d);
-        d.innerHTML = `<span>Mirror Y:</span><input type="checkbox" style="margin:-7px;margin-top:0px;height:15px">`;
-        let cb = d.children[1];
-        cb.onclick = function(){
-          td.mirrorY = this.checked;
-        };
-        cb.checked = td.mirrorY;
-      } break;
-      case "lineMirrorMode":{
-        let d = document.createElement("div");
-        d.style = "display:inline-flex;justify-content:space-between"; //align-items:center
-        td_d.appendChild(d);
-        d.innerHTML = `<span>Line Mirror Mode:</span><input type="checkbox" style="margin:-7px;margin-top:0px;height:15px">`;
-        let cb = d.children[1];
-        cb.onclick = function(){
-          td.lineMirrorMode = this.checked;
-        };
-        cb.checked = td.lineMirrorMode;
       } break;
     }
   }
@@ -2244,66 +2118,6 @@ function runScaleDiv(scaleI,scaleR,td,visualOnly=false){
     scaleR.style.visibility = "visible";
   }
 }
-let preview = {
-  playing:false,
-  i:0,
-  s:5, //this will be scaled by 60 (a speed of 15 is 4 frames per second)
-  run(){
-    if(!this.playing) return;
-    prevCan.width = img.w;
-    prevCan.height = img.h;
-    prevCtx.clearRect(0,0,img.w,img.h);
-    let t = this;
-    let frameI = Math.floor(t.i/60);
-    let frame = project.frames[frameI];
-    if(!frame){
-      console.warn("There is no frame: ",frameI);
-      return;
-    }
-    // let n = frame.curLayer.nob;
-    for(let j = 0; j < frame.layers.length; j++){
-      let layer = frame.layers[j];
-      let tc = document.createElement("canvas");
-      tc.width = frame.w;
-      tc.height = frame.h;
-      let tctx = tc.getContext("2d");
-      tctx.putImageData(new ImageData(layer.nob.buf,frame.w,frame.h),0,0);
-      prevCtx.drawImage(tc,0,0);
-    }
-    // prevCtx.putImageData(new ImageData(n.buf,n.width,n.height),0,0);
-
-    t.i += t.s;
-    if(t.i >= project.frames.length*60) t.i = 0;
-  },
-  cb_play:null,
-  i_scale:null,
-  i_speed:null,
-  init(){
-    let t = this;
-    t.cb_play = document.getElementById("prev_play");
-    t.i_scale = document.getElementById("prev_scale");
-    t.i_speed = document.getElementById("prev_speed");
-    t.cb_play.onclick = function(){
-      t.toggle();
-    };
-    t.i_scale.oninput = function(){
-      let rs = this.value*2+50;
-      prevCan.style.width = rs*2+"px";
-    };
-    t.i_speed.oninput = function(){
-      t.s = parseFloat(this.value);
-      this.parentNode.children[1].textContent = t.s;
-    };
-  },
-  toggle(){
-    let t = this;
-    t.playing = !t.playing;
-    t.cb_play.textContent = (t.playing?"pause":"play_arrow");
-  }
-};
-preview.init();
-var shiftX = 0;
-var shiftY = 0;
 function update(){
   window.requestAnimationFrame(update);
   nob.pixelCount = 0;
@@ -2317,9 +2131,6 @@ function update(){
     l.ind = i;
     //l.nob.buf = new Uint8ClampedArray(l.nob.size);
   }
-
-  //PREVIEW CAN
-  preview.run();
 
   //DRAGGING
   if(dragLayer){
@@ -2406,45 +2217,17 @@ function update(){
   document.body.style.cursor = "unset";
   if(overCanvas || img.curLayer.nob.pixelCount > 0) if(!dragging) if(img.curLayer) switch(curTool){
     case Tools.pencil:{
-      let cc = getCurTool();
-      let op = !cc.lineMirrorMode;
-      function mirrorPos(nob,mode,prev,...ar){
-        if(mode == 1 || mode == 3){
-          ar[0] = img.w-ar[0];
-          if(op) ar[2] = img.w-ar[2];
-        }
-        if(mode == 2 || mode == 3){
-          ar[1] = img.w-ar[1];
-          if(op) ar[3] = img.w-ar[3];
-        }
-        if(prev) nob.drawLine_smart(...ar);
-        else nob.drawLine_smart_dep(...ar);
-      }
-      function drawMirror(nob,prev,...ar){
-        mirrorPos(nob,0,prev,...ar);
-        if(cc.mirrorX) mirrorPos(nob,1,prev,...ar);
-        if(cc.mirrorY) mirrorPos(nob,2,prev,...ar);
-        if(cc.mirrorX && cc.mirrorY) mirrorPos(nob,3,prev,...ar);
-      }
-      drawMirror(pNob,true,lcx,lcy,cx,cy,getCol(mouseDown[2]?2:0,true,true),ts.size);
-      // pNob.drawLine_smart(lcx,lcy,cx,cy,getCol(mouseDown[2]?2:0,true,true),ts.size);
-      
+      pNob.drawLine_smart(lcx,lcy,cx,cy,getCol(mouseDown[2]?2:0,true,true),ts.size);
       if(mouseDown[0] || mouseDown[2]){
         /*let c = color[0];
         if(mouseDown[2]) c = color[1];
         if(keys.alt) c = clear;*/
         let c = getCol(mouseDown[0]?0:2);
         //img.curLayer.nob.drawLine_smart_dep(lcx,lcy,cx,cy,c,ts.size,1);
-        // drawLine(img.curLayer.nob,lcx,lcy,cx,cy,c,ts.size,1);
-        drawMirror(img.curLayer.nob,false,lcx,lcy,cx,cy,c,ts.size,1);
+        drawLine(img.curLayer.nob,lcx,lcy,cx,cy,c,ts.size,1);
       }
-    } break;
-    case Tools.eraser:{
-      pNob.drawLine_smart(lcx,lcy,cx,cy,pink,ts.size);
-      if(mouseDown[0] || mouseDown[2]){
-        img.curLayer.nob.drawLine_smart(lcx,lcy,cx,cy,clear,ts.size);
-      }
-    } break;
+    }
+    break;
     case Tools.line:
       if(mouseDown[0] || mouseDown[2]){
         //let c = color[0];
@@ -3280,38 +3063,14 @@ const editFunc = {
     _histAdd(HistIds.full,null,"Flip X");
   },
   flipY:function(){
-    let b = new Uint8ClampedArray(nob.size);
-    let i = 0;
-    let i2 = nob.size;
-    for(let y = 0; y < nob.height; y++){
-      i2 -= nob.width*4;
-      for(let x = 0; x < nob.width; x++){
-        b[i] = img.curLayer.nob.buf[i2];
-        b[i+1] = img.curLayer.nob.buf[i2+1];
-        b[i+2] = img.curLayer.nob.buf[i2+2];
-        b[i+3] = img.curLayer.nob.buf[i2+3];
-        i2 += 4;
-        i += 4;
-      }
-      i2 -= nob.width*4;
-    }
-    img.curLayer.nob.buf = b;
-    _histAdd(HistIds.full,null,"Flip Y");
+
   }
 };
-function keydown(e){
-  
+document.addEventListener("keydown",e=>{
   if(prompKeyChord) return;
   let key = e.key.toLowerCase();
-  if(!keys.shift){
-    shiftX = Math.floor(cx);
-    shiftY = Math.floor(cy);
-  }
   keys[key] = true;
   didBind = false;
-
-
-  if(isBind(keybinds.preview.togglePlay)) preview.toggle();
 
   let isInputting = (document.activeElement.tagName == "INPUT");
   if(isInputting) return;
@@ -3458,9 +3217,6 @@ function keydown(e){
     console.log("PREVENT");
     e.preventDefault();
   }
-}
-document.addEventListener("keydown",function(e){
-  keydown(e);
 });
 var keyDrawing = false;
 document.addEventListener("keyup",e=>{
@@ -3604,9 +3360,6 @@ function _mousedown(button){
         n.initRec();
       }
     break;
-    case Tools.eraser:{
-      resetDep();
-    } break;
     case Tools.line:
       resetDep();
       lastSelLen = img.selCount;
@@ -4154,12 +3907,6 @@ let cur = document.getElementById("colorCur");
 let cw = document.getElementById("colorArea");
 let col1 = document.getElementById("col1");
 let col2 = document.getElementById("col2");
-col1.onmousedown = function(){
-  addToColHist(0);
-};
-col2.onmousedown = function(){
-  addToColHist(1);
-};
 cw.width = 32; //100
 cw.height = 32;
 let hw = cw.width/2;
@@ -4237,163 +3984,6 @@ function initColorArea(d){
   if(d.round) cw.style.borderRadius = "50%";
   else cw.style.borderRadius = "0px";
 }
-let swatches = [
-  null,
-  null,
-  null,
-  null,
-  null,
-  null,
-  null,
-  null
-];
-let sw = document.getElementById("swatches");
-let sw2 = document.getElementById("sw2");
-let colHist = [];
-function addToColHist(id){
-  if(id == null) id = img.selCol;
-  let la = color[id];
-  let includes = false;
-  for(let i = 0; i < colHist.length; i++){
-    let cc = colHist[i];
-    if(!cc){
-      colHist.splice(i,1);
-      i--;
-      continue;
-    }
-    if(cc[0] == la[0] && cc[1] == la[1] && cc[2] == la[2] && cc[3] == la[3]){
-      includes = true;
-      break;
-    }
-  }
-  if(!includes){
-    colHist.push([la[0],la[1],la[2],la[3]]);
-    if(colHist.length > 8) colHist.splice(0,1);
-    updateColHist();
-  }
-}
-function updateColHist(){
-  for(let i = 0; i < colHist.length; i++){
-    let ss = colHist[i];
-    let c = sw.children[i];
-    if(ss) c.style.backgroundColor = `rgba(${ss[0]},${ss[1]},${ss[2]},${ss[3]})`;
-    else c.style.backgroundColor = "unset";
-  }
-}
-function saveSwatches(){
-  // while(swatches.includes(null)) swatches.splice(swatches.indexOf(null),1);
-  localStorage.setItem("swatches",JSON.stringify(swatches));
-}
-function loadSwatches(){
-  let r = localStorage.getItem("swatches");
-  if(r) swatches = JSON.parse(r);
-}
-function initSliders(){
-  for(let i = 0; i < sliders.children.length; i++){
-    let c = sliders.children[i];
-    WhenEnter(c.children[1],(a)=>{
-      let v = parseInt(a.value);
-      //setSlider(i,v);
-      let m = 100;
-      if(i == 0) m = 360;
-      else if(i >= 3) m = 255;
-      mx = 109+(v/m*80);
-      c.children[0].onmousedown({button:0});
-      updateSlider();
-      dragging = false;
-      dragSlider = -1;
-    });
-  }
-  for(let i = 0; i < sw.children.length; i++){
-    let s = sw.children[i];
-    s.onmousedown = function(e){
-      if(keys.alt){
-        colHist[i] = null;
-        this.style.backgroundColor = "unset";
-        return;
-      }
-      let tmp = colHist[i];
-      if(!tmp) return;
-      let id = e.button==0?0:1;
-      color[id] = [tmp[0],tmp[1],tmp[2],tmp[3]];
-      updateNewCol(color[img.selCol]);
-    }
-  }
-  for(let i = 0; i < sw2.children.length; i++) {
-    let s = sw2.children[i];
-    let tmp = swatches[i];
-    if(tmp) s.style.backgroundColor = `rgba(${tmp[0]},${tmp[1]},${tmp[2]},${tmp[3]})`;
-    s.onmousedown = function(e){
-      if(keys.alt){
-        swatches[i] = null;
-        this.style.backgroundColor = "unset";
-        saveSwatches();
-        return;
-      }
-      let id = e.button==0?0:1;
-      tmp = swatches[i];
-      if(!tmp){
-        let col = color[id];
-        swatches[i] = [0,0,0,0];
-        let tmp = swatches[i];
-        tmp[0] = col[0];
-        tmp[1] = col[1];
-        tmp[2] = col[2];
-        tmp[3] = col[3];
-        this.style.backgroundColor = `rgba(${tmp[0]},${tmp[1]},${tmp[2]},${tmp[3]})`;
-        saveSwatches();
-        return;
-      }
-      addToColHist(id);
-      color[id] = [tmp[0],tmp[1],tmp[2],tmp[3]];
-      updateNewCol(color[img.selCol]);
-      return;
-
-      //let tmp = swatches[i];
-      // let id = 0; //e.button==0?0:1
-      // if(!tmp) id = e.button==0?0:1;
-      id = e.button==0?0:1;
-      /*if(e.button != 0){
-        swatches[i] = null;
-        this.style.backgroundColor = "unset";
-        return;
-      }*/
-      let col = color[id];
-      if(keys.alt){
-        swatches[i] = null;
-        this.style.backgroundColor = "unset";
-        return;
-      }
-      if(e.button == 0 && tmp){
-        addToColHist();
-        color[id] = [tmp[0],tmp[1],tmp[2],tmp[3]];
-        updateColorCur();
-        return;
-      }
-      if(e.button == 1 && tmp){
-        addToColHist();
-        let tmp1 = [tmp[0],tmp[1],tmp[2],tmp[3]];
-        swatches[i] = [col[0],col[1],col[2],col[3]];
-        color[id] = [tmp1[0],tmp1[1],tmp1[2],tmp1[3]];
-        updateColorCur();
-        let ss = swatches[i];
-        this.style.backgroundColor = `rgba(${ss[0]},${ss[1]},${ss[2]},${ss[3]})`;
-        return;``
-      }
-      // swatches[i] = [col[0],col[1],col[2],col[3]];
-      // let ss = swatches[i];
-      // this.style.backgroundColor = `rgba(${ss[0]},${ss[1]},${ss[2]},${ss[3]})`;
-      /*if(tmp){
-        color[id] = [tmp[0],tmp[1],tmp[2],tmp[3]];
-        updateColorCur();
-      }
-      let col = color[id];
-      swatches[i] = [col[0],col[1],col[2],col[3]];
-      let ss = swatches[i];
-      this.style.backgroundColor = `rgba(${ss[0]},${ss[1]},${ss[2]},${ss[3]})`;*/
-    };
-  }
-}
 function updateColorCur(){
   if(colorArea.round){
     let dist = Math.sqrt(cw_xy.x*cw_xy.x+cw_xy.y*cw_xy.y);
@@ -4434,7 +4024,7 @@ function updateCurVisual(){
 function updateCol(){
   //let col = color[img.selCol];
   //let c = R_G_B_AtoH_S_L_A(col[0],col[1],col[2],col[3]);
-  let c = [(getSliderChild(0).children[0].offsetLeft-3)/80*360,(getSliderChild(1).children[0].offsetLeft-3)/80*100,(getSliderChild(2).children[0].offsetLeft-3)/80*100];
+  let c = [(sliders.children[0].children[0].offsetLeft-3)/80*360,(sliders.children[1].children[0].offsetLeft-3)/80*100,(sliders.children[2].children[0].offsetLeft-3)/80*100];
   let p = colorArea.fget(c);
   //let d = (100-c[2])/50*40;
   //if(c[0] < 0) c[0] += 360;
@@ -4454,12 +4044,11 @@ function updateNewCol(col){
   updateAllSliders(c);
   updateColorCur();
 }
-function updateSlider(useX=true){
+function updateSlider(){
   if(dragSlider != -1){
-    let s = getSliderChild(dragSlider);
+    let s = sliders.children[dragSlider];
     let c = s.children[0];
-    let mx1 = mx;//parseFloat(s.children[0].style.marginLeft.replace("px",""));//mx;
-    let x = mx1-s.parentNode.parentNode.parentNode.offsetLeft-103;
+    let x = mx-s.parentNode.parentNode.offsetLeft-112;
     if(x < 0) x = 0;
     else if(x > 80) x = 80;
     //let mcol = color[img.selCol];
@@ -4467,7 +4056,7 @@ function updateSlider(useX=true){
     let isHSL = [0,1,2,6].includes(dragSlider);
     let col = (isHSL?getHSLA():color[img.selCol]);
     let v = 0;
-    if(useX) switch(dragSlider){
+    switch(dragSlider){
       case 0: //Hue
         v = x/80*360;
         col[0] = v;
@@ -4507,8 +4096,7 @@ function updateSlider(useX=true){
       setSlider(5,color[img.selCol][2]);
     }
     else updateNewCol(color[img.selCol]);
-    if(useX) c.style.marginLeft = x+"px";
-    c.parentNode.parentNode.children[1].value = Math.floor(v);
+    c.style.marginLeft = x+"px";
     updateCol();
     updateColorCur();
     if(!isHSL){
@@ -4517,7 +4105,7 @@ function updateSlider(useX=true){
   }
 }
 function setSlider(i,v){
-  let s = getSliderChild(i);
+  let s = sliders.children[i];
   let c = s.children[0];
   switch(i){
     case 0: //Hue
@@ -4542,23 +4130,18 @@ function setSlider(i,v){
       c.style.marginLeft = (v/255*80)+"px";
     break;
   }
-  c.parentNode.parentNode.children[1].value = Math.floor(v);
-}
-function getSliderChild(i){
-  // return sliders.children[i];
-  return sliders.children[i].children[0];
 }
 function getHSLA(){
-  return [(getSliderChild(0).children[0].offsetLeft-3)/80*360,(getSliderChild(1).children[0].offsetLeft-3)/80*100,(getSliderChild(2).children[0].offsetLeft-3)/80*100,color[img.selCol][3]];
+  return [(sliders.children[0].children[0].offsetLeft-3)/80*360,(sliders.children[1].children[0].offsetLeft-3)/80*100,(sliders.children[2].children[0].offsetLeft-3)/80*100,color[img.selCol][3]];
 }
 function getHSLA_i(i){
   switch(i){
     case 0:
-      return (getSliderChild(0).children[0].offsetLeft-3)/80*360;
+      return (sliders.children[0].children[0].offsetLeft-3)/80*360;
     case 1:
-      return (getSliderChild(1).children[0].offsetLeft-3)/80*100;
+      return (sliders.children[1].children[0].offsetLeft-3)/80*100;
     case 2:
-      return (getSliderChild(2).children[0].offsetLeft-3)/80*100
+      return (sliders.children[2].children[0].offsetLeft-3)/80*100
   }
 }
 function updateSliderVisuals(hslOnly=false){
@@ -4566,7 +4149,7 @@ function updateSliderVisuals(hslOnly=false){
   let c2 = color[img.selCol];
   let a = c[3]/255;
   for(let i = 0; i < sliders.children.length; i++){
-    let ss = getSliderChild(i).children[1];
+    let ss = sliders.children[i].children[1];
     //if(hslOnly) if(i == 3 || i == 4 || i == 5) continue;
     switch(i){
       case 0:
@@ -4619,7 +4202,7 @@ function updateSliderVisuals(hslOnly=false){
       case 6:
         ss.style.backgroundImage = `linear-gradient(to right,
           rgba(0,0,0,0),
-          hsla(${c[0]},${c[1]}%,${c[2]}%,${1})
+          hsla(${c[0]},${c[1]}%,${c[2]}%,${a})
         )`;
       break;
     }
@@ -4654,7 +4237,7 @@ function updateAllSliders(hslc){
 }
 let sliders = document.getElementById("sliders");
 for(let i = 0; i < sliders.children.length; i++){
-  let s = getSliderChild(i);
+  let s = sliders.children[i];
   let c = s.children[0];
   s.onmousedown = function(){
     dragging = true;
@@ -5346,52 +4929,22 @@ function saveAsFile(){
   saveAsFile_bare(name);
   alert("File successfully saved!");
 }
-let sel2Frames = [];
-function highlightFrame(i){
-  let tframe = frames_d.children[i];
-  if(sel2Frames.includes(i)){
-    sel2Frames.splice(sel2Frames.indexOf(i),1);
-    tframe.classList.remove("sel2");
-    return;
-  }
-  if(!sel2Frames.length){
-    sel2Frames.push(i);
-    console.log("ADDED");
-  }
-  else if(sel2Frames[0] > i){
-    sel2Frames.splice(0,0,i);
-    console.log("ADDED");
-  }
-  else if(sel2Frames[sel2Frames.length-1] < i){
-    sel2Frames.push(i);
-    console.log("ADDED");
-  }
-  else for(let j = 0; j < sel2Frames.length; j++){
-    let jj = sel2Frames[j];
-    if(i < jj){
-      sel2Frames.splice(j,0,i);
-      console.log("ADDED");
-      break;
-    }
-  }
-  tframe.classList.add("sel2");
-}
 function updateFramesDiv(){
   for(let i = 0; i < project.frames.length; i++){
     let d = frames_d.children[i];
-    if(i == project.frameI) d.classList.add("sel");
-    else d.classList.remove("sel");
-    d.children[0].children[0].innerHTML = i+1;
-    d.children[1].onmousedown = function(){
-      if(g_keye.shiftKey){
-        highlightFrame(i);
-        return;
-      }
-      for(let j = 0; j < sel2Frames.length; j++){
-        let dd = frames_d.children[sel2Frames[j]];
-        dd.classList.remove("sel2");
-      }
-      sel2Frames = [];
+    if(i == project.frameI) d.className = "sel";
+    else d.className = "";
+    d.children[0].children[0].innerHTML = i;
+    d.children[1].onclick = function(){
+      console.log("start-");
+      /*let i = -1;
+      for(let j = 0; j < layers_d.children.length; j++){
+        if(layers_d.children[j] == this){
+          i = j;
+          break;
+        }
+      }*/
+      console.log("end- ",i,project.frameI);
       if(i != project.frameI){
         project.frameI = i;
         loadFrame(project.frames[project.frameI],false);
@@ -5524,8 +5077,6 @@ for(let i = 0; i < close_bs.length; i++){
   let b = close_bs[i];
   b.onclick = function(){
     this.parentNode.parentNode.style.visibility = "hidden";
-    menus_d.style.backgroundColor = "unset";
-    menus_d.style.zIndex = 0;
   };
 }
 var menus_d = document.getElementById("menus");
@@ -5533,16 +5084,12 @@ function openMenu(id,atr){ //"openFiles"
   let d = document.getElementById("menu_"+id);
   if(d.style.visibility == "visible"){
     d.style.visibility = "hidden";
-    menus_d.style.backgroundColor = "unset";
-    menus_d.style.zIndex = 0;
     return;
   }
   for(let i = 0; i < menus_d.children.length; i++){
     menus_d.children[i].style.visibility = "hidden";
   }
   d.style.visibility = "visible";
-  menus_d.style.backgroundColor = "rgba(0,0,0,0.2)";
-  menus_d.style.zIndex = 4;
   let list_d, list;
   switch(id){
     case "new":{
@@ -5695,28 +5242,7 @@ function openMenu(id,atr){ //"openFiles"
         deleteLayer(d.lRef);
       };
     } break;
-    case "log":{
-      // d.children[1].innerHTML = "";
-      let s1 = d.children[1].children[0];
-      s1.textContent = "Version: "+_ver+" ("+_date+")";
-      s1.className = "prev";
-      s1.style.marginBottom = "5px";
-      let t = d.children[1].children[1].children[0];
-      t.innerHTML = "";
-      t.className = "cTable";
-      for(let i = 0; i < _chnlog.length; i++){
-        let tr = document.createElement("tr");
-        let s = _chnlog[i];
-        tr.innerHTML = `<td>${i}</td><td>${s}</td>`;
-        t.appendChild(tr);
-        if(s.startsWith("Added")) tr.children[1].style.color = "limegreen";
-        else if(s.startsWith("Changed")) tr.children[1].style.color = "orange";
-        else if(s.startsWith("Fixed")) tr.children[1].style.color = "dodgerblue";
-        else if(s.startsWith("Removed")) tr.children[1].style.color = "red";
-      }
-    } break;
   }
-  return d;
 }
 document.getElementById("menu_new").getElementsByClassName("menuFooter")[0].children[0].onclick = function(){
   let w = parseInt(document.getElementById("inp_width").value);
@@ -5923,33 +5449,26 @@ function _loadCtx(id,l,lkey,f,x,y,temp,lvl=0){
   }
   ctxes.appendChild(d);
   let width = d.offsetWidth;
+  console.log(width);
   if(x+width > window.innerWidth) x += window.innerWidth-(x+width);
   d.style.marginLeft = x+"px";
   d.style.marginTop = y+"px";
   d.lvl = lvl;
-  return d;
   /*if(d.offsetLeft+d.offsetWidth > window.innerWidth-10){
     d.style.marginLeft = (x-d.offsetWidth)+"px";
   }*/
 }
 function closeAllCtxMenus(){
-  for(let i = 0; i < ctxes.children.length; i++){
-    let d = ctxes.children[i];
-    if(d.onclose) d.onclose();
-  }
   ctxes.innerHTML = "";
-  label.style.visibility = "hidden";
 }
 function closeAllCtxLowerLvl(lvl){
   for(let i = 0; i < ctxes.children.length; i++){
     let d = ctxes.children[i];
     if(d.lvl > lvl){
-      if(d.onclose) d.onclose();
       ctxes.removeChild(d);
       i--;
     }
   }
-  label.style.visibility = "hidden";
 }
 function openContext_b(id,b){
   openContext(id,b.offsetLeft,b.offsetTop+b.offsetHeight);
@@ -6431,27 +5950,8 @@ var keybinds = {
     sizeDec:["Decrease Size","[",false,false],
     nextTool:["Next Tool","}",false,true],
     prevTool:["Previous Tool","{",false,true]
-  },
-  preview:{
-    name:"Animation Previewer Settings",
-    togglePlay:["Toggle Play","p",false,false]
   }
 };
-function kbsFirst(){
-  let ok = Object.keys(keybinds);
-  for(let j = 0; j < ok.length; j++){
-    let dat = keybinds[ok[j]];
-    let ok2 = Object.keys(dat);
-    for(let i = 1; i < ok2.length; i++){
-      let bind = dat[ok2[i]];
-      bind[5] = bind[1];
-      bind[6] = bind[2];
-      bind[7] = bind[3];
-    }
-  }
-}
-kbsFirst();
-if(localStorage.kbs) keybinds = JSON.parse(localStorage.kbs);
 
 //FINISH INIT
 
@@ -6478,8 +5978,6 @@ initColor();
 _runHist();
 
 update();
-loadSwatches();
-initSliders();
 
 //EXTRA MENU GEN
 
@@ -6603,11 +6101,6 @@ d_keys.children[5].style.justifyContent = "right";
 var didBind = false;
 var m_keys = document.getElementById("menu_keys");
 function isBind(ref){ //isBind(keybinds.tools.pencil)
-  if(ref[10]){
-    ref[10] = false;
-    didBind = true;
-    return true;
-  }
   if(didBind) return false;
   //if(!ref[2] != !keys.control) return false;
   if(!ref[2] != !g_keye.ctrlKey) return false;
@@ -6620,14 +6113,6 @@ function isBind(ref){ //isBind(keybinds.tools.pencil)
   }
   didBind = true;
   return true;
-}
-function forceBind(ref){
-  // keybinds.color.swap
-  // keys[ref[1]] = true;
-  // g_keye.ctrlKey = ref[2];
-  // g_keye.shiftKey = ref[3];
-  ref[10] = true;
-  keydown({key:"asd",preventDefault:()=>{}});
 }
 function resetKeybind(ref){
   if(prompKeyChord){
@@ -6671,16 +6156,9 @@ var az_sym = [
 ];
 document.addEventListener("keydown",e=>{
   g_keye = e;
-  // console.log("Code: ",e.keyCode,e.key);
+  console.log("Code: ",e.keyCode,e.key);
   let key = e.key.toLowerCase();
-  if(key == "t"){
-    if(window.refresh) window.refresh();
-    else window.location.reload();
-    e.preventDefault();
-  }
-  if(e.ctrlKey) if(key != "r"){
-    e.preventDefault();
-  }
+  if(e.ctrlKey) if(key != "r") e.preventDefault();
   if(prompKeyChord){
     e.preventDefault();
     //if(key == "control") keyChord[2] = true;
@@ -6727,7 +6205,6 @@ function getKeybindName(bind){
 }
 //gen keybinds
 function genKeybinds(isFirst=false){
-  if(!isFirst) localStorage.kbs = JSON.stringify(keybinds);
   let ok = Object.keys(keybinds);
   let tmpBinds = [];
   for(let j = 0; j < ok.length; j++){
@@ -6765,7 +6242,7 @@ function genKeybinds(isFirst=false){
         resetKeybind(this.propRef);
       };
 
-      if(false) if(isFirst){
+      if(isFirst){
         bind[5] = bind[1];
         bind[6] = bind[2];
         bind[7] = bind[3];
@@ -6824,141 +6301,3 @@ function genKeybinds(isFirst=false){
   }
 }
 genKeybinds(true);
-
-function cloneMulti(rev=false){
-  if(!sel2Frames.length) return;
-  let tmpI = project.frameI;
-  let lI = sel2Frames[sel2Frames.length-1]+1;
-  if(rev) lI = sel2Frames[0]+1;
-  for(let i = 0; i < sel2Frames.length; i++){
-    console.log("CLONE: ",sel2Frames[i],lI+i);
-    cloneFrame(sel2Frames[i],lI+i,true);
-  }
-  reconstructFramesDiv();
-  loadFrame(project.frames[tmpI]);
-  let mode = "Clone Frames";
-  if(rev) mode += "  (Reverse)";
-  _histAdd(HistIds.full,null,mode);
-}
-
-//init2
-const label = document.getElementById("label");
-function init2(){
-  let l = document.getElementsByName("info");//tools_d.children;
-  for(let i = 0; i < l.length; i++){
-    let c = l[i];
-    regNewLabel(c);
-  }
-
-  //hardcoded init
-  let b_swapCur = document.getElementById("b_swapCur");
-  let b_swapPallet = document.getElementById("b_swapPallet");
-  b_swapCur.onclick = function(){
-    // keybinds.color.swapCur;
-  };
-  regNewLabel(b_swapCur);
-  regNewLabel(b_swapPallet);
-
-  const b_clone = document.getElementById("sel2_clone");
-  const b_cloneR = document.getElementById("sel2_cloneR");
-  b_clone.onclick = function(){
-    cloneMulti();
-  };
-  b_cloneR.onclick = function(){
-    if(!sel2Frames.length) return;
-    let tmp = deepClone(sel2Frames);
-    for(let i = 0; i < sel2Frames.length; i++){
-      sel2Frames[i] = tmp[tmp.length-i-1];
-    }
-    cloneMulti(true);
-  };
-
-  const i_shelves = document.getElementById("i_shelves");
-  i_shelves.check = function(){
-    if(!this.value) this.value = 1;
-    let v = parseInt(this.value);
-    let max = Math.floor((innerHeight-50)/86);
-    if(v < 1) v = 1;
-    else if(v > max) v = max;
-    this.value = v;
-    return v;
-  };
-  i_shelves.onwheel = function(){
-    let v = parseInt(this.value);
-    requestAnimationFrame(()=>{this.check();});
-  };
-  WhenEnter(i_shelves,function(a){
-    let v = a.check();
-    // console.log("RUN: ",v,frames_d.getBoundingClientRect().height);
-    frames_d.style.height = (86*v+14)+"px";
-  });
-}
-
-/**
- * 
- * @param {HTMLElement} c 
- */
-function regNewLabel(c){
-  c.addEventListener("mouseenter",()=>{
-    label.textContent = "";
-    let txt = c.getAttribute("info");
-    let pos = c.getAttribute("pos");
-    if(!txt?.length){
-      label.style.visibility = "hidden";
-      return;
-    }
-    label.style.visibility = "unset";
-    let kb = c.kb;
-    let titleTxt = c.getAttribute("header");
-    if(!titleTxt){
-      if(kb) titleTxt = "Keybind: "+getKB(kb);
-    }
-    if(titleTxt){
-      let title = document.createElement("div");
-      title.style = "font-style:italic;color:darkgray";
-      // titleTxt += " ---";
-      title.textContent = titleTxt;
-      label.appendChild(title);
-    }
-    let span = document.createElement("div")
-    span.textContent = txt;
-    label.appendChild(span);
-    let r = c.getBoundingClientRect();
-    let r1 = label.getBoundingClientRect();
-    if(pos == null || pos == "r"){
-      label.style.left = (r.left+r.width+10)+"px";
-      label.style.top = r.top+"px";
-    }
-    else if(pos == "u"){
-      label.style.left = r.left+"px";
-      label.style.top = (r.top-10-r1.height)+"px";
-    }
-  });
-  c.addEventListener("mouseleave",()=>{
-    label.style.visibility = "hidden";
-  });
-  if(!c.regKB){
-    let kb = c.getAttribute("kb");
-    c.kb = kb;
-    c.regKB = true;
-  }
-}
-
-init2();
-
-/**
- * 
- * @param {String} s 
- */
-function getKB(s){
-  let l = s.split(".");
-  let r = keybinds;
-  while(l.length){
-    r = r[l.splice(0,1)];
-  }
-  let key = r[1];
-  key = key.toUpperCase();
-  if(r[3]) key = "Shft+"+key;
-  if(r[2]) key = "Ctrl+"+key;
-  return key;
-}
