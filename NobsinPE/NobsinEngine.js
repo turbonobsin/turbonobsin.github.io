@@ -4,11 +4,12 @@
  *
  * AUTHORS: Turbo Nobsin
  *
- * VERSION: a1.2.0
- * DATE: 8-30-21
+ * VERSION: a1.3.0
+ * DATE: 9-2-22
+ * Last Update: 8-30-21
  *
  * WHATS NEW?
- *  - Started implimentation of compressed image feature
+ *  - Added DrawBezier Functionality
  */
 
  class NobsinCtx{
@@ -4419,7 +4420,7 @@
 
   var clear = [0,0,0,0];
 
-//BEZIERS (9-2-22 - a.1.3.0)
+//BEZIERS (9-2-22 - a1.3.0)
 function drawBezier(nob1,bez,x=0,y=0,dep=0){
   bez.list = [];
   for(let i1 = 0; i1 < 1; i1 += 0.01){

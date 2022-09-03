@@ -53,7 +53,11 @@ const _chnlogL = [
     "Added DrawBezier functionality to NobsinEngine",
     "Added: Started adding functionality for the Bezier Tool (not finished yet)",
     "Fixed up Channelog Menu a bit",
-    "Added feature to Channelog to view past version's Channelogs"
+    "Added feature to Channelog to view past version's Channelogs",
+    "Version: 1.0.5.1",
+    "Added Zen Mode button but am not finished yet",
+    "Added hover highlight to Palette",
+    "Added info-labels to quick settings at top"
   ]
 ];
 let _chnlog = _chnlogL[_chnlogL.length-1];
@@ -7284,6 +7288,10 @@ function regNewLabel(c){
       label.style.left = r.left+"px";
       label.style.top = (r.top-10-r1.height)+"px";
     }
+    else if(pos == "d"){
+      label.style.left = r.left+"px";
+      label.style.top = (r.bottom+10)+"px";
+    }
   });
   c.addEventListener("mouseleave",()=>{
     label.style.visibility = "hidden";
@@ -7313,3 +7321,31 @@ function getKB(s){
   if(r[2]) key = "Ctrl+"+key;
   return key;
 }
+
+let useZen = false;
+const b_zen = document.getElementById("b_zen");
+const color_d = document.getElementById("color");
+const preview_d = document.getElementById("preview");
+function hide(e,v){
+  if(v) e.style.visibility = "unset"; //visible
+  else e.style.visibility = "hidden"; //hidden
+}
+function toggleZen(){
+  useZen = !useZen;
+  let v = !useZen;
+  if(v) b_zen.textContent = "visibility";
+  else b_zen.textContent = "visibility_off";
+  hide(tools_d,v);
+  hide(hist_d.parentNode,v);
+  hide(layers_d.parentNode,v);
+  hide(frames_d.parentNode,v);
+  hide(color_d,v);
+  hide(preview_d,v);
+  if(v){
+    sw2.classList.remove("zen");
+  }
+  else{
+    sw2.classList.add("zen");
+  }
+}
+// toggleZen();

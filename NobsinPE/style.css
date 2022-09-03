@@ -95,8 +95,8 @@ body{
     padding-right:6px;
   }
   #tools{
-    left:5px;
-    top:54px;
+    left:0px;
+    top:56px;
     /* width:26px; */
     /* height:auto; */
     max-height:calc(100% - 500px);
@@ -142,8 +142,8 @@ body{
   }
   
   #hist{
-    right:5px;
-    top:54px;
+    right:0px;
+    top:56px;
     user-select:none;
   }
   #histList{
@@ -492,6 +492,23 @@ body{
   height:12px;
   border:solid 1px gray;
   margin:2px;
+}
+#sw2 > div:hover{
+  filter:contrast(0.8) brightness(1.5);
+}
+#sw2.zen{
+  top:unset;
+  bottom:10px !important;
+  visibility:visible;
+}
+#sw2.zen > div{
+  width:16px;
+  height:16px;
+}
+#sw.zen{
+  visibility:visible;
+  top:unset;
+  bottom:40px;
 }
 #b_swapPallet{
   position:absolute;
