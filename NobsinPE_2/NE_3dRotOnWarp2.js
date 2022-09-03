@@ -36,12 +36,10 @@
       this.checkColArr = [];
       //this.background = [128,128,128,255];
       this.background = [48,48,48,255];
-      //this.data = new ImageData(this.width,this.height);
     }
     ctx;
     buf;
     dep;
-    data;
     size;
     ssize;
     width;
@@ -478,8 +476,7 @@
           if(x < 0) pass = false;
           else if(x >= this.width) pass = false;
           if(pass){
-            this.drawPixel_ind(ind,col[0],col[1],col[2],col[3]);
-            // this.drawPixel_ind(ind,col[0],col[1],col[2],col[3],true);
+            this.drawPixel_ind(ind,col[0],col[1],col[2],col[3],true);
             /*this.buf[ind] = col[0];
             this.buf[ind+1] = col[1];
             this.buf[ind+2] = col[2];
@@ -494,8 +491,6 @@
       }
     }
     drawRect_dep(x1,y1,wr,hr,col,dep=0,upright=false){
-      let replace = false;
-      if(col == clear) replace = true;
       if(this.useCam){
         x1 -= this.camX;
         y1 -= this.camY;
@@ -1610,7 +1605,6 @@
       }
     }
     drawLine_smart_dep(x0,y0,x1,y1,c,w,dep=0){
-      if(!this.dep) return;
       //posibly temp
       let hw = Math.floor(w/2); //half width
   
@@ -2173,34 +2167,6 @@
       }
       this.pixelCount++;
     }
-    drawImage_basic_skip(data,x=0,y=0,skip=1){
-      if(!data) return;
-      x = Math.floor(x);
-      y = Math.floor(y);
-      let w = data.w;
-      let h = data.h;
-      if(w == 0) return;
-      if(h == 0) return;
-      if(!data.data) return;
-      if(data.data.length == 0) return;
-  
-      for(let j = 0; j < h; j += skip){
-        for(let i = 0; i < w; i += skip){
-          let ind = (i+j*w)*4;
-          if(data.data[ind+3]){
-            let check = true;
-            let xx = x+(i/skip);
-            if(xx < 0) check = false;
-            else if(xx >= this.width) check = false;
-            if(check){
-              let tInd = (xx+(y+(j/skip))*this.width)*4;
-              this.drawPixel_ind(tInd,data.data[ind],data.data[ind+1],data.data[ind+2],data.data[ind+3]);
-            }
-          }
-        }
-      }
-      return 1;
-    }
     drawImage_basic(data,x=0,y=0,camera=false){
       if(!data) return;
       if(this.useCam || camera){
@@ -2417,7 +2383,7 @@
               this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
               this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
               this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
-              this.buf[tInd+3] = Math.floor((data.data[ind+3]+t1[3])*t2[3])
+              this.buf[tInd+3] = data.data[ind+3];
             }
           }
         }
@@ -2436,7 +2402,7 @@
                 this.buf[tInd] = Math.floor((data.data[ind]+t1[0])*t2[0]);
                 this.buf[tInd+1] = Math.floor((data.data[ind+1]+t1[1])*t2[1]);
                 this.buf[tInd+2] = Math.floor((data.data[ind+2]+t1[2])*t2[2]);
-                this.buf[tInd+3] = Math.floor((data.data[ind+3]+t1[3])*t2[3]);
+                this.buf[tInd+3] = data.data[ind+3];
               }
             }
           }
@@ -2966,32 +2932,7 @@
       return 1;
     }
     sqrt2 = Math.sqrt(2);
-    drawImage_basic_scale(data,x=0,y=0,sx=1,sy=1){
-      x = Math.floor(x);
-      y = Math.floor(y);
-      let w = data.w;
-      let h = data.h;
-      if(w == 0) return;
-      if(h == 0) return;
-      if(!data.data) return;
-      if(data.data.length == 0) return;
-
-      let right = Math.min(x+w*sx,this.width);
-      let bottom = Math.min(y+h*sy,this.height);
-
-      for(let j = Math.max(y,0); j < bottom; j++){
-        for(let i = Math.max(x,0); i < right; i++){
-          let ax = Math.floor((i-x)/sx);
-          let ay = Math.floor((j-y)/sy);
-          let aInd = (ax+ay*w)*4;
-          if(data.data[aInd+3]){
-            let ind = (i+j*this.width)*4;
-            this.drawPixel_ind(ind,data.data[aInd],data.data[aInd+1],data.data[aInd+2],data.data[aInd+3],false);
-          }
-        }
-      }
-    }
-    drawImage_basic_rot(data,x=0,y=0,a=0,dep=0,srx=0,sry=0){
+    drawImage_warp2(data,x=0,y=0,sx=1,sy=1,a=0,dep=0,srx=0,sry=0){
       x = Math.floor(x);
       y = Math.floor(y);
       let w = data.w;
@@ -3004,45 +2945,45 @@
       let srx2 = 1-srx;
       let sry2 = 1-sry;
 
-      let ox = x+w*srx-0.5;
-      let oy = y+h*sry-0.5;
+      let ox = x+w*srx+0.5;
+      let oy = y+h*sry+0.5;
 
       let lar = (Math.abs(w)>Math.abs(h)?w:h)*this.sqrt2;
       let larSx = (srx<0.5?srx2:srx);
       let larSy = (sry<0.5?sry2:sry);
-      let larS = (Math.abs(larSx)>Math.abs(larSy)?larSx:larSy);
-      let left = Math.round(ox-lar*larS);
-      let right = Math.round(ox+lar*larS);
-      let top = Math.round(oy-lar*larS);
-      let bottom = Math.round(oy+lar*larS);
+      let left = Math.floor(ox-lar*larSx*sx);
+      let right = Math.floor(ox+lar*larSx*sx);
+      let top = Math.floor(oy-lar*larSy*sy);
+      let bottom = Math.floor(oy+lar*larSy*sy);
 
       //if(a < Math.PI/2 && a >= 0) left += w*(larSx-0.5)*2;
       //left += Math.floor((Math.cos(a-Math.PI/2)+0.5)*w*(larSx-0.5));
       
       for(let j = Math.max(top,0); j < Math.min(bottom,this.height); j++){
         for(let i = Math.max(left,0); i < Math.min(right,this.width); i++){
-          //let li = i-ox;
-          //let ji = j-oy;
-          //let sx2 = sx;
-          //let sy2 = sy;
-          let fi = Math.floor(i);
-          let fj = Math.floor(j);
+          let li = i-ox;
+          let ji = j-oy;
+          let sx2 = Math.cos(a)*sx;
+          let sy2 = Math.sin(a)*sy;
+          let fi = Math.floor(li/sx2+ox);
+          let fj = Math.floor(ji/sy2+oy);
           let ax = Math.round(Math.cos(a)*(fi-ox)-Math.sin(a)*(fj-oy)+ox-x);
           let ay = Math.round(Math.sin(a)*(fi-ox)+Math.cos(a)*(fj-oy)+oy-y);
-          //this.setData(ind,[255,0,0,255]);
+          let ind = (i+j*this.width)*4;
+          this.setData(ind,[255,0,0,255]);
           if(ax < 0) continue;
           if(ay < 0) continue;
           if(ax >= w) continue;
           if(ay >= h) continue;
           let aInd = (ax+ay*w)*4;
-          
+
           //aInd = ((i-left)+(j-top)*w)*4;
           //if(Math.floor(Math.floor(performance.now())%100) <= 20) console.log("draw: ",ax,ay);
           //this.drawPixel_ind(ind,255,0,0,255,false);
-          if(data.data[aInd+3]){
-            let ind = (i+j*this.width)*4;
+          //if(data.data[aInd+3]){
+            //let ind = (i+j*this.width)*4;
             this.drawPixel_ind(ind,data.data[aInd],data.data[aInd+1],data.data[aInd+2],data.data[aInd+3],false);
-          }
+          //}
         }
       }
     }
@@ -4416,138 +4357,3 @@
     };
     return d;
   }
-
-  var clear = [0,0,0,0];
-
-//BEZIERS (9-2-22 - a.1.3.0)
-function drawBezier(nob1,bez,x=0,y=0,dep=0){
-  bez.list = [];
-  for(let i1 = 0; i1 < 1; i1 += 0.01){
-      _drawBez(nob1,bez,i1,x,y,dep);
-  }
-  for(let j = 0; j < bez.list.length; j++){
-      let c = bez.list[j];
-      let c1 = bez.list[j+1];
-      if(!c1) break;
-      nob1.drawLine_smart_dep(c[0],c[1],c1[0],c1[1],bez.col,bez.w,dep);
-  }
-}
-function _drawBez(nob,bez,i,xx=0,yy=0){
-  let t = bez;
-  if(true/**doShake */) for(let j = 0; j < t.c.length; j++){
-      let c = t.c[j];
-      if(c[2] == null) c[2] = c[0];
-      if(c[3] == null) c[3] = c[1];
-      let ang = performance.now()/300+j;
-      let r = 0;//shake; //2
-      c[0] = c[2]+Math.cos(ang)*r+xx;
-      c[1] = c[3]+Math.sin(ang)*r+yy;
-  }
-  let mids = deepClone(t.c);
-  let times = t.c.length;
-  let lvl = 0;
-  let col = [
-      [255,0,0,50],
-      [255,200,0,50],
-      [255,255,0,50],
-      [0,100,0,50],
-      [0,0,255,50],
-      [200,50,220,50],
-      [0,0,0,255]
-  ];
-  function ss(){
-      let ar = [];
-      for(let j = 0; j < mids.length-1; j++){
-          let m = mids[j];
-          let nm = mids[j+1];
-          if(!nm){
-              console.log("no nm");
-              continue;
-          }
-          let color = col[lvl];
-          let fm = mids[j+2];
-          if(!fm){
-              if(mids.length == 2){
-                  // lvl--;
-                  let mid = doMid(nob,i,m[0],m[1],nm[0],nm[1]);
-                  ar.push(mid);
-                  color = col[lvl];
-                  drawRectc(mid[0],mid[1],2,color);
-              }
-              {
-                  lvl++;
-                  for(let j1 = 0; j1 < ar.length; j1++){
-                      let c = ar[j1];
-                      drawRectc(c[0],c[1],2,col[lvl]);
-                  }
-                  mids = ar;
-                  lvl++;
-                  if(mids.length == 1){
-                      t.list.push(ar[0]);
-                  }
-                  if(lvl > times){
-                      //list.push(ar[0]);
-                      continue;
-                  }
-                  ss();
-              }
-              break;
-          }
-          drawRectc(m[0],m[1],1,color);
-          drawRectc(nm[0],nm[1],1,color);
-          drawRectc(fm[0],fm[1],1,color);
-          let d = doLine(nob,i,m[0],m[1],nm[0],nm[1]);
-          let qx = d.qx;
-          let qy = d.qy;
-          d = doLine(nob,i,nm[0],nm[1],fm[0],fm[1]);
-          let qx1 = d.qx;
-          let qy1 = d.qy;
-          let mid = doMid(nob,i,qx,qy,qx1,qy1);
-          color = col[lvl];
-          drawRectc(qx,qy,2,color);
-          drawRectc(qx1,qy1,2,color);
-          ar.push(mid);
-      }
-  }
-  ss();
-}
-function nobCreateBezier(c,w,col){
-  return {
-      w,c,col,
-      list:[]
-  };
-}
-let _drawBezDebug = false;
-const _bezLightgreen = [200,255,200,220];
-const _bezGray = [200,200,200,50];
-function drawRectc(nob,x,y,w,c,over=false){
-  if(!over) if(!_drawBezDebug) return;
-  if(w == 1) nob.setPixel(x,y,c);
-  nob.drawRect(x-Math.floor(w/2),y-Math.floor(w/2),w,w,c);
-}
-function getAng(x,y,x1,y1){
-  let dx = x1-x;
-  let dy = y1-y;
-  return Math.atan2(dy,dx);
-}
-function doLine(nob,i,x,y,tx,ty){
-  let dx1 = tx-x;
-  let dy1 = ty-y;
-  let dist1 = Math.sqrt(dx1**2+dy1**2);
-  let ang1 = Math.atan2(dy1,dx1);
-  let q0x = x+Math.cos(ang1)*dist1*i;
-  let q0y = y+Math.sin(ang1)*dist1*i;
-  if(_drawBezDebug) nob.drawLine_smart(x,y,tx,ty,_bezGray,1);
-  return {
-      qx:q0x,
-      qy:q0y
-  };
-}
-function doMid(nob,i,sx,sy,tx,ty){
-  if(_drawBezDebug) nob.drawLine_smart(sx,sy,tx,ty,_bezLightgreen,1);
-  let dx = tx-sx;
-  let dy = ty-sy;
-  let x = sx+dx*i;
-  let y = sy+dy*i;
-  return [x,y];
-}

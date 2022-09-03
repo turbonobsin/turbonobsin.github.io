@@ -10,7 +10,6 @@
   </head>
   <body>
     <div id="back"></div>
-    <div id="backRef"></div>
 		<div id="label">Test Label</div>
     <div id="messages"></div>
     <div id="ctxes"></div>
@@ -21,7 +20,6 @@
       <div onclick="openContext_b('view',this)">View</div>
       <div onclick="openContext_b('image',this)">Image</div>
       <div onclick="openContext_b('object',this)">Object</div>
-      <div onclick="openContext_b('reference',this)">References</div>
       <span class="vr"></span>
       <div id="settings_b" class="material-icons" onclick="" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">settings</div>
       <div id="keybinds_b" class="material-icons" onclick="openMenu('keys')" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">keyboard</div>
@@ -50,7 +48,7 @@
     </div>
     <div id="menus">
       <div class="menu" id="menu_log">
-        <div class="menuHeader"><span class="menuTitle">Channelog</span><div style="margin-left:20px;display:flex;align-items:center"><div class="l_i" style="margin-right:10px;width:20px">0</div><button class="go_l"><</button><button class="go_r">></button></div><button class="closeWindow_b">X</button></div>
+        <div class="menuHeader"><span class="menuTitle">Channelog</span><button class="closeWindow_b">X</button></div>
         <div>
           <div>ver.</div>
           <div class="tabc">
@@ -197,9 +195,6 @@
       <div alt="eraser" name="info" info="
         Eraser Tool:
       "><div class="material-icons">backspace</div></div>
-      <div alt="bezier" name="info" info="
-        Bezier Curve Tool:
-      "><div class="material-icons">gesture</div></div>
     </div>
     <div class="cont" id="hist">
       <span class="title" style="border-bottom:solid 1px darkgray">History</span>
@@ -224,9 +219,9 @@
       <div id="layerList"></div>
     </div>
     <div class="cont" id="frames">
+      <span class="title">Frames</span>
       <div id="frameOptions">
-        <span class="title">Frames</span>
-        <div style="margin-left:auto;padding-right:10px;margin-right:10px;border-right:solid 1px gray;display:flex;align-items:center">
+        <div style="padding-right:10px;margin-right:10px;border-right:solid 1px gray;display:flex;align-items:center">
           <span name="info" pos="u" info="Hold [Shift] and click frames to highlight and de-highlight them" style="margin-right:5px;font-size:13px">(Selection?)</span>
           <button name="info" pos="u" info="Clone Highlighted" style="height:100%" id="sel2_clone">Clone >></button>
           <button name="info" pos="u" info="Clone Highlighted (Reversed)" style="height:100%" id="sel2_cloneR">Clone <<</button>
@@ -318,12 +313,12 @@
         </div>
         <div id="slider_hex">
           <div>Hex 1</div>
-          <input id="hex1" class="hex" type="text">
+          <input id="hex0" class="hex" type="text">
           <div style="margin-left:20px">Hex 2</div>
-          <input id="hex2" class="hex" type="text">
+          <input id="hex1" class="hex" type="text">
         </div>
-        <div class="material-icons" id="b_swapCur" name="info" info="Swap current active color. This lets you edit your right click color" pos="u" kb="color.swapCur">swap_horiz</div>
-        <div class="material-icons" id="b_swapPallet" name="info"  info="Swap active color palette. This will switch the left and right click colors" pos="u" kb="color.swap">swap_horizontal_circle</div>
+        <div class="material-icons" id="b_swapCur" name="info" info="asd" pos="u" kb="color.swapCur">swap_horiz</div>
+        <div class="material-icons" id="b_swapPallet" name="info"  info="asd" pos="u" kb="color.swap">swap_horizontal_circle</div>
         <div id="swatches" name="info" info="Color History">
           <div></div>
           <div></div>

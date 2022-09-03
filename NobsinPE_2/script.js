@@ -1,83 +1,45 @@
-const _ver = "_vardepricated";
-const _date = "_vardepricated";
-const _chnlogL = [
-  [
-    "Version: 1.0.2 - 8-27-22",
-    "Added version label",
-    "Added Channelog Menu",
-    "Added info-labels for Color Palette and Color History",
-    "Added toolbar GUI options to change MirrorX, MirrorY, and LineMirrorMode on the pen tool",
-    "Added darkened screen tint and when opening menus and preventing the clicking on other buttons when a menu is open",
-    "Added a border shadow around menus so they stand out more",
-    "Changed the close window button so it was red and easier to see",
-    "Changed selecting frames to mousedown event rather than mouseup so it feels faster and more responsive",
-    "Changed the preview label to have a border and box-shadow so it's easier to see, especially in dark mode",
-    "Fixed Bug: when clicking from the color palette with right click, the old color wouldn't go into the color history",
-    "Added the ability to highlight select multiple frames",
-    "Added Clone >> and Clone << with undo-redo support",
-    "Changed frame cards so that they are easier to distingusish from the selected ones",
-    "Added shelves mechanic to change the amount of frames you can see",
-    "Changed frames and layers to visually start at 1 instead of 0 to make it less confusing",
-    "Fixed Bug: when drawing with translucent colors, it wouldn't layer but replace colors with the translucent one",
-    "Changed layer settings button into 'layer actions' with settings under an option",
-    "Fixed Bug: Deleting layers apparently was majorly broken and would crash the program when you hit undo after deleting. There still may be bugs but the general use cases are good and smooth.",
-    "Added the ability to change the orientation in which info labels are displayed",
-    "Fixed Bug: If you selected the first frame and then deleted it, it would crash the program"
-  ],
-  [
-    "Version: 1.0.3 - 8-29-22 and briefly 8-31-22",
-    "Added: finished adding the rest of the features to the eraser tool with undo-redo support",
-    "Added support for undo-redo when naming layers, and it uses a dedicated undo-redo type so much less RAM is used",
-    "Fixed Frames Widget so that when you resize your window small, the option buttons cram together so you can still press them",
-    "Added the (Add layer to highlighted frames) layer action with undo-redo support",
-    "Added the (merge layer down) layer action with undo-redo support",
-    "Added info-labels to the layer actions",
-    "Added a wrap feature to info-labels so that if they would appear off the screen, they get moved to the left of whatever you hovered over",
-    "Changed when deleting from color palette, it adds the color to the history, in case you accedentally deleted it",
-    "Found Issue: (File -> New) doesn't work anymore",
-    "Version: 1.0.3.1 - 8-31-22",
-    "Fixed File->New and File->Import",
-    "Added support for when there isn't enough room for the toolbar, it wraps",
-    "Added References tab with support to open files from your computer to show as previews"
-  ],
-  [
-    "Version: 1.0.4 (9-1-22)",
-    "Fixed version so that it is reflective of the first element in the channelog, for concurrency",
-    "Changed Reference Viewer to get rid of url box and replace it with a color preview to show what you've hovered over",
-    "Fixed info-label's 'pos' property so that the orientation is correct; in some cases it was not correct",
-    "Added feature where your active 2 colors are unique between opened project (not on save yet)",
-    "Fixed the swap buttons they so actually work and have a desc",
-  ],
-  [
-    "Version: 1.0.5 (9-2-22)",
-    "Added DrawBezier functionality to NobsinEngine",
-    "Added: Started adding functionality for the Bezier Tool (not finished yet)",
-    "Fixed up Channelog Menu a bit",
-    "Added feature to Channelog to view past version's Channelogs"
-  ]
+const _ver = "1.0.2";
+const _date = "8-27-22";
+document.getElementById("l_ver").textContent = "Quick Surface - version: "+_ver+" ("+_date+")";
+const _chnlog = [
+  "Added version label",
+  "Added Channelog Menu",
+  "Added info-labels for Color Palette and Color History",
+  "Added toolbar GUI options to change MirrorX, MirrorY, and LineMirrorMode on the pen tool",
+  "Added darkened screen tint and when opening menus and preventing the clicking on other buttons when a menu is open",
+  "Added a border shadow around menus so they stand out more",
+  "Changed the close window button so it was red and easier to see",
+  "Changed selecting frames to mousedown event rather than mouseup so it feels faster and more responsive",
+  "Changed the preview label to have a border and box-shadow so it's easier to see, especially in dark mode",
+  "Fixed Bug: when clicking from the color palette with right click, the old color wouldn't go into the color history",
+  "Added the ability to highlight select multiple frames",
+  "Added Clone >> and Clone << with undo-redo support",
+  "Changed frame cards so that they are easier to distingusish from the selected ones",
+  "Added shelves mechanic to change the amount of frames you can see",
+  "Changed frames and layers to visually start at 1 instead of 0 to make it less confusing",
+  "Fixed Bug: when drawing with translucent colors, it wouldn't layer but replace colors with the translucent one",
+  "Changed layer settings button into 'layer actions' with settings under an option",
+  "Fixed Bug: Deleting layers apparently was majorly broken and would crash the program when you hit undo after deleting. There still may be bugs but the general use cases are good and smooth.",
+  "Added the ability to change the orientation in which info labels are displayed",
+  "Fixed Bug: If you selected the first frame and then deleted it, it would crash the program",
 ];
-let _chnlog = _chnlogL[_chnlogL.length-1];
-document.getElementById("l_ver").textContent = "Quick Surface - "+_chnlog[0];
 const b_chan = document.getElementById("b_chan");
 b_chan.onclick = function(){
   let d = openMenu("log");
   let r = this.getBoundingClientRect();
   d.style.transform = "translateX(-50%)";
+  // d.style.marginLeft = (r.left)+"px";
   d.style.marginTop = (r.top+r.height-5)+"px";
+  console.log(d);
 };
 
 const canvas = document.getElementById("canvas");
-/**@type {HTMLCanvasElement} */
 const can = document.getElementById("can");
 const ctx = can.getContext("2d");
-/**@type {HTMLCanvasElement} */
 const prev = document.getElementById("prev");
 const pCtx = prev.getContext("2d");
-pCtx.imageSmoothingEnabled = false;
 const overlay = document.getElementById("overlay");
 const back = document.getElementById("back");
-const hex1i = document.getElementById("hex1");
-const hex2i = document.getElementById("hex2");
 const nob = new NobsinCtx(ctx);
 const pNob = new NobsinCtx(pCtx);
 /**@type {HTMLCanvasElement} */
@@ -135,9 +97,7 @@ function createNewProject(name,w,h){
     histI:-1,
     unsaved:true,
 
-    onionSkin:false,
-    c1:[255,0,0,255],
-    c2:[0,0,255,255]
+    onionSkin:false
   };
   return data;
 }
@@ -372,30 +332,16 @@ function createLayer(i,name){
     i,name
   });
 }
-function selectFrame(i){
-  project.frameI = i;
-  let f = project.frames[project.frameI];
-  img = f;
-  loadFrame(f);
-  reconstructFramesDiv(true); //maybe don't need this?
-}
-function cloneLayer(i,frameI,bare=false){
+function cloneLayer(i){
   let layer = img.layers[i];
-  let rem = null;
   if(!layer){
     console.warn("no layer found");
     return;
   }
-  if(frameI != null){
-    selectFrame(frameI);
-    rem = deepClone(sel2Frames);
-  }
-  i = img.layers.length-1;
   let l = createLayer_bare(i+1,layer.name);
   l.nob.buf = cloneBuf(layer.nob.buf,layer.nob.size);
   selectLayer_bare(i+1);
-  if(!bare) _histAdd(HistIds.full,null,(frameI!=null?"Clone to other frames":"Clone Layer")); //to-do - make this dedicated
-  //if(rem) sel2Frames = rem;
+  _histAdd(HistIds.full,null,"Clone Layer"); //to-do - make this dedicated
 }
 function deleteLayer(i){
   //let name = img.layers[i].name;
@@ -481,18 +427,14 @@ function createLayer_html(i,name){
       //this.innerHTML = `<input value='${this.innerHTML}'>`;
       inp.onblur = function(){
         let name = this.value;
-        this.onblur = null;
-        this.parentNode.innerHTML = "";
-        renameLayer(l,name,this.parentNode);
-        //this.parentNode.innerHTML = name;
+        this.parentNode.innerHTML = name;
         //this.onkeydown({key:"Enter"});
       };
       inp.onkeydown = function(e){
         if(e.key == "Enter"){
-          this.onblur();
-          //this.onblur = null;
-          //let name = this.value;
-          //this.parentNode.innerHTML = name;
+          this.onblur = null;
+          let name = this.value;
+          this.parentNode.innerHTML = name;
         }
         else if(e.key == "Escape"){
           this.onblur = null;
@@ -511,7 +453,7 @@ function createLayer_html(i,name){
   dmain.appendChild(dset);
   dmain.appendChild(d);
   if(img.layers.length != 0) layers_d.insertBefore(dmain,layers_d.firstChild);
-  if(l) toggleLayerVisibility(i,true,l.visible);
+  toggleLayerVisibility(i,true,l.visible);
 }
 function createLayer_bare(i,name,visual=true){
   can.width = project.w;
@@ -642,9 +584,6 @@ var tools = [
   },
   {
     name:"Simple Eraser"
-  },
-  {
-    name:"Bezier Curve"
   }
 ];
 var Tools = {
@@ -657,8 +596,7 @@ var Tools = {
   pointer:6,
   fill:7,
   eyeDropper:8,
-  eraser:9,
-  bezier:10,
+  eraser:9
 };
 var selTool = 0;
 var tempTool = -1;
@@ -694,39 +632,13 @@ function updateLayersDiv(){
       aa.style.transform = "";
     };
     let l2 = ["Close","Merge Down","Add To Highlighted Frames","Settings","Delete"];
-    createDropdown(0,l2,[
-      null,
-      "Merge the current layer on top of the lower one",
-      "Add the current layer to all of the highlighted frames. If there is already a layer with the same name on a frame, the new layer is not added",
-      "Adjust layer settings",
-      "Deletes the layer"
-    ],(j,a)=>{
+    createDropdown(0,l2,null,(j,a)=>{
       let l1 = l2[j];
-      if(j == 1){ //Merge Down
-        if(!img.layers[i-1]) return;
-        let l2 = img.layers[i-1];
-        l2.nob.drawImage_basic(rasterizeLayer(l),0,0);
-        deleteLayer_bare(i);
-        selectLayer_bare(i-1);
-        _histAdd(HistIds.full,null,"Merge layer down");
+      if(j == 1){
+
       }
-      if(j == 2){ //Add to highlighted
-        for(let i1 = 0; i1 < sel2Frames.length; i1++){
-          let f1 = sel2Frames[i1];
-          let ff = project.frames[f1];
-          let cont = false;
-          for(let j1 = 0; j1 < ff.layers.length; j1++){
-            let l2 = ff.layers[j1];
-            if(l2.name == l.name){
-              cont = true;
-              break;
-            }
-          }
-          if(cont) continue;
-          cloneLayer(i,f1,true);
-        }
-        _histAdd(HistIds.full,null,"Clone to other frames");
-        reconstructFramesDiv();
+      if(j == 2){
+        
       }
       if(l1 == "Settings") openMenu("layerSettings",l.ind);
       if(l1 == "Delete") deleteLayer(i);
@@ -803,9 +715,9 @@ function reconstructLayersDiv(){
   selectLayer_bare(im.curLayer.ind);
   updateLayersDiv();
 }
-function reconstructFramesDiv(keepSel=false){
+function reconstructFramesDiv(){
   frames_d.innerHTML = "";
-  if(!keepSel) sel2Frames = [];
+  sel2Frames = [];
   for(let i = 0; i < project.frames.length; i++){
     createFrame_html(i);
   }
@@ -879,8 +791,7 @@ var HistIds = {
   full:8,
   moveFrame:9,
   resizeImage:10,
-  resizeCanvas:11,
-  renameLayer:12
+  resizeCanvas:11
 };
 var HistNames = [
   "Color data",
@@ -1245,9 +1156,6 @@ function _runHist(){
         case HistIds.resizeCanvas:
           resizeProjectCanvas(e.data.w,e.data.h,e.data.ox,e.data.oy,true);
         break;
-        case HistIds.renameLayer:
-          renameLayer(img.layers[e.data.l],e.data.n,e.data.ref,true);
-        break;
       }
       //console.warn("NOT IMPL YET");
     }
@@ -1361,8 +1269,7 @@ function redo_old(){
 document.addEventListener("selectstart",e=>{
   e.preventDefault();
 });
-function registerInfo(l,inf,pos){
-  if(pos) l.setAttribute("pos",pos);
+function registerInfo(l,inf){
   if(inf != null){
     l.setAttribute("name","info");
     l.setAttribute("info",inf);
@@ -1428,13 +1335,7 @@ var toolSettings = [
     blendMode:BlendMode.normal
   }, //fill,
   {},
-  { //eraser
-    size:1,
-    mirrorX:false,
-    mirrorY:false,
-    lineMirrorMode:false
-  },
-  { //bezier
+  {
     size:1
   }
 ];
@@ -2504,15 +2405,7 @@ function update(){
   var ts = toolSettings[curTool];
   document.body.style.cursor = "unset";
   if(overCanvas || img.curLayer.nob.pixelCount > 0) if(!dragging) if(img.curLayer) switch(curTool){
-    case Tools.bezier:{
-      pNob.drawLine_smart(lcx,lcy,cx,cy,getCol(mouseDown[2]?2:0,true,true),ts.size);
-      if(gbez){
-        drawBezier(pNob,gbez,0,0);
-      }
-    } break;
-    case Tools.pencil:
-    case Tools.eraser:
-    {
+    case Tools.pencil:{
       let cc = getCurTool();
       let op = !cc.lineMirrorMode;
       function mirrorPos(nob,mode,prev,...ar){
@@ -2544,6 +2437,12 @@ function update(){
         //img.curLayer.nob.drawLine_smart_dep(lcx,lcy,cx,cy,c,ts.size,1);
         // drawLine(img.curLayer.nob,lcx,lcy,cx,cy,c,ts.size,1);
         drawMirror(img.curLayer.nob,false,lcx,lcy,cx,cy,c,ts.size,1);
+      }
+    } break;
+    case Tools.eraser:{
+      pNob.drawLine_smart(lcx,lcy,cx,cy,pink,ts.size);
+      if(mouseDown[0] || mouseDown[2]){
+        img.curLayer.nob.drawLine_smart(lcx,lcy,cx,cy,clear,ts.size);
       }
     } break;
     case Tools.line:
@@ -2983,22 +2882,9 @@ function update(){
   selTimer++;
   if(selTimer > 60) selTimer = 0;
 
-  //Tests for preview
-  //drawBezier(pNob,bez,0,0);
-  //
-
   ctx.putImageData(new ImageData(nob.buf,nob.width,nob.height),0,0);
   pCtx.putImageData(new ImageData(pNob.buf,pNob.width,pNob.height),0,0);
 }
-var bez = nobCreateBezier([
-  [80,20],
-  [30,70],
-  [380,30],
-  [90,-60],
-  [120,40],
-  [160,60],
-  [120,90]
-],1,black);
 var selColor = [100,80,255,100];
 var selTimer = 0;
 var globalRot = 0;
@@ -3413,17 +3299,6 @@ const editFunc = {
     _histAdd(HistIds.full,null,"Flip Y");
   }
 };
-function swapColors(){
-  let c = color[0];
-  color[0] = color[1];
-  color[1] = c;
-  updateNewCol(color[img.selCol]);
-}
-function swapCurColor(){
-  if(img.selCol == 0) img.selCol = 1;
-  else img.selCol = 0;
-  updateNewCol(color[img.selCol]);
-}
 function keydown(e){
   
   if(prompKeyChord) return;
@@ -3568,10 +3443,15 @@ function keydown(e){
   if(isBind(keybinds.frames.prev)) goBackFrame();
   
   if(isBind(keybinds.color.swap)){
-    swapColors();
+    let c = color[0];
+    color[0] = color[1];
+    color[1] = c;
+    updateNewCol(color[img.selCol]);
   }
   if(isBind(keybinds.color.swapCur)){
-    swapCurColor();
+    if(img.selCol == 0) img.selCol = 1;
+    else img.selCol = 0;
+    updateNewCol(color[img.selCol]);
   }
 
   if(didBind){
@@ -3704,7 +3584,6 @@ function startMoveTool(fromCP=false){
   lockHist();
   d.data.delete("[0,0,0,0]");
 }
-let gbez = null;
 function _mousedown(button){
   scx = cx;
   scy = cy;
@@ -3716,16 +3595,7 @@ function _mousedown(button){
   let ts = toolSettings[curTool];
   //console.log(overCanvas,img.curLayer.nob.pixelCount);
   if(overCanvas || img.curLayer.nob.pixelCount > 0) switch(curTool){
-    case Tools.bezier:{
-      if(!gbez){
-        gbez = nobCreateBezier([[cx,cy],[cx+12,cy+2],[cx+4,cy+8]],ts.size,getCol(mouseDown[2]?2:0,true,true));
-      }
-      else{
-
-      }
-    } break;
     case Tools.pencil:
-    case Tools.eraser:
       if(img.curLayer){
         img.curLayer.nob.dep = new Uint8ClampedArray(img.curLayer.nob.ssize);
         img.curLayer.nob.pixelCount = 0;
@@ -3734,6 +3604,9 @@ function _mousedown(button){
         n.initRec();
       }
     break;
+    case Tools.eraser:{
+      resetDep();
+    } break;
     case Tools.line:
       resetDep();
       lastSelLen = img.selCount;
@@ -3902,10 +3775,6 @@ function tint(c,a,aa=1){
   return c;
 }
 function getCol(b,prev=false,darken=false){
-  if(curTool == Tools.eraser){
-    if(prev) return pink;
-    return clear;
-  }
   let ts = toolSettings[curTool];
   if(prev) if(keys.alt) return pink;
   if(ts.drawMode != DrawMode.select) if(keys.alt) return clear;
@@ -3925,7 +3794,6 @@ function getCol(b,prev=false,darken=false){
 }
 function _mouseup(button){
   mouseDown[button] = false;
-  dragRef = null;
   ecx = cx;
   ecy = cy;
   if(button == 1) endTempTool();
@@ -3933,17 +3801,13 @@ function _mouseup(button){
   let ts = toolSettings[curTool];
   if(button == 0 || button == 2) if(img.curLayer) switch(curTool){
     case Tools.pencil:
-    case Tools.eraser:
-    {
-      let era = curTool == Tools.eraser;
-      let toolS = (era?"Eraser":"Pencil");
       if(ts.drawMode == DrawMode.select){
         if(lastSelLen != img.selCount){
           img.curLayer.nob.finishRec();
           _histAdd(HistIds.select,{
             a:cloneBuf(img.select2,nob.ssize),
             c:img.selCount
-          },toolS+" select");
+          },"Pencil select");
           lastSelLen = img.selCount;
         }
       }
@@ -3956,10 +3820,10 @@ function _mouseup(button){
           list:img.curLayer.nob.finishRec()
         },"Pencil");*/
         
-        _histAdd(HistIds.px,img.curLayer.nob.finishRec(),toolS);
+        _histAdd(HistIds.px,img.curLayer.nob.finishRec(),"Pencil");
         img.curLayer.nob.pixelCount = 0;
       }
-    } break;
+    break;
     case Tools.line:
       let tx = cx;
       let ty = cy;
@@ -4177,13 +4041,6 @@ function _mousemove(e){
   my = y;
   runScaleXY();
 
-  if(dragRef){
-    let lx = x-dragX;
-    let ly = y-dragY;
-    dragRef.style.left = (dragRef.sx+lx)+"px";
-    dragRef.style.top = (dragRef.sy+ly)+"px";
-  }
-
   lcx = cx;
   lcy = cy;
   cx = scaleX*project.w;
@@ -4236,7 +4093,6 @@ function resizeImage(w,h,bare=false){
   pNob.size = w*h*4;
   pNob.ssize = w*h;
   pNob.buf = new Uint8ClampedArray(pNob.size);
-  pNob.dep = new Uint8ClampedArray(pNob.ssize);
   pNob.data = new ImageData(pNob.width,pNob.height);
   for(let i = 0; i < project.frames.length; i++){
     let f = project.frames[i];
@@ -4283,12 +4139,9 @@ function resetView(){
 }
 resetView();
 
-function renameLayer(l,name,html,bare=false){
+function renameLayer(l,name){
   l.name = name;
-  if(!html) html = layers_d.children[img.layers.length-l.ind-1].children[1].children[0];
-  else html.innerHTML = name;
-  if(!bare) _histAdd(HistIds.renameLayer,{l:l.ind,n:name,ref:html},"Rename Layer");
-  reconstructLayersDiv();
+  layers_d.children[img.layers.length-l.ind-1].children[1].children[0].innerHTML = name;
 }
 
 //Color
@@ -4397,10 +4250,9 @@ let swatches = [
 let sw = document.getElementById("swatches");
 let sw2 = document.getElementById("sw2");
 let colHist = [];
-function addToColHist(id,over){
+function addToColHist(id){
   if(id == null) id = img.selCol;
   let la = color[id];
-  if(over) la = over;
   let includes = false;
   for(let i = 0; i < colHist.length; i++){
     let cc = colHist[i];
@@ -4419,7 +4271,6 @@ function addToColHist(id,over){
     if(colHist.length > 8) colHist.splice(0,1);
     updateColHist();
   }
-  saveHistSwatches();
 }
 function updateColHist(){
   for(let i = 0; i < colHist.length; i++){
@@ -4433,17 +4284,9 @@ function saveSwatches(){
   // while(swatches.includes(null)) swatches.splice(swatches.indexOf(null),1);
   localStorage.setItem("swatches",JSON.stringify(swatches));
 }
-function saveHistSwatches(){
-  localStorage.setItem("histSwatches",JSON.stringify(colHist));
-}
 function loadSwatches(){
   let r = localStorage.getItem("swatches");
   if(r) swatches = JSON.parse(r);
-}
-function loadHistSwatches(){
-  let r = localStorage.getItem("histSwatches");
-  if(r) colHist = JSON.parse(r);
-  updateColHist();
 }
 function initSliders(){
   for(let i = 0; i < sliders.children.length; i++){
@@ -4482,7 +4325,6 @@ function initSliders(){
     if(tmp) s.style.backgroundColor = `rgba(${tmp[0]},${tmp[1]},${tmp[2]},${tmp[3]})`;
     s.onmousedown = function(e){
       if(keys.alt){
-        addToColHist(0,swatches[i]);
         swatches[i] = null;
         this.style.backgroundColor = "unset";
         saveSwatches();
@@ -4567,21 +4409,6 @@ function updateColorCur(){
     else if(cw_xy.y > 40) cw_xy.y = 40;
   }
 
-  let c1 = color[0];
-  let c2 = color[1];
-  project.c1 = c1;
-  project.c2 = c2;
-  c1[0] = Math.floor(c1[0]);
-  c1[1] = Math.floor(c1[1]);
-  c1[2] = Math.floor(c1[2]);
-  c1[3] = Math.floor(c1[3]);
-  c2[0] = Math.floor(c2[0]);
-  c2[1] = Math.floor(c2[1]);
-  c2[2] = Math.floor(c2[2]);
-  c2[3] = Math.floor(c2[3]);
-  hex1i.value = rgbaToHex(...c1);
-  hex2i.value = rgbaToHex(...c2);
-
   /*let c = colorArea.f(cw_xy.x/40*50,cw_xy.y/40*50);
   if(c[4] == 1) c = H_S_L_AtoR_G_B_A(c[0],100,c[2],c[3]);
   color[img.selCol][0] = c[0];
@@ -4618,7 +4445,6 @@ function updateCol(){
   cw_xy.y = p[1];
 }
 function updateNewCol(col){
-  if(col == null) col = color[img.selCol];
   let c = R_G_B_AtoH_S_L_A(col[0],col[1],col[2],col[3]);
   let d = (100-c[2])/50*40;
   if(c[0] < 0) c[0] += 360;
@@ -4898,10 +4724,7 @@ function getFileStr(){
   f_head += project.w+",";
   f_head += project.h+",";
   f_head += "1,"; //format, 1 is current format
-  f_head += project.frameI+",";
-  f_head += project.c1.toString().replace("/g/,","|");
-  f_head += "\n";
-  console.log(f_head);
+  f_head += project.frameI+"\n";
   for(let i = 0; i < project.frames.length; i++) f_head += project.frames[i].curLayer.ind+(i+1<project.frames.length?",":"");
   f_head += "\n";
   let f_frames = [];
@@ -4923,7 +4746,7 @@ function getFileStr(){
           if(g.length == 1) g = "0"+g;
           b = b.toString(16);
           if(b.length == 1) b = "0"+b;
-	        let la = a;
+	  let la = a;
           a = a.toString(16);
           if(a.length == 1) a = "0"+a;
           s += r;
@@ -5874,58 +5697,23 @@ function openMenu(id,atr){ //"openFiles"
     } break;
     case "log":{
       // d.children[1].innerHTML = "";
-      let go_l = d.getElementsByClassName("go_l")[0];
-      let go_r = d.getElementsByClassName("go_r")[0];
-      let l_i = d.getElementsByClassName("l_i")[0];
-      go_l.onclick = function(){
-        if(this.classList.contains("disabled")) return;
-        let ind = _chnlogL.indexOf(_chnlog);
-        ind--;
-        go_l.classList.remove("disabled");
-        go_r.classList.remove("disabled");
-        if(ind <= 0){
-          ind = 0;
-          this.classList.add("disabled");
-        }
-        l_i.textContent = -(_chnlogL.length-1-ind);;
-        _chnlog = _chnlogL[ind];
-        reload();
-      };
-      go_r.onclick = function(){
-        if(this.classList.contains("disabled")) return;
-        let ind = _chnlogL.indexOf(_chnlog);
-        ind++;
-        go_l.classList.remove("disabled");
-        go_r.classList.remove("disabled");
-        if(ind >= _chnlogL.length-1){
-          ind = _chnlogL.length-1;
-          this.classList.add("disabled");
-        }
-        l_i.textContent = -(_chnlogL.length-1-ind);
-        _chnlog = _chnlogL[ind];
-        reload();
-      };
-      l_i.textContent = 0;
-      function reload(){
-        let s1 = d.children[1].children[0];
-        s1.textContent = _chnlog[0];//"Version: "+_ver+" ("+_date+")";
-        s1.className = "prev";
-        s1.style.marginBottom = "5px";
-        let t = d.children[1].children[1].children[0];
-        t.innerHTML = "";
-        t.className = "cTable";
-        for(let i = 0; i < _chnlog.length; i++){
-          let tr = document.createElement("tr");
-          let s = _chnlog[i];
-          tr.innerHTML = `<td>${i}</td><td>${s}</td>`;
-          t.appendChild(tr);
-          if(s.startsWith("Added")) tr.children[1].style.color = "limegreen";
-          else if(s.startsWith("Changed")) tr.children[1].style.color = "orange";
-          else if(s.startsWith("Fixed")) tr.children[1].style.color = "dodgerblue";
-          else if(s.startsWith("Removed")) tr.children[1].style.color = "red";
-        }
+      let s1 = d.children[1].children[0];
+      s1.textContent = "Version: "+_ver+" ("+_date+")";
+      s1.className = "prev";
+      s1.style.marginBottom = "5px";
+      let t = d.children[1].children[1].children[0];
+      t.innerHTML = "";
+      t.className = "cTable";
+      for(let i = 0; i < _chnlog.length; i++){
+        let tr = document.createElement("tr");
+        let s = _chnlog[i];
+        tr.innerHTML = `<td>${i}</td><td>${s}</td>`;
+        t.appendChild(tr);
+        if(s.startsWith("Added")) tr.children[1].style.color = "limegreen";
+        else if(s.startsWith("Changed")) tr.children[1].style.color = "orange";
+        else if(s.startsWith("Fixed")) tr.children[1].style.color = "dodgerblue";
+        else if(s.startsWith("Removed")) tr.children[1].style.color = "red";
       }
-      reload();
     } break;
   }
   return d;
@@ -5940,7 +5728,6 @@ document.getElementById("menu_new").getElementsByClassName("menuFooter")[0].chil
   }
   fileFunc.createNew(n,w,h);
   this.parentNode.parentNode.style.visibility = "hidden";
-  closeAllCtxMenus();
 };
 document.getElementById("menu_resize").getElementsByClassName("menuFooter")[0].children[0].onclick = function(){
   let w = parseInt(this.parentNode.parentNode.getElementsByClassName("inp_width")[0].value);
@@ -6150,8 +5937,6 @@ function closeAllCtxMenus(){
     let d = ctxes.children[i];
     if(d.onclose) d.onclose();
   }
-  menus_d.style.backgroundColor = "unset";
-  menus_d.style.zIndex = 0;
   ctxes.innerHTML = "";
   label.style.visibility = "hidden";
 }
@@ -6182,7 +5967,6 @@ var fileFunc = {
     reconstructFramesDiv();
     reconstructLayersDiv();
     reconstructHistDiv_new();
-    loadProject(project); //clean-up
   },
   createNew_menu:function(){
     openMenu("new");
@@ -6208,115 +5992,12 @@ function updateRedoCtxB(){
     else b.className = "";
   }
 }
-const backRef = document.getElementById("backRef");
-//https://www.pngkit.com/png/full/206-2062034_minecraft-bukkit-icon-8-bit-coin.png
-let dragRef = null;
-let dragX = 0;
-let dragY = 0;
-function readImage1() {
-  let ctx = this.refCtx;
-  if (!this.files || !this.files[0]) return;
-  console.log(111);
-  const FR = new FileReader();
-  FR.addEventListener("load", (evt) => {
-    console.log(222);
-    const img = new Image();
-    img.addEventListener("load", () => {
-      ctx.canvas.width = img.width;
-      ctx.canvas.height = img.height;
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      ctx.drawImage(img, 0, 0);
-      ctx.canvas.dat = ctx.getImageData(0,0,img.width,img.height).data;
-      console.log(ctx.canvas.dat);
-    });
-    img.src = evt.target.result;
-  });
-  FR.readAsDataURL(this.files[0]);
-}
-function createReference(){
-  let d1 = document.createElement("div");
-  let d = document.createElement("div");
-  let ops = document.createElement("div");
-  ops.innerHTML = "<div class='pCol'><div></div></div><div style='font-size:12px' class='prev'>(Shift)</div><button style='margin-left:auto'>X</button>"; //<div style='font-size:14px;white-space:nowrap' class='prev'>Shift + Click to take color...</div>
-  ops.style = "display:flex;width:100%;align-items:center";
-  d1.appendChild(d);
-  d.appendChild(ops);
-  ops.children[2].onclick = function(){
-    let c = this.parentNode.parentNode.parentNode;
-    c.parentNode.removeChild(c);
-  };
-  let pCol = ops.children[0];
-  registerInfo(pCol,"Shift + Click to take color","u");
-  d1.className = "d_ref";
-  let imgCan = document.createElement("canvas");
-  let imgCtx = imgCan.getContext("2d");
-  let ff = document.createElement("input");
-  ff.type = "file";
-  ff.refCtx = imgCtx;
-  ff.addEventListener("change",readImage1);
-  ff.click();
-  d.appendChild(imgCan);
-  backRef.appendChild(d1);
-  imgCan.onmousemove = function(e){
-    if(!e.shiftKey) return;
-
-    let rect = this.getBoundingClientRect();
-    let x = Math.floor((e.x-rect.x)/rect.width*this.width);
-    let y = Math.floor((e.y-rect.y)/rect.height*this.height);
-
-    this.inrange = (x >= 0 && y >= 0 && x < this.width && y < this.height);
-    if(this.inrange){
-      let ind = Math.floor(x+y*this.width)*4;
-      let r = imgCan.dat[ind];
-      let g = imgCan.dat[ind+1];
-      let b = imgCan.dat[ind+2];
-      let a = imgCan.dat[ind+3];
-      this.col = [r,g,b,a];
-      ops.children[0].children[0].style.backgroundColor = `rgba(${r},${g},${b},${a/255})`;
-    }
-  };
-  imgCan.onmousedown = function(e){
-    dragRef = this.parentNode.parentNode;
-    dragX = e.clientX;
-    dragY = e.clientY;
-    if(dragRef.sx == null) dragRef.style.left = "0px";
-    if(dragRef.sy == null) dragRef.style.top = "0px";
-    dragRef.sx = parseFloat(dragRef.style.left.replace("px",""));
-    dragRef.sy = parseFloat(dragRef.style.top.replace("px",""));
-    
-    if(!e.shiftKey) return;
-    if(this.inrange){
-      color[0] = this.col;
-      updateNewCol();
-    }
-  };
-}
 function openContext(id,x,y,temp,level){
   if(document.getElementById("ctx_"+id)){
     closeAllCtxMenus();
     return;
   }
   switch(id){
-    case "reference":{
-      _loadCtx(id,[
-        "New",
-        "Close All"
-      ],[],function(i,d){
-        console.log(i,d);
-        if(i == 0){
-          d.onclick = function(){
-            createReference();
-            closeAllCtxMenus();
-          };
-        }
-        else if(i == 1){
-          d.onclick = function(){
-            backRef.innerHTML = "";
-            closeAllCtxMenus();
-          };
-        }
-      },x,y,temp,level);
-    } break;
     case "file":{
       _loadCtx(id,[
         "New",
@@ -6341,7 +6022,7 @@ function openContext(id,x,y,temp,level){
             registerInfo(d,"File -> New: Creates a new empty image.")
             d.onclick = function(){
               fileFunc.createNew_menu();
-              //closeAllCtxMenus();
+              closeAllCtxMenus();
             };
           break;
           case 1:
@@ -6693,9 +6374,6 @@ function loadProject(p){
   reconstructHistDiv_new();
   _runHist();
   resetView();
-  color[0] = deepClone(p.c1);
-  color[1] = deepClone(p.c2);
-  updateNewCol();
 }
 
 var keybinds = {
@@ -6801,7 +6479,6 @@ _runHist();
 
 update();
 loadSwatches();
-loadHistSwatches();
 initSliders();
 
 //EXTRA MENU GEN
@@ -6996,7 +6673,6 @@ document.addEventListener("keydown",e=>{
   g_keye = e;
   // console.log("Code: ",e.keyCode,e.key);
   let key = e.key.toLowerCase();
-  if(document.activeElement.tagName.toLowerCase() == "input") if(e.ctrlKey) return;
   if(key == "t"){
     if(window.refresh) window.refresh();
     else window.location.reload();
@@ -7179,10 +6855,6 @@ function init2(){
   let b_swapPallet = document.getElementById("b_swapPallet");
   b_swapCur.onclick = function(){
     // keybinds.color.swapCur;
-    swapCurColor();
-  };
-  b_swapPallet.onclick = function(){
-    swapColors();
   };
   regNewLabel(b_swapCur);
   regNewLabel(b_swapPallet);
@@ -7220,24 +6892,6 @@ function init2(){
     // console.log("RUN: ",v,frames_d.getBoundingClientRect().height);
     frames_d.style.height = (86*v+14)+"px";
   });
-
-  //Hex
-  let c1 = deepClone(color[0]);
-  let c2 = deepClone(color[1]);
-  let hex1 = rgbaToHex(c1[0],c1[1],c1[2],c1[3]);
-  let hex2 = rgbaToHex(c2[0],c2[1],c2[2],c2[3]);
-  hex1i.value = hex1.replace("#","");
-  hex2i.value = hex2.replace("#","");
-  WhenEnter(hex1i,(a)=>{
-    let cc = hexToR_g_b_a(a.value);
-    color[0] = cc;
-    updateNewCol();
-  });
-  WhenEnter(hex2i,(a)=>{
-    let cc = hexToR_g_b_a(a.value);
-    color[1] = cc;
-    updateNewCol();
-  });
 }
 
 /**
@@ -7271,13 +6925,8 @@ function regNewLabel(c){
     label.appendChild(span);
     let r = c.getBoundingClientRect();
     let r1 = label.getBoundingClientRect();
-    if(pos=="r") if(r.right+r1.width+10 >= innerWidth) pos = "l";
     if(pos == null || pos == "r"){
       label.style.left = (r.left+r.width+10)+"px";
-      label.style.top = r.top+"px";
-    }
-    else if(pos == "l"){
-      label.style.left = (r.left-10-r1.width)+"px";
       label.style.top = r.top+"px";
     }
     else if(pos == "u"){
