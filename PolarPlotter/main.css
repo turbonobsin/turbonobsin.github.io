@@ -1,0 +1,49 @@
+body{
+    margin:0px;
+}
+canvas{
+    image-rendering:pixelated;
+    width:100%;
+    border-bottom:solid 1px gray;
+}
+#can2{
+    width:30%;
+    border-right:solid 1px gray;
+}
+#controls{
+    float:right;
+    padding:8px;
+    border:solid 1px gray;
+    width:33%;
+}
+#controls > *{
+    margin-bottom:4px;
+}
+.redraw{
+    background-color:tomato;
+    border:solid 1px black;
+    color:white;
+}
+button{
+    padding:6px;
+    background-color:white;
+    border:solid 1px gray;
+    color:black;
+}
+button:hover{
+    filter:brightness(0.8);
+}
+button:active{
+    filter:brightness(0.5);
+}
+input:not([type="checkbox"]){
+    width:100%;
+    margin:4px;
+}
+.inp{
+    display:flex;
+    white-space:nowrap;
+    align-items:center;
+    /* justify-content:space-between; */
+    width:100%;
+}

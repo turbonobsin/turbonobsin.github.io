@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polar Plotter</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <canvas id="can"></canvas>
+    <div id="controls">
+        <div>Controls:</div>
+        <hr>
+        <div class="inp">
+            <button class="redraw">Redraw</button>
+            <button id="reset" style="margin-left:auto">Reset Settings</button>
+        </div>
+        <div class="inp">
+            <input class="zoom" type="number" value="16">
+            <span>Zoom</span>
+        </div>
+        <div class="inp">
+            <input class="left" type="text" value="0">
+            <span> <= theta <= </span>
+            <input class="right" type="text" value="PI">
+        </div>
+        <div class="inp">
+            <span>Equation:</span>
+            <input class="eq" type="text" value="2*t">
+        </div>
+        <div class="inp">
+            <span>Speed:</span>
+            <input class="skip" type="number" value="3">
+        </div>
+        <div class="inp">
+            <span>Instant:</span>
+            <input class="instant" type="checkbox" value="true">
+        </div>
+        <div class="inp">
+            <span>Step:</span>
+            <input class="step" type="number" value="0.01">
+        </div>
+        <div class="inp">
+            <span>Delay (ms):</span>
+            <input class="delay" type="number" value="0">
+        </div>
+    </div>
+    <canvas id="can2"></canvas>
+    <script src="main.js"></script>
+</body>
+</html>
