@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "incremental": true,
+        "outDir": "out"
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}
