@@ -196,8 +196,57 @@ const _chnlogL = [
     "Version: 1.2.4 (10-15-22)",
     "Fixed pencil and line tool's select mode so it works now",
     "Fixed recursive fill tool so that it works with select mode"
+  ],
+  [
+    "Version: 1.2.5 (11-7-22)",
+    "Added draw circle by pressing Shft+C"
+  ],
+  [
+    "Version: 1.2.6 (12-18-22)",
+    "Fixed Clone Frames so that it highlights the newly added frames (so you can actually see the new frames you added and at what frame)",
+    "Added the ability to insert cloned frames before or after a certain frame, should be working but may have bugs",
+    "Started working on adding draggable ability to rearrange frames (not enabled in this version)"
+  ],
+  [
+    "Version: 1.2.7 (12-19-22)",
+    "Fixed resizing the preview widget so that you can use the right edge so it can't get stuck on lower resolution displays",
+    "Fixed: moved preview speed up to the top so that you can adjust the speed even when the preview is very large",
+    "Fixed: cleaned up the preview widget design",
+    "Fixed a few small bugs",
+    "Added: finished dragging frames to reorgranize",
+    "Added: made it so you can highlight frames by right clicking",
+    "Changed: redid design in the frames panel",
+    "Added: move single/multiple frames left or right using the move buttons on the frame option bar so you can move frames around that way quicker",
+    "Changed: redid design of multi-highlighted frames so they appear blue over the entire frame and they blink",
+    "Changed the onion skinning icon so it looks more correct",
+    "Fixed Move Selection Tool so that it appears different than the Move tool",
+    "Started adding more functions to the edit menu option and added Camera menu (no functionallity)",
+    "Added Camera Object (no functionallity yet)"
+  ],
+  [
+    "Version: 1.2.8 (12-21-22)",
+    "Changed: made file recovery backup not occur when autoSave is turned off",
+    "Added the button for preview menu",
+    "Added support for obj layer parents so that each obj layer can have reference to the original object in the objs panel (so there can be global object properties that you can specify in the 'Object Options' panel (working on hist and file open)",
+    "Added feature where if you try to add an object with the same name of an existing object, it will prompt you saying that you can't do that and ask for a new name",
+    "Fixed preview so that if it gets out of range it goes back to frame 0",
+    "Added onLoad (ol) callback to createDropdown",
+    "Added the ability to move objects around (including the camera) with the pointer tool",
+    "Fixed bugs with undo-redo with the camera moving around",
+    "Added the prev-menu option to select a camera to attach to",
+    "Added the prev-menu option to clear whatever camera is connected",
+    "Added the ability for the previewer to only draw the image content drawn within the camera"
+  ],
+  [
+    "Version: 1.2.9 (12-22-22)",
+    "Changed: made prevCtx draw cam previews fullsize",
+    "Fixed the fullsize preview so it doesn't use upscaling",
+    "Fixed camera layer objs so that their width and height is based on the parent",
+    "Fixed fullsize preview aspect ratio",
+    "Added the ability to resize the parent camera's width and height"
   ]
 ];
+const WIPText = "This feature is still in development/unfinished and is not available for use yet."
 
 //GIF CAPTURING
 let capturer = {start:()=>{},stop:()=>{},save:()=>{}};
@@ -257,6 +306,7 @@ function addRecoveryBackup(){
   if(project.handle) return;
   if(project.hist.length <= 1) return;
   if(project.legacyName) return;
+  if(!autoSave) return;
   console.log("saved...");
   let name = "rcv@"+sessionId+"@"+project.name;
   // console.log("Making recovery backup of... ",name);
@@ -284,6 +334,8 @@ const hex1i = document.getElementById("hex1");
 const hex2i = document.getElementById("hex2");
 const nob = new NobsinCtx(ctx);
 const pNob = new NobsinCtx(pCtx);
+const fore = document.getElementById("fore");
+const shape = document.getElementById("shape");
 /**@type {HTMLCanvasElement} */
 const prevCan = document.getElementById("prevCan");
 prevCan.width = 256;
@@ -382,7 +434,7 @@ function goForwardFrame(){
 frameOps.byClass("onionSkin").onclick = function(){
   project.onionSkin = !project.onionSkin;
   let l = this;
-  l.innerHTML = (project.onionSkin?"join_full":"join_inner");
+  l.innerHTML = "animation";//(project.onionSkin?"join_full":"join_inner");
   if(project.onionSkin){
     l.style.color = "olivedrab";
   }
@@ -395,6 +447,32 @@ frameOps.byClass("navLeft").onclick = function(){
 };
 frameOps.byClass("navRight").onclick = function(){
   goForwardFrame();
+};
+frameOps.byClass("moveLeft").onclick = function(){
+  ar = [project.frameI];
+  let useSel = (sel2Frames.length);
+  if(sel2Frames.length) ar = deepClone(sel2Frames);
+  if(ar[0] <= 0) return;
+  for(let i = 0; i < ar.length; i++){
+    moveFrame(ar[i],ar[i]-1,true);
+  }
+  _histAdd(HistIds.full,null,"Move frames left");
+  if(useSel) for(let i = 0; i < ar.length; i++){
+    highlightFrame(ar[i]-1);
+  }
+};
+frameOps.byClass("moveRight").onclick = function(){
+  ar = [project.frameI];
+  let useSel = (sel2Frames.length);
+  if(sel2Frames.length) ar = deepClone(sel2Frames);
+  if(ar[ar.length-1] >= project.frames.length-1) return;
+  for(let i = ar.length-1; i >= 0; i--){
+    moveFrame(ar[i],ar[i]+1,true);
+  }
+  _histAdd(HistIds.full,null,"Move frames right");
+  if(useSel) for(let i = 0; i < ar.length; i++){
+    highlightFrame(ar[i]+1);
+  }
 };
 frameOps.byClass("newFrame").onclick = function(){
   createFrame(project.frameI+1);
@@ -434,23 +512,32 @@ function moveLayer(i,toI,bare=false){
 }
 function createFrame_html(i){
   let d = document.createElement("div");
+  d.className = "frameDiv";
   let head = document.createElement("div");
   head.className = "header";
-  let num = document.createElement("span");
+  let num = document.createElement("div");
   num.innerHTML = i+1;
   head.appendChild(num);
   d.appendChild(head);
   let cont = document.createElement("div");
-  cont.className = "content";
+  cont.className = "frameContent";
   let c = document.createElement("canvas");
   cont.appendChild(c);
   d.appendChild(cont);
+
+  let overl = document.createElement("div");
+  overl.className = "frameOverlay";
+  d.appendChild(overl);
+  let overl2 = document.createElement("div");
+  overl2.className = "frameOverlay2";
+  d.appendChild(overl2);
 
   let op = document.createElement("div");
   op.style.display = "flex";
   op.style.float = "right";
   op.style.height = "19px";
   op.style.transform = "translateY(1px)";
+  // op.style.marginLeft = "auto";
   op.frameI = i;
   /*let b = document.createElement("button");
   b.innerHTML = "<";
@@ -473,7 +560,7 @@ function createFrame_html(i){
     moveFrame(this.parentNode.frameI,this.parentNode.frameI-1);
   };
   b.innerHTML = "arrow_back";
-  op.appendChild(b);
+  //op.appendChild(b);
   let b2 = document.createElement("div");
   b2.className = "material-icons";
   b2.classList.add("bLighter");
@@ -483,9 +570,7 @@ function createFrame_html(i){
     moveFrame(this.parentNode.frameI,this.parentNode.frameI+1);
   };
   b2.innerHTML = "arrow_forward";
-  //op.appendChild(b);
-  //op.appendChild(b1);
-  op.appendChild(b2);
+  // op.appendChild(b2);
   let b3 = document.createElement("div");
   b3.className = "material-icons";
   b3.classList.add("bLighter");
@@ -495,6 +580,14 @@ function createFrame_html(i){
   };
   b3.innerHTML = "cancel";
   op.appendChild(b3);
+
+  //fillLine decor
+  let line = document.createElement("div");
+  let lineCont = document.createElement("div");
+  line.className = "fillLine";
+  lineCont.appendChild(line);
+  head.appendChild(lineCont);
+
   head.appendChild(op);
 
   frames_d.insertBefore(d,frames_d.children[i]);
@@ -611,9 +704,10 @@ function createLayer(i,name,ops){
   },"Create layer: "+i);*/
   selectLayer(i);
   //histAdd_all("Create-layer: "+i);
-  _histAdd(HistIds.createLayer,{
+  if(ops?!ops.obj:true) _histAdd(HistIds.createLayer,{
     i,name,ops
   });
+  else _histAdd(HistIds.full,null,"Create Obj Layer");
 }
 function selectFrame(i){
   project.frameI = i;
@@ -776,7 +870,8 @@ function createLayer_bare(i,name,visual=true,ops={}){
       brightness:1,
       contrast:1
     },
-    ops:cloneOps(ops)
+    ops //maybe temp? 
+    //ops:cloneOps(ops)
   };
   l.nob.pixelCount = 0;
   l.nob.buf = new Uint8ClampedArray(l.nob.size);
@@ -918,6 +1013,15 @@ var Tools = {
 var selTool = 0;
 var tempTool = -1;
 var curTool = 0;
+const tools_menu = document.getElementById("tools_menu");
+tools_menu.onclick = function(){
+  /*if(tools_d.classList.contains("open")){
+    tools_d.classList.remove("open");
+    return;
+  }
+  tools_d.classList.add("open");*/
+  // openMenu("tools");
+};
 
 //Layers
 var layers_d = document.getElementById("layerList");
@@ -1106,7 +1210,13 @@ function rasterizeLayer(l){
     if(o.type == ObjType.none){
 
     }
-    else if(o.type == ObjType.test){
+    else{
+      l.nob.buf.fill(0);
+      l.nob.pixelCount = 0;
+      o.render(l.nob);
+      l.nob.pixelCount = 0;
+    }
+    /*else if(o.type == ObjType.test){
       l.nob.buf.fill(0);
       l.nob.pixelCount = 0;
       o.render(l.nob);
@@ -1123,7 +1233,7 @@ function rasterizeLayer(l){
       l.nob.pixelCount = 0;
       o.render(l.nob);
       l.nob.pixelCount = 0;
-    }
+    }*/
   }
   let b = l.nob.buf;
   let nb = new Uint8ClampedArray(nob.size);
@@ -1461,21 +1571,13 @@ function _runHist(){
       allProjects[projI] = project;
       for(let i = 0; i < e.objs.length; i++){
         let o = e.objs[i];
-        if(o.type == ObjType.test){
-          let a = new TestObj(o.name,o.x,o.y,ObjType.test);
-          a.loadState(o.state);
-          project.objs.push(a);
-        }
-        else if(o.type == ObjType.arm){
-          let a = new Armature(0,"-.-");
-          a.loadState(o.state);
-          project.objs.push(a);
-        }
-        else if(o.type == ObjType.img){
-          let a = new ImgObj("-.-",0,0);
-          a.loadState(o.state);
-          project.objs.push(a);
-        }
+        let a;
+        if(o.type == ObjType.test) a = new TestObj(o.name,o.x,o.y,ObjType.test);
+        else if(o.type == ObjType.arm) a = new Armature(0,"-.-");
+        else if(o.type == ObjType.img) a = new ImgObj("-.-",0,0);
+        else if(o.type == ObjType.cam) a = new Camera("-.-",0,0);
+        a.loadState(o.state);
+        project.objs.push(a);
       }
       reloadObjsList();
       for(let a = 0; a < e.frames.length; a++){
@@ -1494,6 +1596,8 @@ function _runHist(){
           if(layer.ops){
             if(layer.ops.obj){
               ops.obj = layer.ops.obj.ref;
+              console.log("HIST LOAD: ",layer.ops.obj.ref.parInd);
+              ops.obj.par = project.objs[layer.ops.obj.ref.parInd];
               ops.obj.loadState(layer.ops.obj.state);
             }
           }
@@ -1602,6 +1706,16 @@ function _runHist(){
       //console.warn("NOT IMPL YET");
     }
   }
+
+  //fix obj par references
+  let curFrame = getCurFrame();
+  for(let i = 0; i < curFrame.layers.length; i++){
+    let l = curFrame.layers[i];
+    if(l.ops.obj){
+      l.ops.obj.par = project.objs[l.ops.obj.parInd];
+    }
+  }
+  //
 
   reconstructHistDiv_new();
   previewUpdateTimer = 0;
@@ -1952,7 +2066,7 @@ function getOffset(a){
   }*/
   //return [x,y];
 }
-function createDropdown(i,l,desc,f,b,fixed=false){
+function createDropdown(i,l,desc,f,b,fixed=false,ol){
   if(!b) b = document.createElement("button");
   if(!fixed) b.innerHTML = l[i];
   b.onmousedown = function(){
@@ -1963,6 +2077,7 @@ function createDropdown(i,l,desc,f,b,fixed=false){
     //let l = ["Flood","Global"];
     this.ctxRef = _loadCtx("dd",l,[],function(j,d,lvl){
       d.i = j;
+      if(ol) ol(j,d);
       d.onclick = function(){
         main.index = this.i;
         if(!fixed) main.innerHTML = l[this.i];
@@ -2042,7 +2157,7 @@ function genToolSettings(i){
           "Flood","Global"
         ],[
           "Fill Mode (flood): Pixels will keep filling from the cursor position until they hit a different pixel color.",
-          "Fill Mode (global): All the pixels in the image with the same color as what you clicked on will be replaced with your palet color."
+          "Fill Mode (global): All the pixels in the image with the same color as what you clicked on will be replaced with your palette color."
         ],function(i,d){
           toolSettings[curTool].fillMode = i;
         });
@@ -2357,7 +2472,7 @@ function tempDeselTool(i){
   tempTool = -1;
 }
 let tools_d = document.getElementById("tools");
-for(let i = 0; i < tools_d.children.length; i++){
+for(let i = 0; i < tools_d.children.length-1; i++){
   tools_d.children[i].onclick = function(){
     selectTool(i);
   }
@@ -2751,10 +2866,17 @@ function exportAsGif(){
   startRecording(preview.s);
   preview.s = 5;
 }
+const CAMMode = {
+  off:0,
+  mask:1
+};
 let preview = {
   playing:false,
   i:0,
   s:5, //this will be scaled by 60 (a speed of 15 is 4 frames per second)
+  /**@type {Camera} */
+  cam:null,
+  camMode:CAMMode.off,
   run(){
     if(!this.playing) return;
     prevCan.width = img.w;
@@ -2765,18 +2887,52 @@ let preview = {
     let frameI = Math.floor(t.i/60);
     let frame = project.frames[frameI];
     if(!frame){
+      t.i = 0;
       console.warn("There is no frame: ",frameI);
       return;
     }
     // let n = frame.curLayer.nob;
+
+    //
+
+    /**@type {Camera} */
+    let cam = null;
+    if(t.cam){
+      for(let j = 0; j < frame.layers.length; j++){
+        let layer = frame.layers[j];
+        if(layer.ops.obj) if(layer.ops.obj.par == t.cam){
+          cam = layer.ops.obj;
+          break;
+        }
+      }
+    }
+
+    //
+
     for(let j = 0; j < frame.layers.length; j++){
       let layer = frame.layers[j];
       let tc = document.createElement("canvas");
       tc.width = frame.w;
       tc.height = frame.h;
       let tctx = tc.getContext("2d");
-      tctx.putImageData(new ImageData(layer.nob.buf,frame.w,frame.h),0,0);
-      prevCtx.drawImage(tc,0,0);
+      /**@type {NobsinCtx} */
+      let n = layer.nob;
+      //
+      if(cam){
+        n = new NobsinCtx(tctx);
+        n.buf = new Uint8ClampedArray(n.size);
+        for(let k = 0; k < n.size; k += 4) n.buf[k+3] = 255;
+        cam.rasterize(n,frameI);
+      }
+      //
+      tctx.putImageData(new ImageData(n.buf,frame.w,frame.h),0,0);
+      if(cam){
+        prevCtx.imageSmoothingEnabled = false;
+        let aRatio = cam.h/cam.w;
+        let w = Math.floor(project.w/cam.w*project.w);
+        prevCtx.drawImage(tc,0,0,w,w*1);
+      }
+      else prevCtx.drawImage(tc,0,0);
     }
     if(isExportingGif) capturer.capture(prevCan);
     // prevCtx.putImageData(new ImageData(n.buf,n.width,n.height),0,0);
@@ -2811,25 +2967,62 @@ let preview = {
     }
   },
   cb_play:null,
-  i_scale:null,
   i_speed:null,
+  dd_menu:null,
   init(){
     let t = this;
     t.cb_play = document.getElementById("prev_play");
-    t.i_scale = document.getElementById("prev_scale");
     t.i_speed = document.getElementById("prev_speed");
+    t.dd_menu = document.getElementById("prev_menu");
     t.cb_play.onclick = function(){
       t.toggle();
-    };
-    t.i_scale.oninput = function(){
-      let rs = this.value*2+50;
-      prevCan.style.width = rs*2+"px";
     };
     t.i_speed.oninput = function(){
       t.s = parseFloat(this.value);
       this.parentNode.children[1].textContent = t.s;
     };
-    t.i_scale.oninput();
+    t.i_speed.value = t.s;
+    t.i_speed.oninput();
+    createDropdown(0,[
+      "Toggle Camera ",
+      "Select Camera ",
+      // "Cam Mode: off [...]"
+    ],[],(i,d)=>{
+      if(i == 0){
+        d.innerHTML += t.cam!=null?"(<span style='color:green'>on</span>)":"(<span style='color:red'>off</span>)";
+        t.cam = null;
+      }
+      else if(i == 1){
+        let name = prompt("Please type the name of the camera object you want to use:","Camera 1");
+        if(name == null) return;
+        let cam = null;
+        function check(){
+          for(let i = 0; i < project.objs.length; i++){
+            let o = project.objs[i];
+            if(o.name == name) cam = o;
+          }
+        }
+        check();
+        while(!cam){
+          name = prompt("There is no camera with this name, please try again:",name);
+          if(name == null) return;
+          check();
+        }
+        t.cam = cam;
+      }
+      else if(i == 2){
+
+      }
+    },t.dd_menu,true,(i,d)=>{
+      if(i == 0){
+        d.style.backgroundColor = "black";
+        d.innerHTML += t.cam!=null?"(<span style='color:green'>on</span>)":"(<span style='color:red'>off</span>)";
+      }
+      else if(i == 1){
+        if(!t.cam) d.textContent += "[...]";
+        else d.textContent += `[${t.cam.name}]`;
+      }
+    });
   },
   toggle(){
     let t = this;
@@ -2868,6 +3061,21 @@ function update(){
 
   //PREVIEW CAN
   preview.run();
+
+  //cursor shape
+  if(false){
+    if(cx < 0 || cy < 0 || cx >= project.w || cy >= project.h){
+      shape.style.visibility = "hidden";
+    }
+    else{
+      shape.style.visibility = "unset";
+      let rect = can.getBoundingClientRect();
+      shape.style.left = (rect.x+(Math.trunc(cx)+0.5)*zoom)+"px";
+      shape.style.top = (rect.y+(Math.trunc(cy)+0.5)*zoom)+"px";
+      shape.style.width = (zoom)+"px";
+      shape.style.height = (zoom)+"px";
+    }
+  }
 
   //Update APoints
   if(img.curLayer.ops.obj && img.curLayer.visible) updateAPoints(img.curLayer.ops.obj,"unset");
@@ -3029,6 +3237,18 @@ function update(){
       }
       else pNob.drawLine_smart(lcx,lcy,cx,cy,red,ts.size);
     break;
+    case Tools.pointer:{
+      if(mouseDown[0]) if(img.curLayer.ops.obj){
+        let dx = cx-scx;
+        let dy = cy-scy;
+        /**@type {Obj} */
+        let o = img.curLayer.ops.obj;
+        o.x += dx;
+        o.y += dy;
+        scx = cx;
+        scy = cy;
+      }
+    } break;
     case Tools.rectSelect:
       pNob.setPixel(cx,cy,gray);
     break;
@@ -3696,7 +3916,7 @@ function confirmTool(i){
   let td = toolData[i];
   switch(i){
     case Tools.bezier:{
-      drawBezier(img.curLayer.nob,gbez,0,0);
+      drawBezier(img.curLayer.nob,gbez,0,0,1);
       gbez = null;
     } break;
     case Tools.rectSelect:{
@@ -4635,6 +4855,11 @@ function _mouseup(button){
         img.curLayer.nob.pixelCount = 0;
       }
     break;
+    case Tools.pointer:{
+      if(button == 0) if(img.curLayer.ops.obj){
+        _histAdd(HistIds.full,null,"Move object");
+      }
+    }
     case Tools.rectSelect:
       d = toolData[curTool];
       if(d.drawn == 1){
@@ -5967,6 +6192,11 @@ function openFileBase(e,type,fd_name,fileHandle){
           a.loadState(state);
           project.objs.push(a);
         }
+        else if(type == ObjType.cam){
+          let a = new Camera("-.-",0,0);
+          a.loadState(state);
+          project.objs.push(a);
+        }
         else console.warn("UNKNOWN OBJ TYPE while loading");
       } break;
     }
@@ -6392,33 +6622,41 @@ function highlightFrame(i){
   }
   if(!sel2Frames.length){
     sel2Frames.push(i);
-    console.log("ADDED");
   }
   else if(sel2Frames[0] > i){
     sel2Frames.splice(0,0,i);
-    console.log("ADDED");
   }
   else if(sel2Frames[sel2Frames.length-1] < i){
     sel2Frames.push(i);
-    console.log("ADDED");
   }
   else for(let j = 0; j < sel2Frames.length; j++){
     let jj = sel2Frames[j];
     if(i < jj){
       sel2Frames.splice(j,0,i);
-      console.log("ADDED");
       break;
     }
   }
   tframe.classList.add("sel2");
 }
+let draggingFrames = [];
 function updateFramesDiv(){
   for(let i = 0; i < project.frames.length; i++){
     let d = frames_d.children[i];
     if(i == project.frameI) d.classList.add("sel");
     else d.classList.remove("sel");
     d.children[0].children[0].innerHTML = i+1;
-    d.children[1].onmousedown = function(){
+    /**@type {HTMLElement} */
+    let a = d.children[1];
+    a.onmouseup = function(){
+      this.clicking = false;
+    };
+    a.onmousedown = function(e){
+      this.clicking = true;
+      if(e.button == 1) return;
+      if(e.button == 2){
+        highlightFrame(i);
+        return;
+      }
       if(g_keye.shiftKey){
         highlightFrame(i);
         return;
@@ -6431,6 +6669,132 @@ function updateFramesDiv(){
       if(i != project.frameI){
         project.frameI = i;
         loadFrame(project.frames[project.frameI],false);
+      }
+      if(a.down) a.down(e);
+    };
+    let overl = d.getElementsByClassName("frameOverlay")[0];
+    overl.onmousemove = function(e){
+      overl.onmouseleave(e);
+      let rect = d.getBoundingClientRect();
+      if(e.clientX > rect.left+rect.width/2){
+        d.style.borderRight = "solid 7px dodgerblue";
+        d.style.marginRight = "-3px";
+      }
+      else{
+        d.style.borderLeft = "solid 7px dodgerblue";
+        d.style.marginLeft = "-3px";
+      }
+    };
+    overl.onmouseleave = function(e){
+      d.style.borderLeft = "none";
+      d.style.borderRight = "none";
+      d.style.border = "solid 1px gray";
+      d.style.marginRight = "3px";
+      d.style.marginLeft = "3px";
+    }
+    overl.onmouseup = function(e){
+      overl.onmouseleave(e);
+      let rect = d.getBoundingClientRect();
+      draggingFrames.sort((a,b)=>{return a-b});
+      let useHighlight = (sel2Frames.length != 0);
+      let tos = [];
+      console.log(draggingFrames);
+      let ind = draggingFrames[0];
+      let to = 0;
+      if(ind == null) return;
+      if(e.clientX > rect.left+rect.width/2){
+        to = i+1;
+        for(let j = 0; j < draggingFrames.length; j++){
+          if(to >= draggingFrames[j]-1) to--;
+        }
+        for(let j = draggingFrames.length-1; j >= 0; j--){
+          //console.log("TO: "+draggingFrames[j],to+j);
+          moveFrame(draggingFrames[j],to+j,true);
+          tos.push(to+j);
+        }
+      }
+      else{
+        to = i;
+        for(let j = 0; j < draggingFrames.length; j++){
+          if(to > draggingFrames[j]) to--;
+        }
+        for(let j = 0; j < draggingFrames.length; j++){
+          //console.log("TO: "+draggingFrames[j],to+j);
+          moveFrame(draggingFrames[j],to+j,true);
+          tos.push(to+j);
+        }
+      }
+      if(draggingFrames.length == 1 && ind == to) return;
+      selectFrame(to);
+      _histAdd(HistIds.full,null,"Move frame(s)");
+      if(useHighlight) for(let j = 0; j < tos.length; j++){
+        highlightFrame(tos[j]);
+      }
+    };
+    /**@type {HTMLElement} */
+    let tmp = null;
+    if(true) createDragable(d.children[0],function(){
+      if(tmp == null){
+        this.cancel();
+        return;
+      }
+      tmp.style.left = mx+"px";
+      tmp.style.top = my+"px";
+      tmp.style.visibility = "unset";
+    },function(){
+      tmp = d.cloneNode(true);
+      if(sel2Frames.length != 0 ? (!sel2Frames.includes(i)) : true){
+        draggingFrames = [i];
+        sel2Frames = [];
+      }
+      else draggingFrames = deepClone(sel2Frames);
+      let l = document.getElementsByClassName("frameOverlay");
+      for(let i = 0; i < l.length; i++){
+        let b = l[i];
+        if(b.parentNode != d) b.style.pointerEvents = "all";
+      }
+      // console.log(tmp);
+      if(true){
+        tmp = document.createElement("div");
+        tmp.className = "dragFrame";
+        if(draggingFrames.length == 1) tmp.innerHTML = "Frame<br>"+(i+1);
+        else tmp.innerHTML = "Frames<br>"+(draggingFrames[0]+1)+"-"+(draggingFrames[draggingFrames.length-1]+1);
+      }
+      if(false){
+        tmp.style.position = "absolute";
+        tmp.style.translate = "-50% -50%";
+        tmp.style.visibility = "hidden";
+      }
+      ctxes.appendChild(tmp);
+      d.classList.add("darken");
+      tmp.classList.remove("darken");
+    },function(){
+      draggingFrames = [];
+      let l = document.getElementsByClassName("frameOverlay");
+      for(let i = 0; i < l.length; i++){
+        let b = l[i];
+        b.style.pointerEvents = "none";
+      }
+      if(tmp){
+        if(tmp.parentNode) tmp.parentNode.removeChild(tmp);
+        d.classList.remove("darken");
+      }
+      ctxes.innerHTML = "";
+    },function(){
+      draggingFrames = [];
+      let l = document.getElementsByClassName("frameOverlay");
+      for(let i = 0; i < l.length; i++){
+        let b = l[i];
+        b.style.pointerEvents = "none";
+      }
+      if(tmp){
+        if(tmp.parentNode) tmp.parentNode.removeChild(tmp);
+        d.classList.remove("darken");
+      }
+      ctxes.innerHTML = "";
+    });
+    a.onmousemove = function(){
+      if(this.clicking){
       }
     };
   }
@@ -6577,7 +6941,7 @@ function reloadRecoveryList(t,v,k){
     if(listRepeat.includes(val)){
       console.log("Recovery: caught dupe, fixing...");
       delete localStorage[str];
-      return;
+      // return; ()()() temp
     }
     else listRepeat.push(val);
     let b = document.createElement("div");
@@ -7251,10 +7615,17 @@ let uniDragY = 0;
  * 
  * @param {HTMLElement} a 
  */
-function createDragable(a,onmove,ondown,onup){
+function createDragable(a,onmove,ondown,onup,oncancel){
   a.onmove = onmove;
   a.onup = onup;
-  a.onmousedown = function(e){
+  a.cancel = function(e){
+    if(oncancel) oncancel(e);
+    uniDrag = null;
+    dragging = false;
+    draggingColor = false;
+    dragSlider = -1;
+  };
+  a.down = function(e){
     if(ondown) ondown(e);
     uniDrag = a;
     uniDragX = cx;
@@ -7262,6 +7633,9 @@ function createDragable(a,onmove,ondown,onup){
     a.sx = a.px;
     a.sy = a.py;
   };
+  a.addEventListener("mousedown",function(e){
+    a.down(e);
+  });
 }
 function createDragableV(a,onmove,ondown){ //virtual, no html is created
   a.onmove = onmove;
@@ -7305,6 +7679,7 @@ const ObjType = {
   none:0,
   arm:1,
   img:2,
+  cam:3,
   test:99
 };
 class Obj{
@@ -7325,19 +7700,53 @@ class Obj{
   x = 0;
   y = 0;
   type;
-  getState(){return this.name+","+this.x.toFixed(1)+","+this.y.toFixed(1)}
+  /**@type {Obj} */
+  par = null;
+  parInd = -1;
+  getState(){return this.name+","+this.x.toFixed(1)+","+this.y.toFixed(1)}//+","+this.parInd}
   loadState(s){
     let c = s.split(",");
     let t = this;
     t.name = c[0];
     t.x = parseFloat(c[1]);
     t.y = parseFloat(c[2]);
+    //console.log("OBJS: ",project.objs.length);
+    
+    // t.parInd = parseInt(c[3]);
+    // console.log("LOAD PAR IND: ",t.parInd)*
     return c;
   }
+  copyVals(a){
+    a.par = this.par || this;
+    a.parInd = project.objs.indexOf(a.par);
+    console.log("COPIED PARIND: ",a.parInd);  
+    /*for(let i = 0; i < project.objs.length; i++){
+      if(project.objs[i] == t.name){
+        t.parInd = i;
+        break;
+      }
+    }*/
+    // a.parInd = project.objs.indexOf(a.par);
+    // console.log("FOUND PAR IND: ",a.parInd);
+  }
 }
-function addObj(o){
+function addObj(/**@type {Obj}*/ o){
+  let newName = o.name;
+  function check(){
+    for(let i = 0; i < project.objs.length; i++){
+      let a = project.objs[i];
+      if(a.name == newName){
+        newName = prompt("Object names must be unique! Two objects have the name: '"+newName+"'. Please type in a new name:",newName);
+        console.log(newName);
+        if(newName == null) newName = o.name+"_2";
+        check();
+      }
+    }
+  }
+  check();
+  o.name = newName;
   project.objs.push(o);
-  _histAdd(HistIds.full,null,"Add Img Obj");
+  _histAdd(HistIds.full,null,"Add "+obj_names[o.type]+" Obj");
   reloadObjsList();
 }
 function selToNewNob(){
@@ -7501,6 +7910,77 @@ class ImgObj extends Obj{
     return a;
   }
 }
+class RenderHog extends Obj{ //kinda like backdrop filter but you write the algorithm
+
+}
+class Fireflier extends Obj{ //particle generator
+
+}
+class Camera extends Obj{
+  constructor(name,x,y){
+    super(name,x,y,ObjType.cam);
+    this.width = Math.ceil(project.w/2);
+    this.height = Math.ceil(project.h/2);
+  }
+  width = 0;
+  height = 0;
+  get w(){
+    if(this.par) return this.par.width;
+    else return this.width;
+  }
+  get h(){
+    if(this.par) return this.par.height;
+    else return this.height;
+  }
+  getState(){
+    let t = this;
+    let s = super.getState()+",";
+    s += t.width+","+t.height;
+    return s;
+  }
+  loadState(s){
+    let c = super.loadState(s);
+    let t = this;
+    t.width = c[3] ?? 16;
+    t.height = c[4] ?? 16;
+  }
+  render(/**@type {NobsinCtx}*/ n){
+    let w = this.w;
+    let h = this.h;
+    let x = project.w/2+this.x-w/2;
+    let y = project.h/2+this.y-h/2;
+    for(let i = 0; i < n.size; i += 4){
+      n.buf[i+3] = 150;
+    }
+    n.drawRect(x,y,w,h,[0,0,0,0]);
+  }
+  clone(){
+    let t = this;
+    let a = new Camera(t.name,t.x,t.y);
+    t.copyVals(a);
+    return a;
+  }
+  rasterize(/**@type {NobsinCtx}*/n,frameI){
+    let t = this;
+    let x1 = Math.floor(t.x+project.w/2-t.w/2);
+    let y1 = Math.floor(t.y+project.h/2-t.h/2);
+    let ind = (x1+y1*project.w)*4;
+    let indStart = ind;
+    let frame = rasterizeFrame(frameI);
+    for(let y = 0; y < t.h; y++){
+      for(let x = 0; x < t.w; x++){
+        let indD = ind-indStart;
+        n.buf[indD] = frame.buf[ind];
+        n.buf[indD+1] = frame.buf[ind+1];
+        n.buf[indD+2] = frame.buf[ind+2];
+        n.buf[indD+3] = frame.buf[ind+3];
+        ind += 4;
+      }
+      ind += project.w*4;
+      ind -= t.w*4;
+    }
+  }
+}
 class TestObj extends Obj{
   constructor(name,x,y,type){
     super(name,x,y,type);
@@ -7525,6 +8005,7 @@ class TestObj extends Obj{
   }
   clone(){
     let a = new TestObj(this.name,this.x,this.y,this.type);
+    this.copyVals(a);
     a.color = this.color;
     return a;
   }
@@ -7842,6 +8323,7 @@ class Armature extends Obj{
   clone(){
     let t = this;
     let a = new Armature(0,t.name);
+    this.copyVals(a);
     a.x = t.x;
     a.y = t.y;
     /**
@@ -7928,9 +8410,9 @@ class Armature extends Obj{
   render(n){
     if(!n) return;
     let t = this;
-    let x1_ = t.x;
-    let y1_ = t.y;
-    let a1_ = 0;
+    // let x1_ = t.x;
+    // let y1_ = t.y;
+    // let a1_ = 0;
     /**
      * 
      * @param {Joint} p 
@@ -8069,6 +8551,21 @@ function openContext(id,x,y,temp,level,b){
     return;
   }
   switch(id){
+    case "camera":{
+      _loadCtx(id,[
+        "New Camera"
+      ],[],function(i,d){
+        switch(i){
+          case 0: 
+            d.onclick = function(){
+              let a = new Camera("Camera 1",0,0);
+              addObj(a);
+              closeAllCtxMenus();
+            };
+            break;
+        }
+      },x,y,temp,level,b);
+    } break;
     case "armature":{
       _loadCtx(id,[
         "New",
@@ -8251,7 +8748,10 @@ function openContext(id,x,y,temp,level,b){
         "Undo",
         "Redo",
         "Select All",
-        "Deselect"
+        "Deselect",
+        "Flip X",
+        "Flip Y",
+        "Crop to Selection"
       ],[
         "Ctrl-Z",
         "Ctrl-Y",
@@ -8279,6 +8779,21 @@ function openContext(id,x,y,temp,level,b){
           case 3:
             d.onclick = function(){
               editFunc.deselect();
+            };
+            break;
+          case 4:
+            d.onclick = ()=>{
+              alert(WIPText);
+            };
+            break;
+          case 5:
+            d.onclick = ()=>{
+              alert(WIPText);
+            };
+            break;
+          case 6:
+            d.onclick = ()=>{
+              alert(WIPText);
             };
             break;
         }
@@ -8376,6 +8891,8 @@ function openContext(id,x,y,temp,level,b){
             break;
           case 1:{
             d.onclick = function(){
+              alert(WIPText);
+              if(true) return; //WIP
               let o = new TestObj("New Obj",0,0,ObjType.test);
               o.color = [0,255,0,255];
               project.objs.push(o);
@@ -8895,6 +9412,55 @@ document.addEventListener("keydown",e=>{
   // console.log("Code: ",e.keyCode,e.key);
   let key = e.key.toLowerCase();
   if(document.activeElement.tagName.toLowerCase() == "input") if(e.ctrlKey) return;
+  if(e.shiftKey && key == "c"){
+    //temp draw circle
+    // let useFill = confirm("Fill?");
+    let d = parseInt(prompt("Diameter?"));
+    // let d = 64;
+    let r = (d/2);
+    let useFill = false;
+    let col = getCol(mouseDown[2]?2:0,false);
+    if(useFill){
+      img.curLayer.nob.drawCircle(cx,cy,r,col,1,0);
+      img.curLayer.nob.drawCircle(cx,cy,r-1,clear,1,0);
+    }
+    else{
+      /*let inc = Math.PI*2 / (d*Math.PI);
+      for(let i = 0; i < Math.PI*2; i += inc){
+        let tx = Math.round(Math.cos(i)*r);
+        let ty = Math.round(Math.sin(i)*r);
+        img.curLayer.nob.drawPixel(Math.round(cx+tx),Math.round(cy+ty),col);
+      }*/
+      let inc = Math.PI*2 / (d*Math.PI) / r;
+      for(let i = 0; i < Math.PI*2; i += inc){
+        let tx = Math.round(Math.cos(i)*r);
+        let ty = Math.round(Math.sin(i)*r);
+        // let tx1 = Math.floor(Math.cos(i+inc)*r);
+        // let ty1 = Math.floor(Math.sin(i+inc)*r);
+        // img.curLayer.nob.drawLine_smart(Math.floor(cx+tx),Math.floor(cy+ty),Math.floor(cx+tx1),Math.floor(cy+ty1),col,1);
+        img.curLayer.nob.drawPixel(Math.round(cx+tx),Math.round(cy+ty),col);
+      }
+      /*let i = 0;
+      for(let y = -r; y < r; y++){
+        function a(v=1){
+          let x = Math.round(Math.abs(Math.sqrt(r*r-(y*y))))*v;
+          let nextX = Math.round(Math.abs(Math.sqrt(r*r-((y+1)*(y+1)))))*v;
+          if(nextX < x){
+            let tmp = x;
+            x = nextX;
+            nextX = tmp;
+          }
+          for(let j = x; j <= nextX; j++) img.curLayer.nob.drawPixel(Math.round(cx+j),Math.round(cy+y),col);
+        }
+        a(1);
+        a(-1);
+        i++;
+      }*/
+      // img.curLayer.nob.drawPixel(cx,cy,getCol(mouseDown[2]?2:0,false));
+      //drawPixel(img.curLayer.nob,mx,my,getCol(mouseDown[2]?2:0,true,true),1);
+      _histAdd(HistIds.full,null,"Draw circle");
+    }
+  }
   if(e.altKey && key == "t"){
     e.preventDefault();
     if(window.refresh) window.refresh();
@@ -9052,16 +9618,38 @@ function cloneMulti(rev=false){
   if(!sel2Frames.length) return;
   let tmpI = project.frameI;
   let lI = sel2Frames[sel2Frames.length-1]+1;
-  if(rev) lI = sel2Frames[0]+1;
-  for(let i = 0; i < sel2Frames.length; i++){
-    console.log("CLONE: ",sel2Frames[i],lI+i);
+  let pLI = null;
+  let len = sel2Frames.length;
+  function check(){
+    return (pLI != null ? (pLI < -project.frames.length || pLI > project.frames.length) : true);
+  }
+  while(check()){
+    let resp = prompt("Type the frame number that these pasted frames will be inserted after. *Make it a negative number to insert before a frame (-2 would insert before frame 2)* DEFAULT (Frame "+(lI+(rev?len-1:0))+")",lI+(rev?len-1:0));
+    if(resp == null) return;
+    pLI = parseInt(resp);
+    if(check()) alert("Invalid frame number, try again.");
+    else lI = pLI;
+  }
+  
+  // if(rev) lI = sel2Frames[0]+1;
+  let lILast = lI;
+  if(lILast < 0) lILast = -lILast-1;
+  lI = project.frames.length;
+  for(let i = 0; i < len; i++){
     cloneFrame(sel2Frames[i],lI+i,true);
+  }
+  for(let i = 0; i < len; i++){
+    moveFrame(project.frames.length-len+i,lILast+i,true);
   }
   reconstructFramesDiv();
   loadFrame(project.frames[tmpI]);
   let mode = "Clone Frames";
   if(rev) mode += "  (Reverse)";
   _histAdd(HistIds.full,null,mode);
+  //highlight after
+  for(let i = 0; i < len; i++){
+    highlightFrame(lILast+i);
+  }
 }
 
 //init2
@@ -9100,26 +9688,28 @@ function init2(){
     cloneMulti(true);
   };
 
-  const i_shelves = document.getElementById("i_shelves");
-  i_shelves.check = function(){
-    if(!this.value) this.value = 1;
-    let v = parseInt(this.value);
-    let max = Math.floor((innerHeight-50)/86);
-    if(v < 1) v = 1;
-    else if(v > max) v = max;
-    this.value = v;
-    return v;
-  };
-  i_shelves.onwheel = function(){
-    let v = parseInt(this.value);
-    requestAnimationFrame(()=>{this.check();});
-  };
-  WhenEnter(i_shelves,function(a){
-    let v = a.check();
-    // console.log("RUN: ",v,frames_d.getBoundingClientRect().height);
-    frames_d.style.height = (86*v+14)+"px";
-  });
-  i_shelves._f(i_shelves);
+  if(false){
+    const i_shelves = document.getElementById("i_shelves");
+    i_shelves.check = function(){
+      if(!this.value) this.value = 1;
+      let v = parseInt(this.value);
+      let max = Math.floor((innerHeight-50)/86);
+      if(v < 1) v = 1;
+      else if(v > max) v = max;
+      this.value = v;
+      return v;
+    };
+    i_shelves.onwheel = function(){
+      let v = parseInt(this.value);
+      requestAnimationFrame(()=>{this.check();});
+    };
+    WhenEnter(i_shelves,function(a){
+      let v = a.check();
+      // console.log("RUN: ",v,frames_d.getBoundingClientRect().height);
+      frames_d.style.height = (86*v+14)+"px";
+    });
+    i_shelves._f(i_shelves);
+  }
 
   //Hex
   let c1 = deepClone(color[0]);
@@ -9302,11 +9892,13 @@ const obj_icons = [
   "view_in_ar",
   "directions_run",
   "view_in_ar",
+  "camera"
 ];
 const obj_names = [
   "OBJ",
   "ARM",
-  "OBJ"
+  "OBJ",
+  "CAM"
 ];
 function reloadObjsList(){
   /**@type {Obj[]} */
@@ -9337,10 +9929,20 @@ function reloadObjsList(){
     if(o.type == ObjType.arm){
       list.splice(1,0,"Scale by","Update from active layer");
     }
+    else if(o.type == ObjType.cam){
+      list.splice(1,0,"Set Width & Height");
+    }
     createDropdown(0,list,[],(j,a)=>{
       let la = list[j];
       if(la == "Add to frame"){
         createLayer(1,obj_names[o.type]+": "+o.name,{obj:o.clone()});
+      }
+      else if(la == "Set Width & Height"){
+        let w = prompt("Please input camera width: ",o.width) || 16;
+        let h = prompt("Please input camera height: ",o.height) || 16;
+        o.width = w;
+        o.height = h;
+        _histAdd(HistIds.full,null,"Set Camera W & H");
       }
       else if(la == "Scale by"){
         let amt = parseFloat(prompt("Multiplier to scale by"));

@@ -4,7 +4,7 @@
  *
  * AUTHORS: Turbo Nobsin
  *
- * VERSION: a1.3.0
+ * VERSION: a1.3.0 (qs)
  * DATE: 9-2-22
  * Last Update: 8-30-21
  *
@@ -4461,7 +4461,7 @@ function bufToImage(buf,w,h){
 
   var clear = [0,0,0,0];
 
-//BEZIERS (9-2-22 - a1.3.0)
+//BEZIERS (9-2-22 - a1.3.0 (qs))
 function drawBezier(nob1,bez,x=0,y=0,dep=0){
   bez.list = [];
   for(let i1 = 0; i1 < 1; i1 += 0.01){

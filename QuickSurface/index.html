@@ -15,15 +15,20 @@
 		<div id="label">Test Label</div>
     <div id="messages"></div>
     <div id="ctxes"></div>
+    <div id="fore">
+      <div id="shape"></div>
+    </div>
     <div class="menuBar">
       <span class="vr"></span>
       <div class="main" onmousedown="openContext_b('file',this)">File</div>
       <div class="main" onmousedown="openContext_b('edit',this)">Edit</div>
       <div class="main" onmousedown="openContext_b('view',this)">View</div>
       <div class="main" onmousedown="openContext_b('image',this)">Image</div>
+      <!-- <div class="main" onmousedown="openContext_b('select',this)">Selection</div> -->
       <div class="main" onmousedown="openContext_b('object',this)">Object</div>
       <div class="main" onmousedown="openContext_b('reference',this)">Reference</div>
       <div class="main" onmousedown="openContext_b('armature',this)">Armature</div>
+      <div class="main" onmousedown="openContext_b('camera',this)">Camera</div>
       <span class="vr"></span>
       <div id="settings_b" name="info" info="Settings: not started" pos="d" class="material-icons" onclick="" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">settings</div>
       <div id="keybinds_b" name="info" info="Open menu to change Keybindings" pos="d" class="material-icons" onclick="openMenu('keys')" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">keyboard</div>
@@ -195,7 +200,10 @@
               "><div class="material-icons">select_all</div></div>
               <div alt="moveSelect" name="info" info="
                 Move Selection: Click and drag to move selection region.
-              "><div class="material-icons">open_with</div></div>
+              " style="position:relative">
+                <div style="position:absolute;width:calc(100% - 5px);height:calc(100% - 5px);border:dashed 3px currentColor"></div>
+                <div class="material-icons" style="scale:0.75;translate:0.5px 0.25px">open_with</div>
+              </div>
               <div alt="move" name="info" info="
                 Move Tool [A]: Click and drag to move entire image or selection region. [Escape] to cancel or [Enter] to confirm.
               "><div class="material-icons">open_with</div></div>
@@ -220,19 +228,26 @@
               <div alt="shape" name="info" info="
                 Shape Tool:
               "><div class="material-icons">interests</div></div>
+              <!--  -->
+              <div id="tools_menu" style="margin-top:auto"><div class="material-icons">menu</div></div>
             </div>
             <div class="cont-subv">
-              <div class="cont" style="margin-top:auto" id="preview">
-                <div class="title" style="display:flex;justify-content:space-between">
-                  <div>Preview</div>
-                  <div id="prev_play" class="material-icons" name="info" info="Pause/Play Previewer" kb="preview.togglePlay">play_arrow</div>
+              <div class="cont dragR" style="margin-top:auto;min-width:207.5px;max-width:60vw;width:207.5px" id="preview">
+                <div class="title" style="display:flex;margin-bottom:-5px">
+                  <div id="prev_menu" class="material-icons" style="margin-right:5px">menu</div>
+                  <div style="margin-right:5px">Preview</div>
+                  <div style="display:flex;margin-left:auto;margin-right:-3px;align-items:center">
+                    <input type="range" id="prev_speed" style="width:75px;margin-top:-1px" value="1" min="1" max="60" step="1">
+                    <span style="width:20px">0</span>
+                  </div>
+                  <div id="prev_play" class="material-icons" name="info" info="Pause/Play Previewer" kb="preview.togglePlay" style="translate:0px 2px">play_arrow</div>
+                </div>
+                <!-- <input type="range" id="prev_scale" style="width:85px" value="0"> -->
+                <div style="display:flex">
+                  <!-- <input type="range" id="prev_speed" style="width:85px" value="1" min="1" max="60" step="1">
+                  <span style="width:20px">0</span> -->
                 </div>
                 <canvas id="prevCan"></canvas>
-                <input type="range" id="prev_scale" style="width:85px" value="0">
-                <div style="display:flex">
-                  <input type="range" id="prev_speed" style="width:85px" value="1" min="1" max="60" step="1">
-                  <span style="width:20px">0</span>
-                </div>
               </div>
             </div>
             <!-- main editor -->
@@ -344,18 +359,22 @@
             <div id="frameOptions">
               <span class="title">Frames</span>
               <div class="material-icons" style="margin-left:auto;margin-right:10px" id="frame_dir" onclick="toggleFrameDir(this)">swap_horiz</div>
-              <div style="padding-right:10px;margin-right:10px;border-right:solid 1px gray;display:flex;align-items:center">
+              <div class="vrDiv">
                 <span name="info" pos="u" info="Hold [Shift] and click frames to highlight and de-highlight them" style="margin-right:5px;font-size:13px">(Selection?)</span>
                 <button name="info" pos="u" info="Clone Highlighted" style="height:100%" id="sel2_clone">Clone >></button>
                 <button name="info" pos="u" info="Clone Highlighted (Reversed)" style="height:100%" id="sel2_cloneR">Clone <<</button>
               </div>
-              <div style="display:flex;align-items:center">
+              <div class="material-icons moveLeft" name="info" pos="u" info="Move selected frames back">arrow_back</div>
+              <div class="material-icons moveRight" name="info" pos="u" info="Move selected frames forward">arrow_forward</div>
+              <div class="vrDiv"></div>
+              <!--<div style="display:flex;align-items:center">
                 <span style="font-size:13px;margin-right:5px">Shelves:</span>
                 <input id="i_shelves" type="number" style="width:40px;margin-right:5px" value="1">
-              </div>
+              </div>-->
               <!--<div class="icon-div">--><div class="material-icons onionSkin" onclick="" style="color:gray;margin-right:5px" name="info" info="
                 Onion Skinning: Displays a blue tinted previous frame and a green tinted next frame in the viewport.
-              " pos="u">join_inner</div>
+              " pos="u">animation</div>
+              <!-- join_inner -->
               <!--<div style="margin-right:0px;border-right:none" class="icon-div">--><div style="margin-right:0px;border-right:none" class="material-icons navLeft" onclick="" name="info" info="
                 Frame Navigation Left: Navigates you to the previous frame.
               " pos="u">chevron_left</div>
@@ -412,8 +431,8 @@
           <div class="cont dragL" nofix="true" nondrag="localStorage.objs_w = this.style.width" id="objs">
             <span class="title bb">Objects</span>
             <div class="list"></div>
-            <div class="dragT" nofix="true" style="margin-top:auto">
-              <span class="title bt bb">Object Options</span>
+            <div class="dragT" nofix="true" style="margin-top:auto/*;height:25%*/">
+              <span id="d_objOps" class="title bt bb">Object Options</span>
               <div class="options"></div>
             </div>
           </div>

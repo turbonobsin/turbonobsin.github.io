@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Quick Surface</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="debugger.css">
+  </head>
+  <body>
+    <div class="gui">
+    <div id="back"></div>
+    <div id="backRef"></div>
+		<div id="label">Test Label</div>
+    <div id="messages"></div>
+    <div id="ctxes"></div>
+    <div class="menuBar">
+      <span class="vr"></span>
+      <div class="main" onmousedown="openContext_b('file',this)">File</div>
+      <div class="main" onmousedown="openContext_b('edit',this)">Edit</div>
+      <div class="main" onmousedown="openContext_b('view',this)">View</div>
+      <div class="main" onmousedown="openContext_b('image',this)">Image</div>
+      <div class="main" onmousedown="openContext_b('object',this)">Object</div>
+      <div class="main" onmousedown="openContext_b('reference',this)">Reference</div>
+      <div class="main" onmousedown="openContext_b('armature',this)">Armature</div>
+      <span class="vr"></span>
+      <div id="settings_b" name="info" info="Settings: not started" pos="d" class="material-icons" onclick="" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">settings</div>
+      <div id="keybinds_b" name="info" info="Open menu to change Keybindings" pos="d" class="material-icons" onclick="openMenu('keys')" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">keyboard</div>
+      <div id="darkMode_b" name="info" info="Toggle light and dark mode" pos="d" class="material-icons" onclick="toggleContrastMode()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">wb_sunny</div>
+      <div id="b_zen" name="info" info="Toggle zen mode on or off (Hides all menus except top bar and canvas)" pos="d" class="material-icons" onclick="toggleZen()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">visibility</div>
+      <div class="ex" id="l_ver">...</div>
+      <div id="b_chan" class="ex material-icons" style="margin:0px;color:gray !important;padding:0px;margin-top:4px" name="info" info="Show Channelog">help</div>
+
+      <div style="margin-left:auto" id="fileName" name="info" info="File Name: The current open file's name." pos="l"></div>
+      <span style="border-right:none" class="vr"></span>
+      <div id="nameDiv" name="info" info="Open Projects List: A list of all your current open projects."></div>
+
+      <!--<button onclick="openMenu('openFiles')">Open</button>
+      <button onclick="openMenu('saveAsFile')">Save As</button>
+      <button onclick="saveFile()">Save</button>-->
+    </div>
+    <div id="toolBar">
+      <div style="padding-right:10px;margin-right:10px">Current Tool: Pencil</div>
+      <div id="toolData"></div>
+      <div id="toolConfirm_d" style="margin-left:10px;visibility:hidden">
+        <i class="material-icons" style="color:red" name="info" info="Cancel [Escape]: Cancels and resets the current state of the tool.">cancel</i>
+        <i class="material-icons" style="color:limegreen" name="info" info="Confirm [Enter]: Confirms the current state and action of the tool.">check_circle</i>
+      </div>
+    </div>
+    <div id="statusBar">
+      <div id="info_l" name="info" info="Info Box: Displays info of hovered parts of the editor.">No info.</div><div id="coordsStart_l" name="info" info="Start Coords: Displays the last position you clicked in pixels.">Start (0,0)</div><div id="coords_l" name="info" info="Cursor Coords: Displays the current cursor position in pixels.">Cursor (0,0)</div>
+    </div>
+    <div id="menus">
+      <div class="menu" id="menu_recovery">
+        <div class="menuHeader"><span class="menuTitle">File Recovery</span><button class="closeWindow_b">X</button></div>
+        <div id="fileRcv">
+          <div>bob</div>
+          <div>bob2</div>
+        </div>
+      </div>
+      <div class="menu" id="menu_log">
+        <div class="menuHeader"><span class="menuTitle">Channelog</span><div style="margin-left:20px;display:flex;align-items:center"><div class="l_i" style="margin-right:10px;width:20px">0</div><button class="go_l"><</button><button class="go_r">></button></div><button class="closeWindow_b">X</button></div>
+        <div>
+          <div>ver.</div>
+          <div class="tabc">
+            <table></table>
+          </div>
+        </div>
+      </div>
+      <div class="menu" id="menu_new">
+        <div class="menuHeader"><span class="menuTitle">New File</span><button class="closeWindow_b">X</button></div>
+        <p>Name:</p>
+        <input type="text" id="inp_name" value="Image">
+        <p>Width:</p>
+        <input type="number" id="inp_width" min="1" value="16">
+        <p>Height:</p>
+        <input type="number" id="inp_height" min="1" value="16">
+        <div class="menuFooter"><button>Create</button></div>
+      </div>
+      <div class="menu" id="menu_resize">
+        <div class="menuHeader"><span class="menuTitle">Resize All Frames' Images</span><button class="closeWindow_b">X</button></div>
+        <p class="l_prevInfo">Previous:</p>
+        <p>Width:</p>
+        <input type="number" class="inp_width" min="1" value="16">
+        <p>Height:</p>
+        <input type="number" class="inp_height" min="1" value="16">
+        <div class="menuFooter"><button>Resize</button></div>
+      </div>
+      <div class="menu" id="menu_keys">
+        <div class="menuHeader"><span class="menuTitle">Keybinds</span><button class="closeWindow_b">X</button></div>
+        <div class="d_keys"></div><hr>
+        <div class="d_keys_list"></div>
+        <input type="number" class="inp_height" min="1" value="16">
+        <div class="menuFooter"><button>Resize</button></div>
+      </div>
+      <div class="menu" id="menu_resizeCanvas">
+        <div class="menuHeader"><span class="menuTitle">Resize Canvas</span><button class="closeWindow_b">X</button></div>
+        <p class="l_prevInfo">Previous:</p>
+        <p>Width:</p>
+        <input type="number" class="inp_width" min="1" value="16">
+        <p>Height:</p>
+        <input type="number" class="inp_height" min="1" value="16">
+        <table class="originTable">
+          <tr>
+            <td>UL</td>
+            <td>UM</td>
+            <td>UR</td>
+          </tr>
+          <tr>
+            <td>ML</td>
+            <td>MM</td>
+            <td>MR</td>
+          </tr>
+          <tr>
+            <td>BL</td>
+            <td>BM</td>
+            <td>BR</td>
+          </tr>
+        </table>
+        <div class="menuFooter"><button>Resize Canvas</button></div>
+      </div>
+      <div class="menu" id="menu_exportAs">
+        <div class="menuHeader"><span class="menuTitle">Export As</span><button class="closeWindow_b">X</button></div>
+        <div class="body" style="margin-top:10px">
+          <div style="display:flex"><span style="padding:4px">Preset: </span><button>Test 0</button><button onclick="openMenu('createExportPreset')" style="margin-left:auto">Create Preset</button></div>
+        </div>
+        <div class="menuFooter"><button>Export</button></div>
+      </div>
+      <div class="menu" id="menu_createExportPreset">
+        <div class="menuHeader"><span class="menuTitle">Create Export Preset</span><button class="closeWindow_b">X</button></div>
+        <div class="body" style="margin-top:10px">
+          <p>Name:</p><input type="text"><br><br>
+          <span>Type: </span><button class="presetType_b">Type</button>
+          <div class="options" style="position:relative;height:200px">
+            <div style="position:absolute">
+              <p>Collumn Count:</p>
+              <input type="number" min="1" value="1">
+              <p>Row Count:</p>
+              <input type="number" min="1" value="1">
+              <pre></pre>
+              
+            </div>
+            <div style="position:absolute">
+              <br>
+              <span>Numbers: </span><input type="text"><input type="text">
+            </div>
+          </div>
+        </div>
+        <div class="menuFooter"><button>Create</button></div>
+      </div>
+      <div class="menu" id="menu_layerSettings">
+        <div class="menuHeader"><span class="menuTitle">Layer Settings</span><button class="closeWindow_b">X</button></div>
+        <div class="_cont">
+          <div class="options"></div>
+          <div class="content"></div>
+        </div>
+        <div class="menuFooter" style="width:100%"><button style="width:90px;color:white;--color:red;--hover:80%;--active:60%">Delete Layer</button></div>
+      </div>
+
+      <div class="menu" id="menu_openFiles">
+        <div class="menuHeader"><span class="menuTitle">Open File Menu</span><button class="closeWindow_b">X</button></div>
+        <p>Files:</p>
+        <div class="fileList" id="open_fileList"></div>
+        <div class="menuFooter" id="openFiles_footer"><button>Open</button></div>
+      </div>
+      <div class="menu" id="menu_saveAsFile">
+        <div class="menuHeader"><span class="menuTitle">Save As File Menu</span><button class="closeWindow_b">X</button></div>
+        <p>Files:</p>
+        <div class="fileList" id="save_fileList"></div>
+        <div class="menuFooter" id="saveFiles_footer"><input type="text" placeholder="file name..."><button>Save</button></div>
+      </div>
+      <div class="menu" id="menu_manageFiles">
+        <div class="menuHeader"><span class="menuTitle">Manage Files</span><button class="closeWindow_b">X</button></div>
+        <p>Files:</p>
+        <div class="fileList" id="manage_fileList"></div>
+      </div>
+    </div>
+    <div class="cont-cont">
+      <div class="cont-sub" style="width:100%">
+        <div class="cont-subv" style="width:315px">
+          <div class="cont-sub" style="height:100%;min-height:0px">
+            <div class="cont" id="tools">
+              <div alt="pencil" name="info" info="
+                Pencil Tool [D]: Click and drag left mouse button for color 1, and right for color 2.
+              "><div class="material-icons">edit</div></div>
+              <div alt="line" name="info" info="
+                Line Tool: Click to begin line, and release mouse button to finish drawing line.
+              "><div class="material-icons">timeline</div></div>
+              <div alt="pan" name="info" info="
+                Pan Tool [Space, Middle Click]: Click and drag to move canvas around.
+              "><div class="material-icons">pan_tool</div></div>
+              <div alt="rectSelect" name="info" info="
+                Rectangle Select [S]: Click and drag to define region. [Escape] to cancel or [Enter] to confirm.
+              "><div class="material-icons">select_all</div></div>
+              <div alt="moveSelect" name="info" info="
+                Move Selection: Click and drag to move selection region.
+              "><div class="material-icons">open_with</div></div>
+              <div alt="move" name="info" info="
+                Move Tool [A]: Click and drag to move entire image or selection region. [Escape] to cancel or [Enter] to confirm.
+              "><div class="material-icons">open_with</div></div>
+              <div alt="pointer" name="info" info="
+                Pointer Tool: Used to move and interact with objects and other non-rasterized data.
+              "><div class="material-icons">pan_tool_alt</div></div>
+              <div alt="fill" name="info" info="
+                Fill Tool: Fills area based on what color you click on.
+              "><div class="material-icons">format_color_fill</div></div>
+              <div alt="eyeDropper" name="info" info="
+                Eye Dropper: Left click on pixel to reassign it to color 1 on the pallet and right click for color 2.
+              "><div class="material-icons">colorize</div></div>
+              <div alt="eraser" name="info" info="
+                Eraser Tool:
+              "><div class="material-icons">backspace</div></div>
+              <div alt="bezier" name="info" info="
+                Bezier Curve Tool:
+              "><div class="material-icons">gesture</div></div>
+              <div alt="bezier" name="info" info="
+                Armature Edit Tool:
+              "><div class="material-icons">directions_run</div></div>
+              <div alt="shape" name="info" info="
+                Shape Tool:
+              "><div class="material-icons">interests</div></div>
+            </div>
+            <div class="cont-subv">
+              <div class="cont" style="margin-top:auto" id="preview">
+                <div class="title" style="display:flex;justify-content:space-between">
+                  <div>Preview</div>
+                  <div id="prev_play" class="material-icons" name="info" info="Pause/Play Previewer" kb="preview.togglePlay">play_arrow</div>
+                </div>
+                <canvas id="prevCan"></canvas>
+                <input type="range" id="prev_scale" style="width:85px" value="0">
+                <div style="display:flex">
+                  <input type="range" id="prev_speed" style="width:85px" value="1" min="1" max="60" step="1">
+                  <span style="width:20px">0</span>
+                </div>
+              </div>
+            </div>
+            <!-- main editor -->
+            
+          </div>
+          <div class="cont" id="color">
+            <span class="title" style="border-bottom:solid 1px darkgray;border-right:solid 1px darkgray;margin-top:-2px">Color</span>
+            <div id="colorDiv">
+              <div id="colorCur"></div>
+              <canvas id="colorArea"></canvas>
+              <div id="colBox"><div id="col1"><div></div></div><div id="col2"><div></div></div></div>
+              <div style="margin-left:4px;font-size:6px;width:75px"><button onclick="switchColorArea(0)" style="width:100%">Radial</button><br><button onclick="switchColorArea(1)" style="width:100%">Linear</button></div>
+              <div id="sliders">
+                  <div>
+                    <div class="ccont"><div class="cur"></div><div class="back"></div></div>
+                    <input class="slider_i" type="number" value="255">
+                    <div class="slider_l" name="info1" info="Hue (HSL)">H</div>
+                  </div>
+                  <div>
+                    <div class="ccont"><div class="cur"></div><div class="back"></div></div>
+                    <input class="slider_i" type="number" value="255">
+                    <div class="slider_l" name="info1" info="Saturation (HSL)">S</div>
+                  </div>
+                  <div>
+                    <div class="ccont"><div class="cur"></div><div class="back"></div></div>
+                    <input class="slider_i" type="number" value="255">
+                    <div class="slider_l" name="info1" info="Lightness (HSL)">L</div>
+                  </div>
+                  <div>
+                    <div class="ccont"><div class="cur"></div><div class="back"></div></div>
+                    <input class="slider_i" type="number" value="255">
+                    <div class="slider_l" name="info1" info="Red (RGB)">R</div>
+                  </div>
+                  <div>
+                    <div class="ccont"><div class="cur"></div><div class="back"></div></div>
+                    <input class="slider_i" type="number" value="255">
+                    <div class="slider_l" name="info1" info="Green (RGB)">G</div>
+                  </div>
+                  <div>
+                    <div class="ccont"><div class="cur"></div><div class="back"></div></div>
+                    <input class="slider_i" type="number" value="255">
+                    <div class="slider_l" name="info1" info="Blue (RGB)">B</div>
+                  </div>
+                  <div>
+                    <div class="ccont"><div class="cur"></div><div class="back"></div></div>
+                    <input class="slider_i" type="number" value="255">
+                    <div class="slider_l" name="info1" info="Alpha / Opacity">A</div>
+                </div>
+              </div>
+              <div id="slider_hex">
+                <div>Hex 1</div>
+                <input id="hex1" class="hex" type="text">
+                <div style="margin-left:20px">Hex 2</div>
+                <input id="hex2" class="hex" type="text">
+              </div>
+              <div class="material-icons" id="b_swapCur" name="info" info="Swap current active color. This lets you edit your right click color" pos="u" kb="color.swapCur">swap_horiz</div>
+              <div class="material-icons" id="b_swapPallet" name="info"  info="Swap active color palette. This will switch the left and right click colors" pos="u" kb="color.swap">swap_horizontal_circle</div>
+              <div id="swatches" name="info" info="Color History">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+              <div id="sw2" name="info" info="Color Palette">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cont-sub" style="align-items:end;width:100%">
+          <div class="cont dragT" id="frames" nofix="true">
+            <div id="frameOptions">
+              <span class="title">Frames</span>
+              <div class="material-icons" style="margin-left:auto;margin-right:10px" id="frame_dir" onclick="toggleFrameDir(this)">swap_horiz</div>
+              <div style="padding-right:10px;margin-right:10px;border-right:solid 1px gray;display:flex;align-items:center">
+                <span name="info" pos="u" info="Hold [Shift] and click frames to highlight and de-highlight them" style="margin-right:5px;font-size:13px">(Selection?)</span>
+                <button name="info" pos="u" info="Clone Highlighted" style="height:100%" id="sel2_clone">Clone >></button>
+                <button name="info" pos="u" info="Clone Highlighted (Reversed)" style="height:100%" id="sel2_cloneR">Clone <<</button>
+              </div>
+              <div style="display:flex;align-items:center">
+                <span style="font-size:13px;margin-right:5px">Shelves:</span>
+                <input id="i_shelves" type="number" style="width:40px;margin-right:5px" value="1">
+              </div>
+              <!--<div class="icon-div">--><div class="material-icons onionSkin" onclick="" style="color:gray;margin-right:5px" name="info" info="
+                Onion Skinning: Displays a blue tinted previous frame and a green tinted next frame in the viewport.
+              " pos="u">join_inner</div>
+              <!--<div style="margin-right:0px;border-right:none" class="icon-div">--><div style="margin-right:0px;border-right:none" class="material-icons navLeft" onclick="" name="info" info="
+                Frame Navigation Left: Navigates you to the previous frame.
+              " pos="u">chevron_left</div>
+              <!--<div class="icon-div">--><div class="material-icons navRight" style="margin-right:5px" onclick="" name="info" info="
+                Frame Navigation Right: Navigates you to the next frame.
+              " pos="u">chevron_right</div>
+              <div style="border-right:none;margin-right:0px;color:royalblue" class="material-icons newFrameWObjs" onclick="" name="info" info="
+                Add Frame (But Clone Objs)
+              " pos="u">person_add</div>
+              <div style="border-right:none;margin-right:0px;color:darkslateblue" class="material-icons newFrame" onclick="" name="info" info="
+                Add Frame: Adds an empty frame to the right of your current frame.
+              " pos="u">add_box</div>
+              <div class="material-icons cloneFrame" onclick="" style="color:darkslategray" name="info" info="
+                Clone Frame: Clones the current frame and adds it to the right.
+              " pos="u">library_add</div>
+            </div>
+            <div id="frameList">
+              <!--<div>
+                <div class="header"><span>0</span></div>
+                <div class="content">
+                  <canvas></canvas>
+                </div>
+              </div>-->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cont-sub">
+        <div class="cont-subv" style="justify-content:unset !important">
+          <div class="cont" id="hist" style="margin-left:auto">
+            <span class="title" style="border-bottom:solid 1px darkgray">History</span>
+            <div id="histList"></div>
+          </div>
+          <div class="cont" nofix="true" id="layers">
+            <div id="layerOptions">
+              <span class="title">Layer</span>
+              <div class="material-icons mi" style="margin-left:auto">
+                <span onclick="moveLayer(img.curLayer.ind,img.curLayer.ind+1)">arrow_upward</span>
+              </div>
+              <div class="material-icons mi">
+                <span onclick="moveLayer(img.curLayer.ind,img.curLayer.ind-1)">arrow_downward</span>
+              </div>
+              <div class="material-icons mi" style="margin-left:4px">
+                <span>add_box</span>
+              </div>
+              <div class="material-icons mi">
+                <span onclick="cloneLayer(img.curLayer.ind)">library_add</span>
+              </div>
+              </div>
+            <div id="layerList"></div>
+          </div>
+        </div>
+        <div class="cont-subv">
+          <div class="cont dragL" nofix="true" nondrag="localStorage.objs_w = this.style.width" id="objs">
+            <span class="title bb">Objects</span>
+            <div class="list"></div>
+            <div class="dragT" nofix="true" style="margin-top:auto">
+              <span class="title bt bb">Object Options</span>
+              <div class="options"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="arms"></div>
+    <div class="can-cont">
+      <div id="canvas">
+        <img id="back_img"></img>
+        <canvas id="can"></canvas>
+        <canvas id="prev"></canvas>
+        <div id="overlay"></div>
+      </div>
+    </div>
+    <!--<script src="CCapture.min.js"></script>
+    <script src="gif.js"></script>
+    <script src="download.js"></script>-->
+    <script src="CCapture.all.min.js"></script>
+
+    <script src="util.js"></script>
+    <script src="pre.js"></script>
+    <script src="conversions.js"></script>
+    <script src="NobsinEngine.js"></script>
+    <script src="script.js"></script>
+    <!-- <script src="debugger.js"></script> -->
+    <!--<script src="conversions.js"></script>
+    <script src="NobsinEngine.js"></script>
+    <script src="script.js"></script>-->
+  </body>
+</html>

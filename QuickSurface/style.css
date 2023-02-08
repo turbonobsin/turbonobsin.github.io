@@ -117,6 +117,10 @@ body{
     display:flex;
     flex-direction:column;
     flex-wrap:wrap;
+    align-items:flex-end;
+  }
+  #tools.open{
+    width:100px;
   }
   #tools > div{
     width:23px;
@@ -683,40 +687,89 @@ body{
     width:100%;
     overflow-x:hidden;
   }
-  #frameList > div{
+  .frameOverlay{
+    position:absolute;
+    left:0px;
+    top:0px;
+    /* background-color:rgba(255,0,0,0.5); */
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    user-select:none;
+    padding-right:3px;
+    padding-left:3px;
+  }
+  .frameOverlay2{
+    position:absolute;
+    left:0px;
+    top:0px;
+    /* background-color:rgba(255,0,0,0.5); */
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    user-select:none;
+  }
+  div.frameDiv{
     height:80px;
     width:100px;
     background-color:var(--background);
     border:solid 1px gray;
     display:inline-block;
-    margin-right:5px;
+    margin-right:3px;
+    margin-left:3px;
     color:var(--frameColor);
+    position:relative;
   }
-  #frameList > div > div.header{
+  div.frameDiv .header{
     padding-left:4px;
     user-select:none;
     background-color:var(--frameHeader);;
     border-bottom:solid 1px black;
     font-family:monospace;
     font-size:16px;
+    display:flex;
+    align-items:center;
   }
-  #frameList > div.sel2{
+  div.frameDiv .header > div:first-child{
+    margin-right:4px;
+  }
+  div.frameDiv .header > div:nth-child(2){
+    width:100%;
+    height:15px;
+    cursor:move;
+    display:flex;
+    align-items:center;
+  }
+  div.frameDiv .header > div:last-child{
+    margin-left:4px;
+  }
+  div.frameDiv.sel2 .frameOverlay2{
     background-color:dodgerblue !important;
+    opacity:0.3;
+    animation:highlightAnim 0.8s alternate infinite ease-in; 
   }
-  #frameList > div.sel > div.header{
+  @keyframes highlightAnim {
+    0%{
+      opacity:0.3;
+    }
+    100%{
+      opacity:0.5;
+    }
+  }
+  div.frameDiv.sel > div.header{
     background-color:var(--frameHeaderSel);
     color:var(--frameColorSel);
   }
-  #frameList > div.sel{
+  div.frameDiv.sel{
     background-color:var(--frameHeaderSel);
   }
-  #frameList > div > div.content{
+  div.frameContent{
     height:60px;
   }
-  #frameList > div > div.content:hover{
+  div.frameContent:hover{
     cursor:pointer;
   }
-  #frameList > div > div.content > canvas{
+  div.frameContent > canvas{
     width:60px;
     height:60px;
     background-image:var(--grid);
@@ -728,6 +781,7 @@ body{
   #frameOptions{
     /* float:right; */
     display:flex;
+    /* align-items:center; */
     /* justify-content:space-between; */
     max-width:var(--mw);
     flex-wrap:wrap;
@@ -1056,6 +1110,12 @@ body{
   background-color:var(--toolbar-color);
   border-right:solid 1px gray;
 }
+.vr2{
+  border-right:solid 1px gray;
+  height:15px;
+  margin-right:10px;
+  padding-right:10px;
+}
 #nameDiv{
   overflow:scroll;
   max-width:45vw;
@@ -1269,6 +1329,8 @@ body{
   background-image:var(--grid);
   background-size:15px;
   image-rendering:pixelated;
+  width:calc(100% - 12.5px) !important;
+  min-width:115px;
 }
 #prev_play{
   cursor:pointer;
@@ -1526,4 +1588,64 @@ body{
 .flex{
   display:flex;
   align-items:center;
+}
+
+/*  */
+
+.dragFrame{
+  /* width:20px; */
+  /* height:20px; */
+  border:solid 1px gray;
+  background-color:black;
+  position:absolute;
+  left:0px;
+  top:0px;
+  z-index:12000;
+  translate:-50% -100%;
+  padding:5px;
+  font-size:16px;
+  color:white;
+  pointer-events:none;
+  text-align:center;
+  opacity:0.7;
+}
+
+.darken{
+  filter:brightness(0.7);
+}
+
+.fillLine{
+  width:100%;
+  border-top:double 4px currentColor;
+  /* border-top:dotted 4px var(--background); */
+}
+
+.vrDiv{
+  padding-right:10px;
+  margin-right:10px;
+  border-right:solid 1px gray;
+  display:flex;
+  align-items:center;
+}
+
+/*  */
+
+#fore{
+  position:absolute;
+  top:0px;
+  left:0px;
+  z-index:20000;
+}
+#shape{
+  position:absolute;
+  top:0px;
+  left:0px;
+  width:10px;
+  height:10px;
+  border:solid 2px var(--text-color);
+  opacity:0.9;
+  translate:-50% -50%;
+  z-index:1000;
+  pointer-events:none;
+  visibility:hidden;
 }
