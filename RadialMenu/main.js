@@ -1,5 +1,14 @@
 let sides = 7;
 let ang = Math.PI*2/sides;
+let labelList = [
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven"
+];
 
 /**@type {HTMLCanvasElement} */
 const can = document.getElementById("can");
@@ -61,18 +70,10 @@ let sects = [];
 /**@type {Sect} */
 let hoverSect = null;
 
-function genSects(amt){
-    let ar = [
-        "One",
-        "Two",
-        "Three",
-        "Four",
-        "Five",
-        "Six",
-        "Seven"
-    ];
-    for(let i = 0; i < amt; i++){
-        sects.push(new Sect(ar[i]));
+function genSects(){
+    sects = [];
+    for(let i = 0; i < sides; i++){
+        sects.push(new Sect(labelList[i]));
     }
 }
 genSects(sides);
@@ -109,8 +110,14 @@ function drawMenu(){
         let r = outerR*sect.scale.val;
         
         ctx.beginPath();
-        ctx.arc(ox,oy,r,left,right);
-        ctx.arc(ox,oy,innerR,right,left,true);
+        if(sides == 1){
+            ctx.arc(ox,oy,r,0,Math.PI*2);
+            ctx.arc(ox,oy,innerR,Math.PI*2,0,true);
+        }
+        else{
+            ctx.arc(ox,oy,r,left,right);
+            ctx.arc(ox,oy,innerR,right,left,true);
+        }
         let lTx = Math.cos(left);
         let lTy = Math.sin(left);
         ctx.moveTo(ox+lTx*r,oy+lTy*r);
@@ -161,3 +168,13 @@ can.addEventListener("click",e=>{
         hoverSect.click();
     }
 });
+
+document.getElementById("b_changeList").onclick = function(){
+    let listStr = prompt("Insert list of labels for the sections",labelList.join(","));
+    if(!listStr) return;
+    let list = listStr.split(",");
+    sides = list.length;
+    labelList = list;
+    ang = Math.PI*2/sides;
+    genSects();
+};

@@ -2,8 +2,9 @@ body{
     overflow:hidden;
 }
 #can{
+    position:absolute;
     width:50%;
-    margin-left:50vw;
-    margin-top:50vh;
+    left:50vw;
+    top:50vh;
     translate:-50% -50%;
 }
