@@ -1,0 +1,59 @@
+body{
+    margin:0px;
+}
+#can{
+    border:solid 1px gray;
+    width:100%;
+    display:none;
+}
+#cont{
+    position:absolute;
+    width:100vw;
+    height:100vh;
+}
+.crankCont{
+    position:absolute;
+    width:350px;
+    aspect-ratio:1;
+    /* border:solid 1px gray; */
+    margin-left:50vw;
+    margin-top:50vh;
+    translate:-50% -50%;
+    display:flex;
+}
+.crankBg{
+    margin:auto;
+    border-radius:50%;
+    width:75%;
+    height:75%;
+    border:solid 1px gray;
+}
+.crankKnob{
+    width:10%;
+    aspect-ratio:1;
+    border-radius:50%;
+    border:solid 1px gray;
+    position:absolute;
+    background-color:red;
+    translate:-50% -50%;
+}
+
+.box{
+    width:100px;
+    height:200px;
+    border:solid 1px gray;
+    position:absolute;
+    margin-left:calc(50vw - 250px);
+    margin-top:50vh;
+    translate:-50% -50%;
+}
+.water{
+    position:absolute;
+    background-color:dodgerblue;
+    width:100%;
+    height:50%;
+    bottom:0px;
+    transition:all 0.4s ease-out;
+    background-image: url(https://static.planetminecraft.com/files/image/minecraft/texture-pack/2020/887/13327895-pack_xl.jpg);
+    background-size: 100%;
+}
