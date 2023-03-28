@@ -1,0 +1,15 @@
+#clock{
+    border:solid 1px gray;
+    width:400px;
+    height:400px;
+    aspect-ratio:1;
+    border-radius:50%;
+    position:absolute;
+    left:50vw;
+    top:450px;
+    translate:-50% -50%;
+}
+#clock canvas{
+    width:100%;
+    aspect-ratio:1;
+}
