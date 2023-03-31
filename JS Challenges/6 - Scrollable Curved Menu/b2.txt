@@ -1,0 +1,62 @@
+const menu = document.getElementById("menu");
+const cont = menu.querySelector(".cont") as HTMLElement;
+
+class Slot{
+    constructor(txt){
+        this.txt = txt;
+    }
+    ref:HTMLElement;
+    y = 0;
+    x = 0;
+    yy = 0;
+    txt = "-.-";
+    update(){
+        let d = this.ref;
+        let height = h*(list.length)-8;
+        this.yy = (height/2 + (this.y+y) % height);
+        d.style.top = this.yy+"px";
+
+        let yoff = ((this.yy+height)-height)/height;
+
+        let ang = yoff*Math.PI/1.5-Math.PI/2;
+        this.x = Math.sin(ang)*100;
+        // this.x = (yoff)*50;
+        
+        d.style.left = this.x+"px";
+    }
+}
+let list = [
+    new Slot("111"),
+    new Slot("222"),
+    new Slot("333"),
+    new Slot("444"),
+    new Slot("555"),
+    new Slot("666"),
+    new Slot("777")
+];
+// let h = 41.267;
+let h = 60;
+let y = -h*list.length;
+
+function load(){
+    for(let i = 0; i < list.length; i++){
+        let d = document.createElement("div");
+        let data = list[i];
+        data.y = i*h;
+        d.textContent = data.txt;
+        cont.appendChild(d);
+        data.ref = d;
+        data.update();
+    }
+}
+load();
+
+cont.onwheel = function(e){
+    y += e.deltaY/50;
+    if(y > -h*list.length) y -= h*list.length;
+    else if(y < -h*list.length*2) y += h*list.length;
+    for(let i = 0; i < list.length; i++){
+        let data = list[i];
+        data.update();
+    }
+};
