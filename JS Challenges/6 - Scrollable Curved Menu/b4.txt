@@ -15,21 +15,21 @@ class Slot{
     update(){
         let d = this.ref;
         let height = h*(list.length)-8;
-        this.yy = (height/2 + (this.y+y) % height);
-        d.style.top = this.yy+"px";
+        // let y0 = Math.cos(ang)*300;
+        // let y0 = this.y+y; //y
+        let y0 = this.y+y;
+        this.yy = (height/2 + (y0) % height);
         
         let yoff = ((this.yy+height)-height)/height;
         
-        
+        let ang = yoff*Math.PI/1.5*1.4-Math.PI/2;
+        this.x = Math.sin(ang)*100;
+        d.style.top = (this.yy/3+Math.cos(ang)*50)+"px";
+
         let scale = yoff;
         scale = Math.abs(scale);
         scale = 1-scale;
-        d.style.scale = scale+"";
-        let w = ((scale*4)**2)**2+100;
-        d.style.width = `${w}px`;
-
-        let ang = yoff*Math.PI/1.5*1.4-Math.PI/2;
-        this.x = Math.sin(ang)*100-w+100;
+        // d.style.scale = scale+"";
         
         d.style.left = this.x+"px";
     }
@@ -41,7 +41,7 @@ for(let i = 0; i < 7; i++){
 let h = 100;
 let y = -h*list.length;
 let vy = 0;
-let drag = 0.98; //0.93
+let drag = 0.9; //0.93
 
 function load(){
     for(let i = 0; i < list.length; i++){
@@ -58,7 +58,7 @@ function load(){
 load();
 
 overlay.onwheel = function(e){
-    let speedScale = 3;
+    let speedScale = 5;
     vy -= e.deltaY/150*speedScale;
 };
 
@@ -79,12 +79,10 @@ function update(){
     let tar = Math.round(tarr/h*2*list.length)*h/2/list.length;
     let tol = 0;
     if(tar > tarr+tol){
-        vy += 0.3;
-        vy *= 0.94;
+        vy += 0.3; //0.3
     }
     else if(tar < tarr-tol){
         vy -= 0.3;
-        vy *= 0.94;
     }
 }
 update();

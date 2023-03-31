@@ -15,14 +15,14 @@ var Slot = /** @class */ (function () {
         this.yy = (height / 2 + (this.y + y) % height);
         d.style.top = this.yy + "px";
         var yoff = ((this.yy + height) - height) / height;
-        var ang = yoff * Math.PI / 1.5 * 1.4 - Math.PI / 2;
-        this.x = Math.sin(ang) * 100;
         var scale = yoff;
         scale = Math.abs(scale);
         scale = 1 - scale;
-        // if(scale > 2) scale = 2;
-        // else if(scale < 0.75) scale = 0.75;
         d.style.scale = scale + "";
+        var w = Math.pow((Math.pow((scale * 4), 2)), 2) + 100;
+        d.style.width = "".concat(w, "px");
+        var ang = yoff * Math.PI / 1.5 * 1.4 - Math.PI / 2;
+        this.x = Math.sin(ang) * 100 - w + 100;
         d.style.left = this.x + "px";
     };
     return Slot;
@@ -34,7 +34,7 @@ for (var i = 0; i < 7; i++) {
 var h = 100;
 var y = -h * list.length;
 var vy = 0;
-var drag = 0.93;
+var drag = 0.98; //0.93
 function load() {
     for (var i = 0; i < list.length; i++) {
         var d = document.createElement("div");
@@ -49,7 +49,8 @@ function load() {
 }
 load();
 overlay.onwheel = function (e) {
-    vy -= e.deltaY / 150;
+    var speedScale = 3;
+    vy -= e.deltaY / 150 * speedScale;
 };
 function update() {
     requestAnimationFrame(update);
@@ -69,13 +70,11 @@ function update() {
     var tol = 0;
     if (tar > tarr + tol) {
         vy += 0.3;
-        // vy *= 0.9;
+        vy *= 0.94;
     }
     else if (tar < tarr - tol) {
         vy -= 0.3;
-        // vy *= 0.9;
+        vy *= 0.94;
     }
-    // if(Math.abs(vy) < 0.3) vy = 0;
-    // else vy = 0;
 }
 update();
