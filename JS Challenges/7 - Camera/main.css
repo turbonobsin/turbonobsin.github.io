@@ -1,0 +1,17 @@
+#aperture{
+    width:50vw;
+    position:absolute;
+    top:50%;
+    left:50%;
+    translate:-50% -50%;
+    border:solid 1px gray;
+    border-radius:50%;
+    background-color:gray;
+    border:solid 1vw black;
+}
+
+.dummy{
+    --time:0.5s;
+    margin-left:0px;
+    transition:all var(--time) ease-out
+}

@@ -1,0 +1,34 @@
+const can = document.getElementById("aperture") as HTMLCanvasElement;
+can.width = 500;
+can.height = 500;
+const ctx = can.getContext("2d");
+
+function update(){
+    requestAnimationFrame(update);
+    ctx.clearRect(0,0,can.width,can.height);
+    let cx = can.width/2;
+    let cy = can.height/2;
+    let rad = cx*0.8;
+    let radClose = cx*0.2;
+
+    for(let i = 0; i < 6; i++){
+        let ang = i*Math.PI*2/6;
+        let x = Math.cos(ang);
+        let y = Math.sin(ang);
+        let txClose = cx+x*radClose;
+        let tyClose = cy+y*radClose;
+        let tx = cx+x*rad;
+        let ty = cy+y*rad;
+
+        let ang2 = ang+Math.PI/4;
+        let x2 = Math.cos(ang2);
+        let y2 = Math.sin(ang2);
+        ctx.beginPath();
+        ctx.moveTo(txClose,tyClose);
+        ctx.lineTo(tx,ty);
+        ctx.lineTo(x2,y2);
+        ctx.closePath();
+        ctx.stroke();
+    }
+}
+update();

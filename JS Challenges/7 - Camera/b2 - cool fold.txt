@@ -1,0 +1,168 @@
+const can = document.getElementById("aperture") as HTMLCanvasElement;
+can.width = 700;
+can.height = 700;
+const ctx = can.getContext("2d");
+
+let innerRad = 0.5;
+
+class AnimProp{
+    constructor(initial:number){
+        let dummy = document.createElement("div");
+        document.body.appendChild(dummy);
+        dummy.className = "dummy";
+        dummy.style.scale = initial.toString();
+        this.dummy = dummy;
+    }
+    dummy:HTMLElement;
+    get(){
+        return parseFloat(getComputedStyle(this.dummy).scale);
+    }
+    set(v:number){
+        this.dummy.style.scale = v.toString();
+    }
+    run(className:string){
+        this.dummy.classList.add(className);
+        this.dummy.onanimationend = ()=>{
+            this.dummy.classList.remove(className);
+        };
+    }
+}
+
+let test = new AnimProp(0.5);
+function change(){
+    test.set(0.8);
+}
+
+
+function update(){
+    innerRad = test.get();
+    requestAnimationFrame(update);
+    ctx.clearRect(0,0,can.width,can.height);
+    let cx = can.width/2;
+    let cy = can.height/2;
+    let rad = cx*0.8; //1.5
+    let radClose = cx*innerRad;
+
+    let tmpCan = document.createElement("canvas");
+    tmpCan.width = can.width;
+    tmpCan.height = can.height;
+    let tmpCtx = tmpCan.getContext("2d");
+    let amt = 6;
+    let lx = null;
+    let ly = null;
+    let pos = [];
+    if(true) for(let i = 0; i < amt; i++){
+        let ang = i*Math.PI*2/amt;
+        let x = Math.cos(ang);
+        let y = Math.sin(ang);
+        let tx = cx+x*radClose;
+        let ty = cy+y*radClose;
+
+        ctx.strokeStyle = "black";
+        ctx.fillStyle = "gray";
+        ctx.lineWidth = 5;
+        // ctx.fillRect(tx-5,ty-5,10,10);
+
+        if(i != -1){
+            let tarAng = ang-Math.PI/2-Math.PI*2/(amt*2);
+            let tx2 = tx+Math.cos(tarAng)*rad;
+            let ty2 = ty+Math.sin(tarAng)*rad;
+            pos.push([tx2,ty2]);
+            // ctx.strokeStyle = "red";
+            ctx.beginPath();
+            
+            if(lx == null){
+                let _ang = (amt-1)*Math.PI*2/amt;
+                let _x = Math.cos(_ang);
+                let _y = Math.sin(_ang);
+                let _tx = cx+_x*radClose;
+                let _ty = cy+_y*radClose;
+                let _tarAng = _ang-Math.PI/2-Math.PI*2/(amt*2);
+                let _tx2 = _tx+Math.cos(_tarAng)*rad;
+                let _ty2 = _ty+Math.sin(_tarAng)*rad;
+                lx = _tx2;
+                ly = _ty2;
+            }
+            // ctx.moveTo(tx,ty);
+            // ctx.lineTo(tx2,ty2);
+            // ctx.lineTo(lx,ly);
+            ctx.moveTo(tx,ty);
+            ctx.lineTo(tx2,ty2);
+            ctx.lineTo(lx,ly);
+            // ctx.fill();
+            // if(i == 0) ctx.fill();
+            ctx.stroke();
+            lx = tx2;
+            ly = ty2;
+        }
+    }
+    // ctx.beginPath();
+    // for(let i = 0; i < pos.length; i++){
+    //     let [x,y] = pos[i];
+    //     ctx.fillStyle = "red";
+    //     ctx.fillRect(x,y,10,10);
+    //     // if(i == 0) ctx.moveTo(x,y);
+    //     // else ctx.lineTo(x,y);
+    // }
+    // ctx.fillStyle = "red";
+    // ctx.fill();
+    if(false) for(let i = 0; i < amt; i++){
+        let ang = i*Math.PI*2/amt-Math.PI/2;
+        let x = Math.cos(ang);
+        let y = Math.sin(ang);
+        let txClose = cx+x*radClose;
+        let tyClose = cy+y*radClose;
+        let tx = cx+x*rad;
+        let ty = cy+y*rad;
+
+        let width = 200;
+        let height = 800;
+
+        ctx.resetTransform();
+        ctx.translate(tx,ty);
+        ctx.rotate(ang);
+        
+        tmpCtx.resetTransform();
+        tmpCtx.translate(tx,ty);
+        tmpCtx.rotate(ang);
+
+        ctx.fillStyle = "gray";
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 5;
+        tmpCtx.fillStyle = "gray";
+        tmpCtx.strokeStyle = "black";
+        tmpCtx.lineWidth = 5;
+        // if(i != 5){
+            ctx.beginPath();
+            ctx.rect(-width/2,-height/2,width,height);
+            ctx.fill();
+            ctx.stroke();
+        // }
+        /*else{
+            
+            let newAng = -Math.PI/2-Math.PI*2/(amt*2);
+            let xx = cx+Math.cos(newAng)*can.width/4;
+            let yy = cx+Math.sin(newAng)*can.width/4+8;
+            
+            ctx.fillStyle = "gray";
+            ctx.resetTransform();
+            ctx.beginPath();
+            let sx = cx;
+            let sy = cy;
+            ctx.moveTo(sx,sy);
+            ctx.lineTo(xx,yy);
+            ctx.lineTo(xx-rad,yy);
+
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fill();
+
+            ctx.resetTransform();
+            ctx.fillStyle = "red";
+            ctx.fillRect(xx,yy,20,20);
+        }*/
+    }
+    ctx.resetTransform();
+    ctx.drawImage(tmpCan,0,0);
+}
+update();
