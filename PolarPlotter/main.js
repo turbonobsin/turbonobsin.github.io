@@ -201,3 +201,4 @@ b_reset.onclick = function(){
     localStorage.clear();
     location.reload();
 };
+docu
