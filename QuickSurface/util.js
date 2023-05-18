@@ -190,3 +190,11 @@ function registerDragSide(t,side,tt,nofix=false){
     }
     if(getComputedStyle(t).position == "static") t.style.position = "relative";
 }
+
+function wait(delay){
+    return new Promise(resolve=>{
+        setTimeout(()=>{
+            resolve();
+        },delay);
+    });
+}

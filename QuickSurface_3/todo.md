@@ -1,0 +1,6 @@
+- Fix flood fill tool - (added recursive mode as a temporary fix)
+- Fix preview aspect-ratio - (done)
+- Fixed framesList so that the previews update properly - (done)
+- Export
+- Gif export option - (glitchy but done)
+- Be able to close opened cached states

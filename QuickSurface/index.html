@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link href="style.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="debugger.css">
+    <link class="new_design" rel="stylesheet" href="new_style.css" disabled>
   </head>
   <body>
     <div class="gui">
@@ -29,13 +30,18 @@
       <div class="main" onmousedown="openContext_b('reference',this)">Reference</div>
       <div class="main" onmousedown="openContext_b('armature',this)">Armature</div>
       <div class="main" onmousedown="openContext_b('camera',this)">Camera</div>
+      <div class="main" onmousedown="openContext_b('tools',this)">Tools</div>
+      <div class="main" onmousedown="openContext_b('scripts',this)">Scripts</div> <!--Scripts / Code-->
       <span class="vr"></span>
-      <div id="settings_b" name="info" info="Settings: not started" pos="d" class="material-icons" onclick="" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">settings</div>
-      <div id="keybinds_b" name="info" info="Open menu to change Keybindings" pos="d" class="material-icons" onclick="openMenu('keys')" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">keyboard</div>
-      <div id="darkMode_b" name="info" info="Toggle light and dark mode" pos="d" class="material-icons" onclick="toggleContrastMode()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">wb_sunny</div>
-      <div id="b_zen" name="info" info="Toggle zen mode on or off (Hides all menus except top bar and canvas)" pos="d" class="material-icons" onclick="toggleZen()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">visibility</div>
-      <div class="ex" id="l_ver">...</div>
-      <div id="b_chan" class="ex material-icons" style="margin:0px;color:gray !important;padding:0px;margin-top:4px" name="info" info="Show Channelog">help</div>
+      <!-- <div style="display:flex;align-items:center" class="sndMenu"> -->
+        <div id="settings_b" name="info" info="Settings: not started" pos="d" class="material-icons miFlex" onclick="" style="color:darkslategray">settings</div>
+        <div id="keybinds_b" name="info" info="Open menu to change Keybindings" pos="d" class="material-icons miFlex" onclick="openMenu('keys')" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">keyboard</div>
+        <div id="darkMode_b" name="info" info="Toggle light and dark mode" pos="d" class="material-icons miFlex" onclick="toggleContrastMode()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">wb_sunny</div>
+        <div id="b_design" name="info" info="Toggle On/Off New Modern Design" pos="d" class="material-icons miFlex" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">brush</div>
+        <div id="b_zen" name="info" info="Toggle zen mode on or off (Hides all menus except top bar and canvas)" pos="d" class="material-icons miFlex" onclick="toggleZen()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">visibility</div>
+        <div class="ex" id="l_ver">...</div>
+        <div id="b_chan" class="ex material-icons" style="margin:0px;color:gray !important;padding:0px;margin-top:4px" name="info" info="Show Channelog">help</div>
+      <!-- </div> -->
 
       <div style="margin-left:auto" id="fileName" name="info" info="File Name: The current open file's name." pos="l"></div>
       <span style="border-right:none" class="vr"></span>
@@ -57,6 +63,42 @@
       <div id="info_l" name="info" info="Info Box: Displays info of hovered parts of the editor.">No info.</div><div id="coordsStart_l" name="info" info="Start Coords: Displays the last position you clicked in pixels.">Start (0,0)</div><div id="coords_l" name="info" info="Cursor Coords: Displays the current cursor position in pixels.">Cursor (0,0)</div>
     </div>
     <div id="menus">
+      <div class="menu" id="menu_brickMosaic">
+        <div class="menuHeader"><span class="menuTitle">Brick Mosaic View</span><button class="closeWindow_b">X</button></div>
+        <div class="bm_view">
+          <div class="colors"></div>
+          <div class="view">
+            <div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+              <div><canvas></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="menu" id="menu_runScript">
+        <div class="menuHeader"><span class="menuTitle">Run Script</span><button class="closeWindow_b">X</button></div>
+        <div class="scriptView">
+          <div class="panels">
+            <div>
+              Left
+            </div>
+            <div class="scriptPanel">
+              <textarea name="" id="" cols="30" rows="10">SR.loopAllPixels((x,y,i)=>{
+    SR.drawPixel(x,y);
+});
+              </textarea>
+              <button class="scriptSubmit">Submit</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="menu" id="menu_recovery">
         <div class="menuHeader"><span class="menuTitle">File Recovery</span><button class="closeWindow_b">X</button></div>
         <div id="fileRcv">
@@ -201,7 +243,7 @@
               <div alt="moveSelect" name="info" info="
                 Move Selection: Click and drag to move selection region.
               " style="position:relative">
-                <div style="position:absolute;width:calc(100% - 5px);height:calc(100% - 5px);border:dashed 3px currentColor"></div>
+                <div style="position:absolute;width:calc(100% - 5px);height:calc(100% - 5px);border:dashed 3px currentColor;border-radius:50%"></div>
                 <div class="material-icons" style="scale:0.75;translate:0.5px 0.25px">open_with</div>
               </div>
               <div alt="move" name="info" info="

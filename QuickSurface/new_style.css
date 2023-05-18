@@ -1,0 +1,199 @@
+:root{
+    --n_border:gray;
+    --n_headerCol:var(--col1);
+    /* --n_headerCol:white; */
+    --background:var(--col2);
+
+    --menubar-button-hover:lightgray !important;
+    --menubar-mainbutton-hover:gainsboro !important;
+
+    /* --ctx-color:#222 !important;
+    --ctx-text-color:rgb(255, 255, 255) !important;
+    --ctx-item-border:rgb(185, 196, 214) !important;
+    --ctx-item-hover:#555 !important; */
+    --ctx-color:#fff !important;
+    --ctx-text-color:black !important;
+    --ctx-item-border:rgb(185, 196, 214) !important;
+    --ctx-item-hover:#ddd !important;
+
+    --grid:url("images/grid_light.png");
+
+    --tool-sel:#1cc15b !important;
+    --tool-hover:#169848 !important;
+    --tool-temp:gainsboro !important;
+    --tool-temp-hover:darkgoldenrod !important;
+
+    --frameHeaderSel:#222;
+
+}
+.title{
+    font-size:14px;
+    /* height:20px; */
+    margin-top:-5px;
+}
+#frameOptions .title{
+    margin-top:0px;
+}
+#frameOptions{
+    /* margin-top:-5px; */
+    /* font-size:10px; */
+    margin-top:-5px;
+    align-items:center;
+    /* padding:3px 0px; */
+}
+#frameOptions > div:not(.vrDiv){
+}
+#frameOptions > div{
+    border:solid 1px gray !important;
+    background-color:#eee !important;
+    /* border:none !important; */
+    margin-right:5px !important;
+    border-radius:0.2rem;
+    padding:3px;
+}
+#frameOptions button{
+    /* border:none; */
+    border-radius:0.3rem;
+    padding:5px;
+    margin-right:5px;
+    /* margin:-3px; */
+    /* background-color:#eee; */
+}
+#frames{
+    left:11px;
+    width:calc(100% - 27px);
+    padding-bottom:10px;
+}
+#preview{
+    margin-bottom:0px;
+}
+#fileName{
+    border-left:none;
+    margin-right:10px;
+}
+#nameDiv{
+    border:none;
+    background-color:none;
+    margin-right:15px;
+    display:flex;
+    justify-content:start;
+    max-width:250px;
+    /* max-width:calc(100vw - 1500px); */
+}
+#nameDiv > div{
+    background-color:none !important;
+    border-radius:0.3rem;
+    margin-right:3px;
+    border:none;
+}
+.menuBar > #nameDiv:hover{
+    background-color:rgba(0,0,0,0) !important;
+}
+.menuBar{
+    padding:3px;
+    /* padding:5px; */
+    max-height:30px;
+    margin:5px;
+    border-radius:50rem;
+    border:solid 1px var(--n_border);
+    background-color:var(--n_headerCol);
+    /* background:linear-gradient(10deg,aliceblue 50%,lightskyblue) !important; */
+}
+.menuBar .vr{
+    display:none;
+}
+.menuBar > div{
+    /* border-radius:0.5rem; */
+    border-right:none;
+
+    background-color:inherit !important;
+    /* background-color:var(--col1) !important; */
+    /* background-color:aliceblue !important; */
+    /* background-color:rgb(76, 83, 88) !important; */
+    /* background-color:rgba(219, 233, 242, 1) !important; */
+    /* background:linear-gradient(10deg,black,aliceblue) !important; */
+    color:var(--text) !important;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:5px 10px;
+    border-radius:0.3rem;
+}
+.menuBar > div:nth-child(2){
+    margin-left:20px;
+}
+.menuBar > div:nth-child(11){
+    margin-right:20px;
+}
+.menuBar > div#settings_b{
+    /* border-top-left-radius:50rem; */
+    /* border-bottom-left-radius:50rem; */
+    padding-left:20px;
+}
+.menuBar > div:nth-child(11){
+    /* border-top-right-radius:50rem; */
+    /* border-bottom-right-radius:50rem; */
+    margin-right:20px;
+}
+.sndMenu{
+    
+}
+.cont{
+    /* background-color:red !important; */
+    border-radius:0.5rem;
+    padding:5px;
+    margin-top:4px;
+    margin-left:4px;
+    margin-right:4px;
+    margin-bottom:25px;
+    /* margin:4px; */
+    background-color:white;
+    /* border:none; */
+}
+#tools{
+    border-radius:1.2rem;
+    height:calc(100% - 10px);
+    /* height:min-content; */
+}
+#tools > div{
+    background-color:white;
+    border:none;
+    margin-bottom:2px;
+    border-radius:50%;
+    padding:5px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    position:static;
+    translate:0px 0px;
+    transform:none;
+    left:0px;
+    top:0px;
+}
+
+#statusBar{
+    margin:0px 5px;
+    width:calc(100% - 70px) !important;
+    padding:2px 30px;
+    bottom:5px;
+    border-radius:1rem;
+    background-color:black;
+}
+.ctxMenu{
+    translate:0px 8px;
+    border-radius:0.5rem;
+    width:150px;
+    border:solid 1px gray;
+}
+.ctxList{
+    border-radius:inherit;
+}
+.ctxList > div{
+    border:none;
+    padding:7px;
+    border-radius:0.3rem;
+    margin:5px;
+}
+.menuBar .miFlex{
+    translate:0px 1px;
+}

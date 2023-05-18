@@ -1,4 +1,6 @@
 :root{
+    --col1:var(--foreground);
+    
     --button-background:#0A0A0A;
     --button-hover:#232323;
     --button-active:#565656;
@@ -13,6 +15,7 @@
 
     --menubar-button-color:var(--foreground);
     --menubar-button-hover:#565656;
+    --menubar-mainbutton-hover:#572222;
     --toolbar-color:var(--background);
     --toolbar-text-color:#CDCDCD;
 
@@ -189,6 +192,9 @@ button:active{
 #tools > div{
     background-color:black;
     color:darkgray;
+}
+#tools > div:hover{
+    background-color:var(--menubar-mainbutton-hover);
 }
 #tools > div.sel{
     background-color:green;

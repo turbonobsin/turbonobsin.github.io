@@ -244,6 +244,43 @@ const _chnlogL = [
     "Fixed camera layer objs so that their width and height is based on the parent",
     "Fixed fullsize preview aspect ratio",
     "Added the ability to resize the parent camera's width and height"
+  ],
+  [
+    "Version: 1.3.0 (2-8-23)",
+    "Fixed Draw Circle so that it doesn't draw differently when you move your cursor slightly on the same pixel",
+    ""
+  ],
+  [
+    "Version: 1.3.1 (5-5-23)",
+    "Added Tools and Scripts/Code menu bar items",
+    "Fixed some brightly colored backgrounds on some elements when hovering like on the menubar and tool panel while in darkMode and adding a nice dark red color in its place",
+    "Started adding Brick Mosaic View"
+  ],
+  [
+    "Version: 1.3.2 (5-6-23)",
+    "Added BM_colors with a list display on the left in the Brick Mosaic View - pretty much complete except there isn't all the lego colors",
+    "Adding red circles temporarily to be drawn to canvas'"
+  ],
+  [
+    "Version: 1.3.3 (5-7-23)",
+    "Added compareColor and related functions",
+    "Added ability to toggle istead of :active canvas' in BM view",
+    "Added ability when opening the brick mosaic menu to load from current rasterized frame and pick the most similar colors according to my algorithm: RGBMaxDiff",
+    "Came up with other algorithms but haven't tested for: RGBAllDiff, HSLMaxDiff, and HSLAllDiff",
+    "Finished prototype for Brick Mosaic"
+  ],
+  [
+    "Version: 1.3.4 (5-8-23)",
+    "Added a variety of fixes but don't remember what"
+  ],
+  [
+    "Version: 1.3.5 (5-15-23)",
+    "Started adding new island-style design"
+  ],
+  [
+    "Version: 1.3.6 (5-17-23)",
+    "idea: save selection map",
+    "Finished a prototype version of the new design (not ideal in dark mode yet"
   ]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
@@ -895,6 +932,7 @@ var pink = [255,150,150,150];
 var gray = [100,100,100,255];
 var lightgray = [150,150,150,255];
 var black = [0,0,0,255];
+var white = [255,255,255,255];
 var prevSelect = [100,100,100,160];
 var delPrevSelect = [200,0,0,160];
 var color = [
@@ -4297,10 +4335,12 @@ function keydown(e){
   }
 }
 document.addEventListener("keydown",function(e){
+  if(document.activeElement.tagName.toLowerCase() == "textarea") return;
   keydown(e);
 });
 var keyDrawing = false;
 document.addEventListener("keyup",e=>{
+  if(document.activeElement.tagName.toLowerCase() == "textarea") return;
   g_keye = e;
   let key = e.key.toLowerCase();
 
@@ -5859,6 +5899,252 @@ function getFileType(){
   }
   return project.name.substring(i+1,project.name.length);
 }
+function getCompImage2(){
+  let n = img.layers[0].nob;
+
+  let cols = {};
+  for(let i = 0; i < n.buf.length; i += 4){
+    let isClear = (n.buf[i+3] == 0);
+    let r = n.buf[i].toString(16);
+    let g = n.buf[i+1].toString(16);
+    let b = n.buf[i+2].toString(16);
+    let a = n.buf[i+3].toString(16);
+    if(r.length == 1) r = "0"+r;
+    if(g.length == 1) g = "0"+g;
+    if(b.length == 1) b = "0"+b;
+    if(a.length == 1) a = "0"+a;
+    let colorStr = r+g+b+a;
+    if(!isClear) if(!cols[colorStr]){
+      cols[colorStr] = {
+        cnt:0,
+        mode:0, //1 is add and 0 is remove
+        str:"",
+        add:function(ind){
+          // console.log("ADD",this.mode);
+          if(this.mode == 0){
+            // console.log(" >>> ADD");
+            // this.str += "-"+this.cnt;
+            // this.str += `${ind-this.cnt}-${ind},`;
+            this.mode = 1;
+            this.cnt = 0;
+          }
+          this.cnt++;
+        },
+        remove:function(ind){
+          // console.log("REMOVE",this.mode);
+          if(this.mode == 1){
+            // console.log(" >>> REMOVE");
+            // this.str += "+"+this.cnt;
+            this.str += `${(ind-this.cnt).toString(36)}-${ind.toString(36)},`;
+            this.mode = 0;
+            this.cnt = 0;
+          }
+          this.cnt++;
+        }
+      };
+      // console.log(colorStr);
+    }
+  }
+  for(let i = 0; i < n.buf.length; i += 4){
+    let isClear = (n.buf[i+3] == 0);
+    let r = n.buf[i].toString(16);
+    let g = n.buf[i+1].toString(16);
+    let b = n.buf[i+2].toString(16);
+    let a = n.buf[i+3].toString(16);
+    if(r.length == 1) r = "0"+r;
+    if(g.length == 1) g = "0"+g;
+    if(b.length == 1) b = "0"+b;
+    if(a.length == 1) a = "0"+a;
+    let colorStr = r+g+b+a;
+    // if(isClear){
+      let ok = Object.keys(cols);
+      for(const k of ok){
+        if(k == colorStr) continue;
+        let data = cols[k];
+        data.remove(i/4);
+      }
+    // }
+    if(!isClear){
+      let data = cols[colorStr];
+      data.add(i/4);
+    }
+  }
+  // console.log(cols);
+  let fstr = "";
+  let ok = Object.keys(cols);
+  for(const k of ok){
+    fstr += cols[k].str;
+  }
+  return fstr;
+}
+function getCompImage(){
+  let n = img.layers[0].nob;
+
+  let cols = {};
+  for(let i = 0; i < n.buf.length; i += 4){
+    let isClear = (n.buf[i+3] == 0);
+    let r = n.buf[i].toString(16);
+    let g = n.buf[i+1].toString(16);
+    let b = n.buf[i+2].toString(16);
+    let a = n.buf[i+3].toString(16);
+    if(r.length == 1) r = "0"+r;
+    if(g.length == 1) g = "0"+g;
+    if(b.length == 1) b = "0"+b;
+    if(a.length == 1) a = "0"+a;
+    let colorStr = r+g+b+a;
+    if(!isClear) if(!cols[colorStr]){
+      cols[colorStr] = {
+        cnt:0,
+        mode:0, //1 is add and 0 is remove
+        str:"",
+        add:function(){
+          // console.log("ADD",this.mode);
+          if(this.mode == 0){
+            // console.log(" >>> ADD");
+            this.str += "-"+this.cnt.toString(36);
+            this.mode = 1;
+            this.cnt = 0;
+          }
+          this.cnt++;
+        },
+        remove:function(){
+          // console.log("REMOVE",this.mode);
+          if(this.mode == 1){
+            // console.log(" >>> REMOVE");
+            this.str += "+"+this.cnt.toString(36);
+            this.mode = 0;
+            this.cnt = 0;
+          }
+          this.cnt++;
+        }
+      };
+      // console.log(colorStr);
+    }
+  }
+  for(let i = 0; i < n.buf.length; i += 4){
+    let isClear = (n.buf[i+3] == 0);
+    let r = n.buf[i].toString(16);
+    let g = n.buf[i+1].toString(16);
+    let b = n.buf[i+2].toString(16);
+    let a = n.buf[i+3].toString(16);
+    if(r.length == 1) r = "0"+r;
+    if(g.length == 1) g = "0"+g;
+    if(b.length == 1) b = "0"+b;
+    if(a.length == 1) a = "0"+a;
+    let colorStr = r+g+b+a;
+    // if(isClear){
+      let ok = Object.keys(cols);
+      for(const k of ok){
+        if(k == colorStr) continue;
+        let data = cols[k];
+        data.remove();
+      }
+    // }
+    if(!isClear){
+      let data = cols[colorStr];
+      data.add();
+    }
+  }
+  // console.log(cols);
+  let fstr = "";
+  let ok = Object.keys(cols);
+  for(const k of ok){
+    fstr += cols[k].str;
+  }
+  return fstr;
+}
+function getFileStrC(){
+  let pallet = [];
+  let fstr = "";
+  let f_head = "";
+  f_head += project.name+",";
+  f_head += project.w+",";
+  f_head += project.h+",";
+  f_head += "1,"; //format, 1 is current format
+  f_head += project.frameI+",";
+  f_head += project.c1.toString().replace("/g/,","|");
+  f_head += "\n";
+  // console.log(f_head);
+  for(let i = 0; i < project.frames.length; i++) f_head += project.frames[i].curLayer.ind+(i+1<project.frames.length?",":"");
+  f_head += "\n";
+  let f_frames = [];
+  for(let j = 0; j < project.frames.length; j++){
+    let frame = project.frames[j];
+    for(let i = 0; i < frame.layers.length; i++){
+      let l = frame.layers[i];
+      let lp = "";
+      let donob = true;
+      if(l.ops.obj) donob = false;
+      if(donob) for(let k = 0; k < nob.size; k += 4){
+        let r = l.nob.buf[k];
+        let g = l.nob.buf[k+1];
+        let b = l.nob.buf[k+2];
+        let a = l.nob.buf[k+3];
+        if(a != 0) {
+          let s = "";
+          r = r.toString(16);
+          if(r.length == 1) r = "0"+r;
+          g = g.toString(16);
+          if(g.length == 1) g = "0"+g;
+          b = b.toString(16);
+          if(b.length == 1) b = "0"+b;
+	        let la = a;
+          a = a.toString(16);
+          if(a.length == 1) a = "0"+a;
+          s += r;
+          s += g;
+          s += b;
+          if(la != 255) s += a;
+
+          if(!pallet.includes(s)) pallet.push(s);
+          let pI = pallet.indexOf(s);
+          let loc = ";"+pI+":";
+          if(!lp.includes(loc)) lp += loc;
+          let ppI = lp.indexOf(loc)+loc.length;
+          let ind = Math.floor(k/4).toString(36);
+          lp = lp.slice(0,ppI)+ind+","+lp.slice(ppI);
+        }
+      }
+      while(lp.includes(",;")) lp = lp.replace(",;",";");
+      if(lp[0] == ";") lp = lp.substring(1,lp.length);
+      if(lp[lp.length-1] == ",") lp = lp.substring(0,lp.length-1);
+      let str2 = "layer\n";
+      str2 += i+","+j+"\n";
+      str2 += l.name+"\n";
+      str2 += lp+"\n";
+      str2 += l.visible+"\n";
+      if(l.ops){
+        if(l.ops.obj){
+          str2 += "#\n";
+          str2 += "obj\n";
+          str2 += l.ops.obj.name+"\n";
+          str2 += l.ops.obj.getState()+"\n";
+          //str2 += l.ops.obj.name+"\n";
+          //str2 += l.ops.obj.x+","+l.ops.obj.y+"\n";
+        }
+      }
+      f_frames.push(str2);
+    }
+  }
+  let f_objs = [];
+  for(let i = 0; i < project.objs.length; i++){
+    let o = project.objs[i];
+    let s2 = "obj\n"+o.type+"\n"+o.getState()+"\n";
+    f_objs.push(s2);
+  }
+  fstr += f_head;
+  for(let i = 0; i < pallet.length; i++) fstr += pallet[i]+(i+1<pallet.length?",":"");
+  fstr += "\n@\n";
+  for(let i = 0; i < f_frames.length; i++){
+    let str = f_frames[i];
+    fstr += str+"@\n";
+  }
+  for(let i = 0; i < f_objs.length; i++){
+    let str = f_objs[i];
+    fstr += str+"@\n";
+  }
+  return fstr;
+}
 function getFileStr(){
   let pallet = [];
   let fstr = "";
@@ -5992,19 +6278,27 @@ async function file_save(){
 
   let type = getFileType();
   console.log("Saving as type: ",type);
+  /**@type {Blob} */
   let blob = null;
+  let str = "";
   switch(type){
     case "png":
       console.log("saving as png...");
       blob = await new Promise(resolve => can.toBlob(resolve,"image/png"));
       //new Blob([nob.buf.buffer],{type:"application/octet-stream"});
+      console.log("SAVED PNG:",await blob.arrayBuffer());
+      break;
+    case "cnbg":
+      console.log("SAVING COMPRESSED NBG");
+      str = getFileStrC();
+      blob = new Blob([str],{type:"text/plain"});
       break;
     default:
       let blob2 = await new Promise(resolve => can.toBlob(resolve,"image/png"));
       console.log(blob2);
       //
 
-      let str = getFileStr();
+      str = getFileStr();
       //console.log("str","*pre:"+str);
       blob = new Blob([str],{type:"text/plain"});
   }
@@ -6024,6 +6318,9 @@ async function file_saveAs(){
     types:[{
       description:"Nobsin Graphic",
       accept:{"image/nbg":[".nbg"]}
+    },{
+      description:"Compressed Nobsin Graphic",
+      accept:{"image/cnbg":[".cnbg"]}
     },{
       description:"PNG Image",
       accept:{"image/png":[".png"]}
@@ -6967,7 +7264,38 @@ function reloadRecoveryList(t,v,k){
   t.ref = cont;
   t.parentNode.insertBefore(cont,t.nextElementSibling);
 }
+
+function getColorId(color=""){
+  let col = convert(color);
+  
+}
+function compareColors(col1="",col2=""){
+  let c1 = (typeof col1 == "string" ? convert(col1) : col1);
+  let c2 = (typeof col2 == "string" ? convert(col2) : col2);
+  let redDiff = c2[0]-c1[0];
+  let greenDiff = c2[1]-c1[1];
+  let blueDiff = c2[2]-c1[2];
+  return Math.max(Math.abs(redDiff),Math.abs(greenDiff),Math.abs(blueDiff));
+}
+function getClosestBrickColorInd(col1){
+  let minDiff = compareColors(col1,bm_colors[0].colArr);
+  let min = 0;
+  for(let i = 1; i < bm_colors.length; i++){
+    let col = bm_colors[i].colArr;
+    let diff = compareColors(col1,col);
+    if(diff < minDiff){
+      minDiff = diff;
+      min = i;
+    }
+  }
+  return min;
+}
+
 function openMenu(id,atr){ //"openFiles"
+  if(id == "brickMosaic") if(project.w != 48 || project.h != 48){
+    alert("Brick Mosaics are currently only supported with images of dimension 48x48. Yours is "+project.w+"x"+project.h);
+    return;
+  }
   let d = document.getElementById("menu_"+id);
   if(d.style.visibility == "visible"){
     d.style.visibility = "hidden";
@@ -6980,9 +7308,96 @@ function openMenu(id,atr){ //"openFiles"
   }
   d.style.visibility = "visible";
   menus_d.style.backgroundColor = "rgba(0,0,0,0.2)";
+  if(id == "brickMosaic") menus_d.style.backdropFilter = "blur(3px)";
   menus_d.style.zIndex = 4;
   let list_d, list;
   switch(id){
+    case "brickMosaic":{
+      /**@type {HTMLElement} */
+      let view = d.querySelector(".bm_view");
+      let l_colors = d.querySelector(".colors");
+      // view.innerHTML = "";
+      l_colors.innerHTML = "";
+
+      let cans = d.getElementsByTagName("canvas");
+      for(let i = 0; i < cans.length; i++){
+        let can = cans[i];
+        can.width = 500;
+        can.height = 500;
+      }
+      //init colors list
+      for(let i = 0; i < bm_colors.length; i++){
+        let c = bm_colors[i];
+        let div = document.createElement("div");
+        div.className = "bm_colCont";
+        div.innerHTML = `
+          <div class="bm_icon" style="background-color:${c.col};border-color:${c.border}"></div>
+          <div class="material-icons">trending_flat</div>
+          <div style="background-color:${c.col};border-color:${c.border};color:${c.text}">${i+1}</div>
+        `;
+        l_colors.appendChild(div);
+      }
+      //init canvas grid
+      let size = project.w*project.h;
+      let buf = new Uint8ClampedArray(size);
+      let n = rasterizeFrame(project.frameI);
+      let k = 0;
+      for(let ky = 0; ky < 3; ky++)
+      for(let kx = 0; kx < 3; kx++){
+        let c = cans[k];
+        let toggled = false;
+        let td = c.parentElement;
+        td.onclick = function(){
+          toggled = !toggled;
+          if(toggled) td.classList.add("toggled");
+          else td.classList.remove("toggled");
+        };
+        let ct = c.getContext("2d");
+        for(let i = 0; i < 16; i++){
+          for(let j = 0; j < 16; j++){
+            let w = c.width/16;
+            let x = i*w+w/2;
+            let y = j*w+w/2;
+            let x1 = i+16*kx;
+            let y1 = j+16*ky;
+            
+            // ,buf[x1+y1*project.w]
+            let cInd = (x1+y1*project.w)*4;
+            let ind = getClosestBrickColorInd([n.buf[cInd],n.buf[cInd+1],n.buf[cInd+2]]);
+            let color = bm_colors[ind];
+            ct.beginPath();
+            ct.arc(x,y,w/2*0.9,0,Math.PI*2);
+            ct.fillStyle = color.col;
+            ct.fill();
+            ct.strokeStyle = color.border;
+            ct.lineWidth = 2;
+            ct.stroke();
+            ind++;
+            let textWidth = ct.measureText(ind).width;
+            let textHeight = w*0.5;
+            ct.font = `${textHeight}px Arial`;
+            ct.fillStyle = color.text;
+            ct.fillText(ind,x-textWidth/2,y+textHeight/2-2);
+          }
+        }
+        k++;
+      }
+    } break;
+    case "runScript":{
+      /**@type {HTMLTextAreaElement} */
+      let area = d.querySelector("textarea");
+      /**@type {HTMLElement} */
+      let b_submit = d.querySelector(".scriptSubmit");
+      b_submit.onclick = function(){
+        let script = document.getElementById("_script");
+        if(script) script.parentNode.removeChild(script);
+        script = document.createElement("script");
+        script.innerHTML = area.value;
+        script.id = "_script";
+        document.body.appendChild(script);
+        // _histAdd(HistIds.full,null,"-Run Script-");
+      };
+    } break;
     case "recovery":{
       let l = document.getElementById("fileRcv");
       l.innerHTML = "";
@@ -7533,6 +7948,7 @@ function closeAllCtxMenus(){
     if(d.onclose) d.onclose();
   }
   menus_d.style.backgroundColor = "unset";
+  menus_d.style.backdropFilter = null;
   menus_d.style.zIndex = 0;
   ctxes.innerHTML = "";
   label.style.visibility = "hidden";
@@ -8580,6 +8996,42 @@ function openContext(id,x,y,temp,level,b){
         else if(i == 1) closeAllCtxMenus();
       },x,y,temp,level,b);
     } break;
+    case "tools":{
+      _loadCtx(id,[
+        "View as Brick Mosaic...",
+      ],[],function(i,d){
+        d.style.width = "150px";
+        if(i == 0){
+          d.onclick = function(){
+            closeAllCtxMenus();
+            openMenu("brickMosaic");
+          };
+        }
+        else if(i == 1) closeAllCtxMenus();
+      },x,y,temp,level,b);
+    } break;
+    case "scripts":{
+      _loadCtx(id,[
+        "New",
+        "Run",
+        "Manage"
+      ],[],function(i,d){
+        // if(i == 0){
+        if(i == 1){
+          d.onclick = function(){
+            closeAllCtxMenus();
+            openMenu("runScript");
+          };
+          return;
+        }
+          d.onclick = function(){
+            alert(WIPText);
+            closeAllCtxMenus();
+          };
+        // }
+        // else if(i == 1) closeAllCtxMenus();
+      },x,y,temp,level,b);
+    } break;
     case "reference":{
       _loadCtx(id,[
         "New",
@@ -9408,6 +9860,7 @@ var az_sym = [
   "home","end","pageup","pagedown","insert"
 ];
 document.addEventListener("keydown",e=>{
+  if(document.activeElement.tagName.toLowerCase() == "textarea") return;
   g_keye = e;
   // console.log("Code: ",e.keyCode,e.key);
   let key = e.key.toLowerCase();
@@ -9438,7 +9891,7 @@ document.addEventListener("keydown",e=>{
         // let tx1 = Math.floor(Math.cos(i+inc)*r);
         // let ty1 = Math.floor(Math.sin(i+inc)*r);
         // img.curLayer.nob.drawLine_smart(Math.floor(cx+tx),Math.floor(cy+ty),Math.floor(cx+tx1),Math.floor(cy+ty1),col,1);
-        img.curLayer.nob.drawPixel(Math.round(cx+tx),Math.round(cy+ty),col);
+        img.curLayer.nob.drawPixel(Math.floor(cx+tx),Math.floor(cy+ty),col);
       }
       /*let i = 0;
       for(let y = -r; y < r; y++){
@@ -9839,13 +10292,24 @@ function getKB(s){
 }
 
 let useZen = false;
+let new_design = false;
 const b_zen = document.getElementById("b_zen");
 const color_d = document.getElementById("color");
 const preview_d = document.getElementById("preview");
+const b_design = document.getElementById("b_design");
 function hide(e,v){
   if(v) e.style.visibility = "unset"; //visible
   else e.style.visibility = "hidden"; //hidden
 }
+function toggleDesign(){
+  new_design = !new_design;
+  localStorage.setItem("useNewDesign",new_design);
+  document.head.children[6].disabled = !new_design;
+}
+b_design.onclick = function(){
+  toggleDesign();
+};
+if(localStorage.getItem("useNewDesign")=="true") toggleDesign();
 function toggleZen(){
   useZen = !useZen;
   let v = !useZen;
@@ -10009,5 +10473,64 @@ function reloadObjsList(){
     },sets,true);
   }
 }
+
+//BRICK MOSAIC
+
+class BMCol{
+  constructor(name,col,text="black",border="black"){
+    this.name = name;
+    this.col = col;
+    this.text = text;
+    this.border = border;
+    this.colArr = convert(col);
+  }
+  name = "";
+  col = "";
+  text = "";
+  border = "";
+  colArr;
+}
+const bm_colors = [
+  new BMCol("none","black","white","white"),
+  new BMCol("black","#333","white"),
+  new BMCol("white","white"),
+  new BMCol("medium_blue","royalblue"),
+  new BMCol("darkseagreen","darkseagreen"),
+  new BMCol("pink","pink"),
+  new BMCol("red","red"),
+  new BMCol("orange_red","orangered"),
+  new BMCol("orange","darkorange"),
+  new BMCol("brick_yellow","orange"),
+  new BMCol("yellow","yellow"),
+  new BMCol("sand_yellow","tan"),
+  new BMCol("bisque","sienna"),
+  new BMCol("dark_brown","saddlebrown","black"),
+  new BMCol("dark_green","green"),
+  new BMCol("lime_green","limegreen")
+];
+
+//SCRIPT RUN HELPERS
+const SR = {
+  loopAllPixels(call){
+    if(!call) return;
+    let i = 0;
+    for(let y = 0; y < project.h; y++){
+      for(let x = 0; x < project.w; x++){
+        call(x,y,i);
+        i++;
+      }
+    }
+    _histAdd(HistIds.full,null,"-SR-loopAllPixels-");
+    resetDep();
+  },
+  drawPixel(x,y,col=black){
+    drawPixel(img.curLayer.nob,x,y,col,1);
+  },
+  rand255(){
+    return Math.floor(Math.random()*256);
+  }
+};
+
+//END
 
 autoSaveF();
