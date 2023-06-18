@@ -25,21 +25,6 @@
 
     --frameHeaderSel:#222;
 
-    --shade:#eee;
-    --fore:white;
-
-}
-body.dark{
-    --shade:#222;
-    --fore:#000;
-
-    --ctx-color:#000;
-    --ctx-text-color:darkgray;
-    --ctx-item-border:#444;
-    --ctx-item-hover:#444;
-
-    --menubar-button-hover:#555 !important;
-    --menubar-mainbutton-hover:#444 !important;
 }
 .title{
     font-size:14px;
@@ -60,7 +45,7 @@ body.dark{
 }
 #frameOptions > div{
     border:solid 1px gray !important;
-    background-color:var(--shade) !important;
+    background-color:#eee !important;
     /* border:none !important; */
     margin-right:5px !important;
     border-radius:0.2rem;
@@ -162,7 +147,7 @@ body.dark{
     margin-right:4px;
     margin-bottom:25px;
     /* margin:4px; */
-    background-color:var(--fore);
+    background-color:white;
     /* border:none; */
 }
 #tools{
@@ -171,7 +156,7 @@ body.dark{
     /* height:min-content; */
 }
 #tools > div{
-    background-color:var(--fore);
+    background-color:white;
     border:none;
     margin-bottom:2px;
     border-radius:50%;
@@ -211,19 +196,4 @@ body.dark{
 }
 .menuBar .miFlex{
     translate:0px 1px;
-}
-
-#canvas > *{
-    border-radius:0.3rem;
-}
-
-.frameDiv .frameContent{
-    width:20px;
-    margin-left:4px;
-}
-.frameDiv{
-    width:70px !important;
-}
-.frameDiv > .header{
-    border-bottom:none !important;
 }
