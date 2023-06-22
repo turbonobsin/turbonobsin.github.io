@@ -989,7 +989,27 @@ body{
 	#fileName{
 		margin-left:auto;
 		border-left:solid 1px gray;
+		display:flex;
+		align-items:center;
+		justify-content:space-between;
+		margin-right:1rem !important;
+		background-color:var(--name-bg);
 	}
+	#fileName div{
+		background-color:inherit;
+		margin:0.3rem;
+		border:none;
+		padding:0px;
+		/* color:var(--text,--prev-text); */
+		/* color:inherit; */
+		color:var(--text-color);
+	}
+	#fileName div:last-child{
+		font-size:16px;
+	}
+	/* #fileName:hover div{
+		--text:var(--text-color);
+	} */
 	
 	.button{
 		background-color:whitesmoke;
@@ -1138,6 +1158,7 @@ body{
 	margin-bottom:-24px;
 	height:47px;
 	background-color:gainsboro;
+	display:none !important;
 }
 #nameDiv > div.sel{
 	background-color:var(--name-bg);

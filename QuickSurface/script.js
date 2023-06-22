@@ -356,6 +356,45 @@ const _chnlogL = [
 		"Fixed FKeyMode so it doesn't get stuck on",
 		"Added GUI Button setting for Pencil Shape Mode",
 		"Fixed select draw using circle shape pencil"
+	],
+	[
+		"Version: 1.4.6 (6-18-23)",
+		"Worked on fixing larger webgl stuff"
+	],
+	[
+		"Version: 1.4.7 (6-19-23)",
+		"Worked on fixing larger webgl stuff"
+	],
+	[
+		"Version: 1.4.8 (6-20-23)",
+		"Thought that I finished the ability to fully save and load .qs files and even larger than the maximum, but now it doesn't remember all of the frames (some get cut off) and layers get duplicated everywhere in the editor"
+	],
+	[
+		"Version: 1.4.9 (6-21-23)",
+		"Fixed createLayer_bare so that noUpdate is a separate property to prevent layer duplication",
+		"Fixed nobEncrypt to properly trim extra data",
+		"Fixed pre meta not reading the whole buffer",
+		"Fixed glitch where history panel wouldn't get updated when opening a qs file",
+		"Changed nobEncrypt to not use the alpha channel and use more pixels instead",
+		"Changed .qs formatting to use 2d canvas instead of webgl or three.js",
+		"Finished .qs file format for large sizes or any files - !",
+		"Added .qs support for remembering which frame and which layer your were last on",
+		"Fixed issue with .qs file appearing unsaved after just opening them",
+
+		"Fixed opening .qs files so that they get added to allProjects instead of replacing",
+		"Added @s for system settings in .qs format (saving and opening)",
+
+		"Added Recent Files support with a sorted list based on last one opened, you can also remove items from the list - !",
+
+		"Added .open for dropdown menus to click it programatically",
+		"Added side option to dropdown (only right and down are supported now)",
+		"Added stay open option to dropdown when an item is clicked",
+		
+		"Removed nameDiv container",
+		"Changed File Name so that it's a dropdown menu of all the options of allProjects (no X button yet) but works really well",
+		"Fixed default file name to be New Image.qs instead of .nbg",
+
+		"Various other optimizations and fixes"
 	]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
@@ -464,7 +503,7 @@ var dragSlider = -1;
 var colorArea = null;
 let penMirrorX = false;
 let penMirrorY = false;
-function createEmptyImage(w,h){
+function createEmptyImage(w,h,noUpdate=false){
 	let data = {
 		name:"image",
 		w,h,
@@ -490,20 +529,28 @@ function createEmptyImage(w,h){
 	};
 	let temp = img;
 	img = data;
-	createLayer_bare(0,"Main");
-	selectLayer_bare(0);
+	createLayer_bare(0,"Main",!noUpdate,{},noUpdate);
+	selectLayer_bare(0,noUpdate);
 	let temp2 = project.frameI;
 	project.frameI = project.frames.length;
-	histAdd_all("Init");
+	// if(!noUpdate) histAdd_all("Init");
 	img = temp;
 	project.frameI = temp2;
-	hist_d.innerHTML = "";
+	if(!noUpdate) hist_d.innerHTML = "";
 	//layers_d.innerHTML = "";
 	//project.frames.push(data);
 	return data;
 }
 var fileName_l = document.getElementById("fileName");
 var allProjects = [];
+fileName_l.addEventListener("mousedown",e=>{
+	let list = allProjects.map(v=>v.name);
+	createDropdown(0,list,[],(i,d)=>{
+		loadProject(allProjects[i]);
+	},fileName_l,true,(i,d)=>{});
+	fileName_l.onmousedown = null;
+	fileName_l.open();
+});
 function createNewProject(name,w,h){
 	fileName_l.innerHTML = name;
 	let data = {
@@ -743,19 +790,19 @@ function createFrameWObjs(i,bare=false){
 	}
 	_histAdd(HistIds.full,null,"New frame w/ objs");
 }
-function createFrame(i,bare=false){
-	let frame = createEmptyImage(project.w,project.h);
+function createFrame(i,bare=false,noUpdate=false){
+	let frame = createEmptyImage(project.w,project.h,noUpdate);
 	project.frames.splice(i,0,frame);
-	createFrame_html(i);
+	if(!noUpdate) createFrame_html(i);
 	let temp = project.frameI;
 	project.frameI = i;
 	if(!bare){
-		project.frameI = i;
+		// project.frameI = i;
 		loadFrame(project.frames[project.frameI]);
 		_histAdd(HistIds.createFrame,i);
 	}
 	else project.frameI = temp;
-	updateFramesDiv();
+	if(!noUpdate) updateFramesDiv();
 	if(!bare) reconstructFramesDiv();
 	return frame;
 }
@@ -794,18 +841,20 @@ function selectLayer(i){
 		deSel:(last?last.ind:-1)
 	},"Select Layer: "+i);
 }
-function selectLayer_bare(i){
+function selectLayer_bare(i,noUpdate=false){
 	if(!img.layers[i]){
 		img.curLayer = null;
 		return;
 	}
 	img.curLayer = img.layers[i];
-	for(let j = img.layers.length-1; j >= 0; j--){
-		let l = layers_d.children[j];
-		l.className = "";
+	if(!noUpdate){
+		for(let j = img.layers.length-1; j >= 0; j--){
+			let l = layers_d.children[j];
+			l.className = "";
+		}
+		layers_d.children[img.layers.length-i-1].className = "sel";
+		updateLayersDiv();
 	}
-	layers_d.children[img.layers.length-i-1].className = "sel";
-	updateLayersDiv();
 	//todo - visually update the selected layer
 }
 function createLayer(i,name,ops){
@@ -823,12 +872,14 @@ function createLayer(i,name,ops){
 	});
 	else _histAdd(HistIds.full,null,"Create Obj Layer");
 }
-function selectFrame(i){
+function selectFrame(i,noUpdate=false){
 	project.frameI = i;
 	let f = project.frames[project.frameI];
 	img = f;
-	loadFrame(f);
-	reconstructFramesDiv(true); //maybe don't need this?
+	if(!noUpdate){
+		loadFrame(f);
+		reconstructFramesDiv(true); //maybe don't need this?
+	}
 }
 function cloneLayer(i,frameI,bare=false){
 	let layer = img.layers[i];
@@ -865,9 +916,9 @@ function deleteLayer(i){
 	}
 	else _histAdd(HistIds.deleteLayer,i);
 }
-function deleteLayer_bare(i){
+function deleteLayer_bare(i,noUpdate=false){
 	img.layers.splice(i,1);
-	layers_d.removeChild(layers_d.children[img.layers.length-i]);
+	if(!noUpdate) layers_d.removeChild(layers_d.children[img.layers.length-i]);
 }
 function toggleLayerVisibility(i,bare=false,val){
 	let l = img.layers[i];
@@ -972,7 +1023,7 @@ function createLayer_html(i,name,ops={}){
 	if(img.layers.length != 0) layers_d.insertBefore(dmain,layers_d.firstChild);
 	if(l) toggleLayerVisibility(i,true,l.visible);
 }
-function createLayer_bare(i,name,visual=true,ops={}){
+function createLayer_bare(i,name,visual=true,ops={},noUpdate=false){
 	can.width = project.w;
 	can.height = project.h;
 	let l = {
@@ -996,6 +1047,7 @@ function createLayer_bare(i,name,visual=true,ops={}){
 		createLayer_html(i,name,ops);
 		updateLayersDiv();
 	}
+	if(noUpdate) img.layers.splice(i,0,l);
 
 	return l;
 	//else layers_d.appendChild(d);
@@ -1277,7 +1329,8 @@ function reconstructLayersDiv(){
 	for(let i = 0; i < im.layers.length; i++){
 		createLayer_html(i,im.layers[i].name,im.layers[i].ops);
 	}
-	selectLayer_bare(im.curLayer.ind);
+	if(!im.curLayer) im.curLayer = im.layers[0];
+	if(im.curLayer) selectLayer_bare(im.curLayer.ind);
 	updateLayersDiv();
 }
 function reconstructFramesDiv(keepSel=false){
@@ -2194,15 +2247,24 @@ function getOffset(a){
 	}*/
 	//return [x,y];
 }
-function createDropdown(i,l,desc,f,b,fixed=false,ol){
+function createDropdown(i,l,desc,f,b,fixed=false,ol,side="d",stayOpen=false){
 	if(!b) b = document.createElement("button");
 	if(!fixed) b.innerHTML = l[i];
 	b.onmousedown = function(){
+		this.open();
+	};
+	b.open = function(){
 		if(img.curLayer.nob.pixelCount != 0) return;
 		if(this.onopen)  this.onopen();
 		let rect = getOffset(this);
 		let main = this;
-		//let l = ["Flood","Global"];
+		let tx = rect[0]-1;
+		let ty = rect[1]+this.offsetHeight-1;
+		if(side == "r"){
+			tx = rect[0]+1+this.offsetWidth;
+			ty = rect[1];
+			if(new_design) ty -= 11;
+		}
 		this.ctxRef = _loadCtx("dd",l,[],function(j,d,lvl){
 			d.i = j;
 			if(ol) ol(j,d);
@@ -2210,12 +2272,12 @@ function createDropdown(i,l,desc,f,b,fixed=false,ol){
 				main.index = this.i;
 				if(!fixed) main.innerHTML = l[this.i];
 				if(f) f(this.i,this);
-				closeAllCtxMenus();
+				if(!stayOpen) closeAllCtxMenus();
 			};
 			if(desc) registerInfo(d,desc[j]);
 			//if(i == 0) registerInfo(d,"Fill Mode (Flood): Pixels will keep filling from the cursor position until they hit a different pixel color.");
 			//else if(i == 1) registerInfo(d,"Fill Mode (Global): All the pixels in the image with the same color as what you clicked on will be replaced with your palet color.");
-		},rect[0]-1,rect[1]+this.offsetHeight-1,true,0);
+		},tx,ty,true,0);
 		if(this.ctxRef) this.ctxRef.onclose = this.onclose;
 		else if(this.onclose) this.onclose();
 	};
@@ -3180,7 +3242,8 @@ function getCurFrame(){
 }
 function updateFramePreview(i,skip){
 	let n = rasterizeFrame(i,skip);
-	let c = frames_d.children[i].children[1].children[0];
+	let c = frames_d?.children[i]?.children[1]?.children[0];
+	if(!c) return;
 	c.width = project.w/skip;
 	c.height = project.h/skip;
 	c.getContext("2d").putImageData(new ImageData(n.buf,project.w,project.h),0,0);
@@ -3220,8 +3283,10 @@ function update(){
 	}
 
 	//Update APoints
-	if(img.curLayer.ops.obj && img.curLayer.visible) updateAPoints(img.curLayer.ops.obj,"unset");
-	else updateAPoints(img.curLayer.ops.obj,"hidden");
+	if(img.curLayer){
+		if(img.curLayer.ops.obj && img.curLayer.visible) updateAPoints(img.curLayer.ops.obj,"unset");
+		else updateAPoints(img.curLayer.ops.obj,"hidden");
+	}
 
 	//RUN ARMS
 	if(false) for(let i = 0; i < arms.length; i++){
@@ -3664,7 +3729,8 @@ function update(){
 		let l = img.layers[i];
 
 		let i2 = img.layers.length-i-1;
-		let c = layers_d.children[i2].children[1].children[1];
+		let c = layers_d?.children[i2]?.children[1]?.children[1];
+		if(!c) continue;
 		let w = ctx.canvas.width;
 		let h = ctx.canvas.height;
 		let skip = 1;
@@ -5210,7 +5276,7 @@ function _mouseup(button){
 	dragging = false;
 	draggingColor = false;
 	dragSlider = -1;
-	img.curLayer.nob.pixelCount = 0;
+	if(img.curLayer) img.curLayer.nob.pixelCount = 0;
 	if(dragLayer){
 		dragLayer.style.marginLeft = "0px";
 		dragLayer.style.marginTop = "0px";
@@ -6085,7 +6151,7 @@ function updateFileName(p){
 	// console.log("EXT: "+ext);
 	if(!ext){
 		if(!p.legacyName){
-			ext = ".nbg";
+			ext = ".qs";
 			name += ext;
 		}
 	}
@@ -6096,9 +6162,10 @@ function updateFileName(p){
 
 	if(p.unsaved) name += "*";
 
+	name = `<div>${name}</div><div class="material-icons">chevron_right</div>`;
 	fileName_l.innerHTML = name;
 	let projI = allProjects.indexOf(p);
-	nameDiv.children[projI].innerHTML = name;
+	// nameDiv.children[projI].innerHTML = name;
 }
 function printFileList(){
 	let s = "";
@@ -6506,6 +6573,7 @@ async function file_save(){
 
 	let type = getFileType();
 	console.log("Saving as type: ",type);
+	let startTime = performance.now();
 	/**@type {Blob} */
 	let blob = null;
 	let str = "";
@@ -6552,7 +6620,11 @@ async function file_save(){
 				if(i != project.frames.length-1) text += ";";
 			}
 			text += "\n";
-
+			
+			//System Settings
+			text += "@s\n";
+			text += "0,"+project.frameI+","+img.curLayer.ind+"\n"; //Current Frame & Layer
+			// console.log(text);
 			// for(let i = 0; i < project.objs.length; i++){
 				// let obj = project.objs[i];
 				// text += "\n@obj\n";
@@ -6560,26 +6632,26 @@ async function file_save(){
 				// text += l.ops.obj.name+"\n";
 				// text += l.ops.obj.getState()+"\n";
 			// }
-			for(let i = 0; i < project.frames.length; i++){
-				let frame = project.frames[i];
-				for(let j = 0; j < frame.layers.length; j++){
-					let l = frame.layers[j];
-					if(l.ops.obj){
-						let obj = l.ops.obj;
-						let type = "";
-						if(obj instanceof Armature) type = "arm";
-						text += "@obj\n";
-						text += i+"\n"+j+"\n"+type+"\n";
-						text += obj.name+"\n";
-						text += obj.getState()+"\n";
-					}
-				}
-			}
+			// for(let i = 0; i < project.frames.length; i++){
+			// 	let frame = project.frames[i];
+			// 	for(let j = 0; j < frame.layers.length; j++){
+			// 		let l = frame.layers[j];
+			// 		if(l.ops.obj){
+			// 			let obj = l.ops.obj;
+			// 			let type = "";
+			// 			if(obj instanceof Armature) type = "arm";
+			// 			text += "@obj\n";
+			// 			text += i+"\n"+j+"\n"+type+"\n";
+			// 			text += obj.name+"\n";
+			// 			text += obj.getState()+"\n";
+			// 		}
+			// 	}
+			// }
 
 			//finished with generating meta string
 
-			let metaWidth = Math.ceil(text.length/height/4);
-			if(metaWidth <= 2) metaWidth = 3;
+			let metaWidth = Math.ceil(text.length/height/3);
+			if(metaWidth <= 3) metaWidth = 4;
 			let metaHeight = height;
 
 			let metaWidthLen = metaWidth.toString().length;
@@ -6587,10 +6659,11 @@ async function file_save(){
 			let reserveSize = 6;
 			text = metaWidth.toString()+text.substring(metaWidthLen);
 			text = text.substring(0,reserveSize)+metaHeight.toString()+text.substring(reserveSize+metaHeightLen);
-			console.log(text);
 
-			_can.width = metaWidth+width+1;
-			_can.height = height;
+			let fullWidth = width+metaWidth+1;
+			let fullHeight = height;
+			_can.width = fullWidth;
+			_can.height = fullHeight;
 
 			let row = 0;
 			let col = 0;
@@ -6612,149 +6685,203 @@ async function file_save(){
 					// }
 				}
 			}
-
-			//2D Canvas Version
-			function couldHaveBeenThisSimple(){
+			function copy5(){
+				let buf = _ctx.getImageData(0,0,_can.width,_can.height).data;
 				buf = nobEncrypt(buf,_can.width,text,metaWidth,metaHeight);
-				let can2 = document.createElement("canvas");
-				let ctx2 = can2.getContext("2d");
-				ctx2.putImageData(new ImageData(buf,metaWidth,metaHeight),0,0);
-				_ctx.drawImage(can2,0,0);
-			}
 
-			console.log("ENCRYPT TEXT:",text);
-			// WebGL Version
-			function copy2(){
-				let canvas = document.createElement("canvas");
-				canvas.width = _can.width;
-				canvas.height = _can.height;
-				let gl = canvas.getContext("webgl2",{premultipliedAlpha:false,alpha:true});
-				buf = _ctx.getImageData(0,0,_can.width,_can.height).data;
-				buf = nobEncrypt(buf,_can.width,text,metaWidth,metaHeight);
-				console.log(buf);
-				const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-				console.log('Maximum texture size:', maxTextureSize);
+				let fullWidth = width+metaWidth+1;
+				let fullHeight = height;
 
-				function createCan(){
-					const texture = gl.createTexture();
-					gl.bindTexture(gl.TEXTURE_2D, texture);
-
-					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-					const width = canvas.width/* width of your image */;
-					const height = canvas.height/* height of your image */;
-					const level = 0; // Mipmap level, 0 for base level
-					const internalFormat = gl.RGBA; // Internal format of the texture
-					const srcFormat = gl.RGBA; // Format of the source data
-					const srcType = gl.UNSIGNED_BYTE; // Data type of the source data
-					let pixels = buf/* your Uint8ClampedArray */;
-					let flippedPixels = new Uint8ClampedArray(width * height * 4);
-					for (let row = 0; row < height; row++) {
-						const rowIndex = height - row - 1;
-						const sourceOffset = rowIndex * width * 4;
-						const targetOffset = row * width * 4;
-						flippedPixels.set(pixels.subarray(sourceOffset, sourceOffset + width * 4), targetOffset);
-					}
-					pixels = flippedPixels;
-
-					gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, 0, srcFormat, srcType, pixels);
-
-					const vertices = [
-						-1, 1,
-						-1, -1,
-						1, -1,
-						1, 1,
-					];
-					
-					const vertexBuffer = gl.createBuffer();
-					gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-					gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-					
-					const indices = [0, 1, 2, 0, 2, 3];
-
-					const indexBuffer = gl.createBuffer();
-					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-					const vertexShaderSource = `
-					attribute vec2 aPosition;
-					void main() {
-						gl_Position = vec4(aPosition, 0.0, 1.0);
-					}`;
-
-					const fragmentShaderSource = `
-					precision mediump float;
-					uniform sampler2D uTexture;
-					void main() {
-						gl_FragColor = texture2D(uTexture, gl_FragCoord.xy / vec2(${width}, ${height}));
-					}`;
-
-					function createShader(gl, type, source) {
-						const shader = gl.createShader(type);
-						gl.shaderSource(shader, source);
-						gl.compileShader(shader);
-					
-						if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-							console.error(gl.getShaderInfoLog(shader));
-							gl.deleteShader(shader);
-							return null;
-						}
-					
-						return shader;
-					}
-					
-					const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-					const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-					
-					const program = gl.createProgram();
-					gl.attachShader(program, vertexShader);
-					gl.attachShader(program, fragmentShader);
-					gl.linkProgram(program);
-					
-					if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-						console.error(gl.getProgramInfoLog(program));
-						gl.deleteProgram(program);
-						return null;
-					}
-					
-					gl.useProgram(program);
-
-					const positionAttributeLocation = gl.getAttribLocation(program, 'aPosition');
-					gl.enableVertexAttribArray(positionAttributeLocation);
-					gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-					gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-
-					const textureUniformLocation = gl.getUniformLocation(program, 'uTexture');
-					gl.uniform1i(textureUniformLocation, 0);
-
-					gl.clearColor(0, 0, 0, 0);
-					gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-					gl.activeTexture(gl.TEXTURE0);
-					gl.bindTexture(gl.TEXTURE_2D, texture);
-
-					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-					gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+				let flippedPixels = new Uint8ClampedArray(fullWidth * fullHeight * 4);
+				for (let row = 0; row < fullHeight; row++) {
+					const rowIndex = fullHeight - row - 1;
+					const sourceOffset = rowIndex * fullWidth * 4;
+					const targetOffset = row * fullWidth * 4;
+					flippedPixels.set(buf.subarray(sourceOffset, sourceOffset + fullWidth * 4), targetOffset);
 				}
-				createCan();
+				buf = flippedPixels;
+				
+				// Access the canvas element
+				const canvas3 = document.createElement("canvas");
+				document.body.appendChild(canvas3);
+				canvas3.style = "position:absolute;top:50%;left:50%;z-index:999;border:solid 1px red;width:50% !important;translate:-50% -50%;image-rendering:pixelated";
 
-				return canvas;
-			}
-			let newCan;
-			
-			try{
-				newCan = copy2();
-			}
-			catch(e){
-				alert("Error while writting file image data: "+e);
-				return;
-			}
+				// Set up Three.js renderer
+				const renderer = new THREE.WebGLRenderer({ canvas: canvas3,alpha:true });
+				renderer.setClearColor(0xffffff, 0);
+				// renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+				
+				renderer.setSize(fullWidth,fullHeight);
 
+				// Create a scene
+				const scene = new THREE.Scene();
+
+				const camera = new THREE.OrthographicCamera(
+					fullWidth / -2, // Left
+					fullWidth / 2,  // Right
+					fullHeight / 2, // Top
+					fullHeight / -2, // Bottom
+					1,                      // Near plane
+					1000                    // Far plane
+				);
+				// window.innerWidth / -2, // Left
+				// window.innerWidth / 2,  // Right
+				// window.innerHeight / 2, // Top
+				// window.innerHeight / -2, // Bottom
+				camera.position.set(0, 0, 10); // Adjust camera position if needed  
+				
+				let sectW = Math.floor(fullWidth/2);
+				let sectH = fullHeight;
+				let sectSize = sectW*sectH*4;
+				let inc = 0;
+				function putMetaImg(){
+					sectW = metaWidth;
+					sectSize = sectW*sectH*4;
+					let pixels = new Uint8ClampedArray(sectSize);
+					let ind = 0;
+					let srcInd = 0;//+metaWidth*4+4;
+					for(let y = 0; y < sectH; y++){
+						for(let x = 0; x < sectW; x++){
+							pixels[ind] = buf[srcInd];
+							pixels[ind+1] = buf[srcInd+1];
+							pixels[ind+2] = buf[srcInd+2];
+							pixels[ind+3] = buf[srcInd+3];
+							ind += 4;
+							srcInd += 4;
+						}
+						srcInd += fullWidth*4;
+						srcInd -= sectW*4;
+					}
+				}
+				for(let i = 0; i < fullWidth; i += sectW){
+					let pixels = new Uint8ClampedArray(sectSize);
+					let ind = 0;
+					let srcInd = inc*sectW*4;//+metaWidth*4+4;
+					for(let y = 0; y < sectH; y++){
+						for(let x = 0; x < sectW; x++){
+							pixels[ind] = buf[srcInd];
+							pixels[ind+1] = buf[srcInd+1];
+							pixels[ind+2] = buf[srcInd+2];
+							pixels[ind+3] = buf[srcInd+3];
+							ind += 4;
+							srcInd += 4;
+						}
+						srcInd += fullWidth*4;
+						srcInd -= sectW*4;
+					}
+					
+					pixels = new Uint8Array(pixels);
+					let texture = new THREE.DataTexture(pixels,sectW,sectH);
+					texture.minFilter = THREE.NearestFilter;
+					texture.magFilter = THREE.NearestFilter;
+					texture.wrapS = THREE.ClampToEdgeWrapping;
+					texture.wrapT = THREE.ClampToEdgeWrapping;
+
+					function getTextureTest(){
+
+						// for ( let i = 0; i < size; i ++ ) {
+						// 	const stride = i * 4;
+						// 	data[ stride ] = r;
+						// 	data[ stride + 1 ] = g;
+						// 	data[ stride + 2 ] = b;
+						// 	data[ stride + 3 ] = 255;
+						// }
+						// for(let i = 0; i < size; i += 4){
+						// 	data[i] = buf[i];
+						// 	data[i+1] = buf[i+1];
+						// 	data[i+2] = buf[i+2];
+						// 	data[i+3] = buf[i+3];
+						// }
+
+						data = pixels;
+
+						// used the buffer to create a DataTexture
+						if(inc == 0){
+							console.log("data buffer: ",data);
+						}
+						const texture = new THREE.DataTexture(
+							data,sectW,sectH,
+							THREE.RGBAFormat,
+							THREE.UnsignedByteType,
+							THREE.Texture.DEFAULT_MAPPING,
+							THREE.ClampToEdgeWrapping,
+							THREE.ClampToEdgeWrapping,
+							THREE.NearestFilter,
+							THREE.NearestFilter,
+							THREE.Texture.DEFAULT_ANISOTROPY,
+							THREE.SRGBColorSpace //LinearSRGBColorSpace
+						);
+						// const texture = new THREE.DataArrayTexture(data, sectW, sectH, 1);
+						// texture.format = THREE.RGBAIntegerFormat;
+						// texture.colorSpace = THREE.LinearSRGBColorSpace;
+						// texture.premultiplyAlpha = true;
+						texture.needsUpdate = true;
+
+						return texture;
+					}
+					texture = getTextureTest();
+
+					const planeGeometry = new THREE.PlaneGeometry(sectW,sectH); // Adjust the dimensions of the plane as needed
+					// const planeMaterial = new THREE.MeshBasicMaterial({ color:"red" });
+					// const planeMaterial = new THREE.MeshBasicMaterial({ map: texture,transparent:true });
+					const planeMaterial = new THREE.MeshBasicMaterial({ map: texture,premultipliedAlpha:false,transparent:true });
+					const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+					plane.position.x = inc * sectW - fullWidth/2 + sectW/2;
+					scene.add(plane);
+
+					inc++;
+				}
+
+				renderer.render(scene, camera);
+
+				canvas3.style.width = "50%";
+				canvas3.style.height = null;
+				return canvas3;
+			}
+			function copy6(){
+				let cellX = 0;
+				for(let i = 0; i < project.frames.length; i++){
+					let frame = project.frames[i];
+					for(let j = 0; j < frame.layers.length; j++){
+						let layer = frame.layers[j];
+						_ctx.putImageData(new ImageData(layer.nob.buf,project.w,project.h),metaWidth+1+cellX,0);
+						cellX += project.w;
+					}
+				}
+				//Meta Data
+				let ind = 0;
+				let bufSize = metaWidth*metaHeight*4;
+				let buf = new Uint8ClampedArray(bufSize);
+				let x = 0;
+				let y = 0;
+				let amt = 3;
+				for(let i = 0; i < text.length; i += amt){
+					let r = text.charCodeAt(i)||0;
+					if(r == 0) break;
+					let g = text.charCodeAt(i+1)||0;
+					let b = text.charCodeAt(i+2)||0;
+
+					// ind = (x+y*fullWidth)*4;
+					buf[ind] = r;
+					buf[ind+1] = g;
+					buf[ind+2] = b;
+					buf[ind+3] = 255;
+
+					x++;
+					if(x >= metaWidth){
+						x -= metaWidth;
+						y++;
+					}
+
+					ind += 4;
+				}
+				_ctx.putImageData(new ImageData(buf,metaWidth,metaHeight),0,0);
+			}
+			copy6();
+
+			console.log("TIME: ",performance.now()-startTime);
 			blob = await new Promise(resolve=>{
-				newCan.toBlob(resolve,"image/png");
+				_can.toBlob(resolve,"image/png");
 			});
 		} break;
 		case "png":
@@ -6775,6 +6902,7 @@ async function file_save(){
 
 			str = getFileStr();
 			//console.log("str","*pre:"+str);
+			console.log("TIME: ",performance.now()-startTime);
 			blob = new Blob([str],{type:"text/plain"});
 	}
 
@@ -7058,35 +7186,63 @@ function openFileBase(e,type,fd_name,fileHandle){
 	updateFileName();
 	reloadObjsList();
 }
-async function file_open(){
-	// open file picker
-	[fileHandle] = await window.showOpenFilePicker({
-		id:"open",
-		types:[{
-			description:"Images",
-			accept:{
-				"image/qs":[".qs"],
-				"image/nbg":[".nbg",".nbg2"],
-				"image/png":[".png"],
-				"image/jpg":[".jpg"]
-			}
-		}]
+function addFileToRecents(fileHandle,blobURL){
+	requestAnimationFrame(async ()=>{
+		// let blobURL = URL.createObjectURL(blob);
+		let transaction = db.transaction(["recentFiles"],"readwrite");
+		let store = transaction.objectStore("recentFiles");
+		// let key = 0;
+		// let list = await getRecentFilesList();
+		// for(const data of list){
+		// 	if(data.id > key) key = data.id;
+		// }
+		// key++;
+		transaction = db.transaction(["recentFiles"],"readwrite");
+		store = transaction.objectStore("recentFiles");
+		let addReq = store.put({
+			name:project.name,
+			url:blobURL,
+			file:fileHandle,
+			date:Date.now()
+		});
+		addReq.onsuccess = e=>console.log("Stored file in DB successfully");
+		addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
 	});
-
+}
+async function file_open(/**@type {FileSystemFileHandle}*/fileHandle,isCustom=false){
+	let startTime = performance.now();
+	if(!isCustom){
+		// open file picker
+		[fileHandle] = await window.showOpenFilePicker({
+			id:"open",
+			types:[{
+				description:"Images",
+				accept:{
+					"image/qs":[".qs"],
+					"image/nbg":[".nbg",".nbg2"],
+					"image/png":[".png"],
+					"image/jpg":[".jpg"]
+				}
+			}]
+		});
+	}
+	else if(!fileHandle){
+		console.error("No file data to open, aborted");
+		return;
+	}
 	// get file contents
-	/**@type {File} */
-	const fileData = await fileHandle.getFile();
+	let fileData = await fileHandle.getFile();
+	if(!fileData){
+		console.error("Could not load file");
+		return;
+	}
+	
 	console.log(fileData.name);
 	let _namel = fileData.name.split(".");
 	let type = _namel[_namel.length-1];
 	switch(type){
 		case "qs":{
-			// fileData.text().then(data=>{
-			//   console.log("FILE DATA: ",data);
-			// });
-			console.log("reading 1");
 			let fileReader = new FileReader();
-			console.log("reading 2");
 			let prom = new Promise(resolve=>{
 				fileReader.onload = (e)=>{
 					resolve(e);
@@ -7102,20 +7258,15 @@ async function file_open(){
 					resolve();
 				};
 			});
-			// image.style = `
-			//   position: absolute;
-			//   top: 50%;
-			//   left: 50%;
-			//   translate: -50% -50%;
-			//   scale: 5;
-			//   image-rendering: pixelated;
-			// `;
-			// document.body.appendChild(image);
-			console.log("reading 4",image);
 			nobDecrypt(image,fileData.name);
 
 			project.handle = fileHandle;
 			project.name = fileData.name;
+
+			console.log("TOTAL FILE LOAD TIME: ",performance.now()-startTime);
+
+			// if(!isCustom) addFileToRecents(fileHandle,imageUrl);
+			addFileToRecents(fileHandle,imageUrl);
 		} break;
 		case "nbg2":{ //Deprecated - superceeded by .qs
 			fileData.text().then(e=>{
@@ -7137,7 +7288,9 @@ async function file_open(){
 		case "nbg":{
 			fileData.text().then(e=>{
 				openFileBase(e,type,fileData.name,fileHandle);
+				console.log("TOTAL FILE LOAD TIME: ",performance.now()-startTime);
 			});
+			if(!isCustom) addFileToRecents(fileHandle);
 		} break;
 		case "png":
 		case "jpg":
@@ -7185,6 +7338,8 @@ async function file_open(){
 				updateFileName();
 
 				URL.revokeObjectURL(this.src);
+
+				console.log("TOTAL FILE LOAD TIME: ",performance.now()-startTime);
 			}
 			return;
 			fileData.arrayBuffer().then(e1=>{
@@ -8498,7 +8653,7 @@ function _loadCtx(id,l,lkey,f,x,y,temp,lvl=0,b){
 		s.addEventListener("mouseenter",e=>{
 			closeAllCtxLowerLvl(lvl);
 		});
-		f(i,s,lvl);
+		f(i,s,lvl,l);
 	}
 	ctxes.appendChild(d);
 	let width = d.offsetWidth;
@@ -9631,6 +9786,7 @@ function openContext(id,x,y,temp,level,b){
 			_loadCtx(id,[
 				"New",
 				"Open",
+				"Open Recent...",
 				"Save As",
 				"Save",
 				"Import",
@@ -9640,29 +9796,176 @@ function openContext(id,x,y,temp,level,b){
 				"File Recovery",
 				`AutoSave: <span style="color:${autoSave?"limegreen":"red"}">${autoSave?"ON":"OFF"}</span>`,
 				"<span class='prev' style='color:darkgray;background-color:black'>Legacy File System:</span>",
-				"New",
-				"Open",
-				"Save As",
-				"Manage Files"
+				"New (Legacy)",
+				"Open (Legacy)",
+				"Save As (Legacy)",
+				"Manage Files",
 			],[
-				"Ctrl-Shift-M",
+				"Ctrl-M",
 				"Ctrl-O",
+				"",
 				"Ctrl-Shift-S",
 				"Ctrl-S",
 				"",
 				"",
 				"",
 				""
-			],function(i,d,lvl){
-				switch(i){
-					case 0:
+			],function(i,d,lvl,list){
+				let label = list[i].split(":")[0];
+				if(label.length > 30) label = i.toString();
+				switch(label){
+					case "New":
 						registerInfo(d,"File -> New: Creates a new empty image.")
 						d.onclick = function(){
 							fileFunc.createNew_menu();
 							//closeAllCtxMenus();
 						};
 					break;
-					case 1:
+					case "Open Recent...":{
+						(async ()=>{
+							let parent = d;
+							let list = await getRecentFilesList();
+							let nameList = list.map(v=>v.name);
+							function reloadDropdown(){
+								createDropdown(0,nameList,[],(i,d)=>{
+									// openRecentFile(list,i);
+								},d,true,(i,d)=>{
+									let text = d.textContent;
+									d.innerHTML = `
+										<div style="width:100%;padding:0.3rem">${text}</div>
+										<div class="material-icons" style="color:white;background-color:red;margin:0px 3px;border-radius:inherit">close</div>
+									`;
+									d.style = "display:flex;align-items:center;height:100%;padding:0px";
+									d.children[0].onclick = function(){
+										openRecentFile(list,i);
+										closeAllCtxMenus();
+									};
+									d.children[1].onclick = async function(){
+										let trans = db.transaction(["recentFiles"],"readwrite");
+										let store = trans.objectStore("recentFiles");
+										let file = list[i];
+										let getReq = store.get(nameList[i]);
+										async function reload(){
+											list = await getRecentFilesList();
+											nameList = list.map(v=>v.name);
+											d.innerHTML = `<div style="width:100%;padding:0.3rem;text-align;center">--- removed ---</div>`;
+											// reloadDropdown();
+											parent.open();
+											parent.open();
+										}
+										let res = await new Promise(resolve=>{
+											getReq.onsuccess = e=>{
+												resolve(e.target.result);
+											};
+											getReq.onerror = e=>{
+												alert("Failed to retrieve file, check console");
+												console.log("Failed to retrieve file",e);
+												resolve(null);
+											};
+										});
+										if(!res){
+											reload();
+											return;
+										}
+										if(res.name != file.name){
+											alert("Failed to delete, change was detected");
+											reload();
+											return;
+										}
+										else{
+											let deleteReq = store.delete(nameList[i]);
+											deleteReq.onsuccess = e=>{
+												console.log("Succcessfully removed file from recents list");
+												reload();
+											};
+											deleteReq.onerror = e=>{
+												alert("Failed to remove file from recents list, check console");
+												console.log("Failed to remove file from recents list",e);
+											};
+										}
+									};
+								},"r",true);
+								d.onmousedown = null;
+							}
+
+							let func = async e=>{
+								list = await getRecentFilesList();
+								nameList = list.map(v=>v.name);
+
+								createDropdown(0,nameList,[],(i,d)=>{
+									// openRecentFile(list,i);
+								},d,true,(i,d)=>{
+									let text = d.textContent;
+									d.innerHTML = `
+										<div style="width:100%;padding:0.3rem">${text}</div>
+										<div class="material-icons" style="color:white;background-color:red;margin:0px 3px;border-radius:inherit">close</div>
+									`;
+									d.style = "display:flex;align-items:center;height:100%;padding:0px";
+									d.children[0].onclick = function(){
+										openRecentFile(list,i);
+										closeAllCtxMenus();
+									};
+									d.children[1].onclick = async function(){
+										let trans = db.transaction(["recentFiles"],"readwrite");
+										let store = trans.objectStore("recentFiles");
+										let file = list[i];
+										let getReq = store.get(nameList[i]);
+										async function reload(){
+											list = await getRecentFilesList();
+											nameList = list.map(v=>v.name);
+											d.innerHTML = `<div style="width:100%;padding:0.3rem;text-align;center">--- removed ---</div>`;
+											// reloadDropdown();
+											func();
+											func();
+											// parent.open();
+											// parent.open();
+										}
+										let res = await new Promise(resolve=>{
+											getReq.onsuccess = e=>{
+												resolve(e.target.result);
+											};
+											getReq.onerror = e=>{
+												alert("Failed to retrieve file, check console");
+												console.log("Failed to retrieve file",e);
+												resolve(null);
+											};
+										});
+										if(!res){
+											reload();
+											return;
+										}
+										if(res.name != file.name){
+											alert("Failed to delete, change was detected");
+											reload();
+											return;
+										}
+										else{
+											let deleteReq = store.delete(nameList[i]);
+											deleteReq.onsuccess = e=>{
+												console.log("Succcessfully removed file from recents list");
+												reload();
+											};
+											deleteReq.onerror = e=>{
+												alert("Failed to remove file from recents list, check console");
+												console.log("Failed to remove file from recents list",e);
+											};
+										}
+									};
+								},"r",true);
+								d.onmousedown = null;
+
+								// reloadDropdown();
+								d.open();
+
+								if(list.length == 0){
+									if(parent.ctxRef) parent.ctxRef.innerHTML = "<div style='padding:0.6rem;user-select:none'>None.</div>";
+									return;
+								}
+							};
+							d.addEventListener("mousedown",func);
+						})();
+					} break;
+					case "Open":
 						registerInfo(d,"File -> Open: Allows you to choose a '.nbg' or '.png' file to open from your hard drive.");
 						d.onclick = function(){
 							file_open();
@@ -9675,7 +9978,7 @@ function openContext(id,x,y,temp,level,b){
 							openContext("recentFiles",x+d.offsetLeft+d.offsetWidth,y+d.offsetTop+d.offsetHeight/2,true,lvl+1);
 						};*/
 					break;
-					case 2:
+					case "Save As":
 						registerInfo(d,"File -> Save As: Allows you to save the current file as a duplicate under a different file name.");
 						d.onclick = function(){
 							file_saveAs();
@@ -9683,7 +9986,7 @@ function openContext(id,x,y,temp,level,b){
 							closeAllCtxMenus();
 						};
 					break;
-					case 3:
+					case "Save":
 						registerInfo(d,"File -> Save: Quickly saves the current file to your hard drive under the same name.");
 						d.onclick = function(){
 							file_save();
@@ -9691,38 +9994,38 @@ function openContext(id,x,y,temp,level,b){
 							closeAllCtxMenus();
 						};
 					break;
-					case 4:
+					case "Import":
 						registerInfo(d,"File -> Import: Allows you to open a '.png' file and add it as another layer to the current image.");
 						d.onclick = function(){
 							file_import();
 						};
 						break;
-					case 5:
+					case "Export As":
 						registerInfo(d,"File -> Export As: Allows you to create an export preset. Then export the image with alternate data, such as a spritesheet.");
 						d.onclick = function(){
 							//file_exportAs();
 							openMenu("exportAs");
 						};
 					break;
-					case 6:
+					case "Export":
 						registerInfo(d,"File -> Export: Quickly saves the export using the last used export preset.");
 						d.onclick = function(){
 							file_export();
 							//openFile_bare(null,true);
 						};
 					break;
-					case 7:
+					case "Export As SS":
 						d.onclick = function(){
 							file_exportAs();
 						};
 					break;
-					case 8: //recovery
+					case "File Recovery": //recovery
 						d.classList.add("bRcv");
 						d.onclick = function(){
 							openMenu("recovery");
 						};
 					break;
-					case 9:
+					case "AutoSave":
 						d.style.backgroundColor = "black";
 						d.style.color = "white";
 						d.onclick = function(){
@@ -9733,26 +10036,26 @@ function openContext(id,x,y,temp,level,b){
 							this.innerHTML = `AutoSave: <span style="color:${autoSave?"limegreen":"red"}">${autoSave?"ON":"OFF"}</span>`;
 						};
 					break;
-					case 10:
+					case "10":
 						d.style.backgroundColor = "black";
 					break;
-					case 11:
+					case "New (Legacy)":
 						d.onclick = function(){
 							newMenuMode = 1;
 							openMenu("new");
 						};
 						break;
-					case 12:
+					case "Open (Legacy)":
 						d.onclick = function(){
 							openMenu("openFiles");
 						};
 					break;
-					case 13:
+					case "Save As (Legacy)":
 						d.onclick = function(){
 							openMenu("saveAsFile");
 						};
 					break;
-					case 14:
+					case "Manage Files":
 						d.onclick = function(){
 							openMenu("manageFiles");
 						};
@@ -10764,6 +11067,59 @@ function init2(){
 		color[1] = cc;
 		updateNewCol();
 	});
+
+	//
+
+	let request = indexedDB.open("qs-main",8);
+	request.onsuccess = (e)=>{
+		db = e.target.result;
+
+		// try{db.createObjectStore("filesTesting",{keyPath:"name"})}
+		// catch(e){console.log(e)}
+
+		console.log("Loaded database");
+	};
+	request.onupgradeneeded = (e)=>{
+		let db = e.target.result;
+
+		// db.deleteObjectStore("recentFiles");
+		// db.createObjectStore("recentFiles",{keyPath:"name"});
+		// try{db.createObjectStore("filesTesting",{keyPath:"name"})}
+		// catch(e){
+		// 	console.log(e);
+		// }
+	};
+}
+/**@type {IDBDatabase} */
+let db;
+async function getRecentFilesList(){
+	let trans = db.transaction(["recentFiles"],"readwrite");
+	let req = trans.objectStore("recentFiles").getAll();
+	return new Promise(resolve=>{
+		req.onsuccess = e=>{
+			resolve(e.target.result.sort((a,b)=>(b.date||0)-(a.date||0)));
+		};
+		req.onerror = e=>{
+			alert("Error when getting recent files list, see console");
+			console.error(e);
+			resolve([]);
+		};
+	});
+}
+async function openRecentFile(list,i){
+	let data = list[i];
+	if(!data){
+		console.warn("Could not find file.");
+		return;
+	}
+	console.log("...Attempting to open file... ",data.name,data);
+	let file = data.file;
+	let perm = await file.requestPermission();
+	if(perm != "granted"){
+		console.log("Permission was not granted to open file");
+		return;
+	}
+	await file_open(file,true);
 }
 
 /**
