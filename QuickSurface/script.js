@@ -395,6 +395,21 @@ const _chnlogL = [
 		"Fixed default file name to be New Image.qs instead of .nbg",
 
 		"Various other optimizations and fixes"
+	],
+	[
+		"Version: 1.5.0 (6-22-23)",
+		"Fixed Open Recents to properly upgrade",
+		"Fixed opening files so they don't have duplicates in allProjects",
+		"Fixes with UI such as Open as Brick Mosaic not being too long and Legacy File System: label looking weird, also with other dropdowns that are too long like recent files list",
+		"Added color name labels and amount label to show how many of them are currently in the mosaic",
+		"Added 'Show All?' option to Brick Mosaic View",
+		"Added 'Draw Numbers?' option to Brick Mosaic View",
+		"Added Background options to Brick Mosaic View",
+		"Added selectability to different colors to hide or show them in the canvases",
+		"Added select all and deslect all buttons",
+		"Added 'Regen With Selected Colors?' and reset regen",
+		"Added ability to load mosaics of different sizes and resolutions, as long as both the width and height are divisible by the same number",
+		"Added GUI to manually change the section amounts, buggy if not using the same x sections as y sections"
 	]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
@@ -7230,6 +7245,14 @@ async function file_open(/**@type {FileSystemFileHandle}*/fileHandle,isCustom=fa
 		console.error("No file data to open, aborted");
 		return;
 	}
+	for(let i = 0; i < allProjects.length; i++){
+		let p = allProjects[i];
+		if(p.handle) if(fileHandle.name == p.handle.name) if(await fileHandle.isSameEntry(p.handle)){
+			console.log("Aborting, project is already open...");
+			loadProject(p);
+			return;
+		}
+	}
 	// get file contents
 	let fileData = await fileHandle.getFile();
 	if(!fileData){
@@ -8008,10 +8031,11 @@ function compareColors_RGBHSLAllMerge(col1="",col2=""){
 	return (one + two) / 2;
 }
 let compareColors = compareColors_HSLAllDiff;
-function getClosestBrickColorInd(col1){
+function getClosestBrickColorInd(col1,whitelist){
 	let minDiff = compareColors(col1,bm_colors[0].colArr);
 	let min = 0;
 	for(let i = 1; i < bm_colors.length; i++){
+		if(whitelist) if(!whitelist.includes(i)) continue;
 		let col = bm_colors[i].colArr;
 		let diff = compareColors(col1,col);
 		if(diff < minDiff){
@@ -8023,10 +8047,14 @@ function getClosestBrickColorInd(col1){
 }
 
 function openMenu(id,atr){ //"openFiles"
-	if(id == "brickMosaic") if(project.w != 48 || project.h != 48){
-		alert("Brick Mosaics are currently only supported with images of dimension 48x48. Yours is "+project.w+"x"+project.h);
-		return;
-	}
+	// if(id == "brickMosaic") if(project.w != 48 || project.h != 48){
+	// 	alert("Brick Mosaics are currently only supported with images of dimension 48x48. Yours is "+project.w+"x"+project.h);
+	// 	return;
+	// }
+	// if(id == "brickMosaic") if(project.w != project.h){
+	// 	alert("Brick Mosaics are currently only supported with SQUARE images of dimension n x n. Yours is "+project.w+" x "+project.h);
+	// 	return;
+	// }
 	let d = document.getElementById("menu_"+id);
 	if(d.style.visibility == "visible"){
 		d.style.visibility = "hidden";
@@ -8045,74 +8073,328 @@ function openMenu(id,atr){ //"openFiles"
 	switch(id){
 		case "brickMosaic":{
 			/**@type {HTMLElement} */
-			let view = d.querySelector(".bm_view");
+			// let view = d.querySelector(".bm_view");
 			let l_colors = d.querySelector(".colors");
 			// view.innerHTML = "";
-			l_colors.innerHTML = "";
+			// let cans = d.getElementsByTagName("canvas");
+			let canList = d.querySelector(".canList");
+			let resoDiv = d.querySelector(".resoDiv");
+			/**@type {HTMLInputElement} */
+			let i_xSects = resoDiv.querySelector(".i_xSects");
+			/**@type {HTMLInputElement} */
+			let i_ySects = resoDiv.querySelector(".i_ySects");
+			let b_apply = resoDiv.querySelector(".b_apply");
+			let sectsX = 3;
+			let sectsY = 3;
+			let sectW = 16;
+			let sectH = 16;
 
-			let cans = d.getElementsByTagName("canvas");
+			let divByX = 4;
+			let divByY = 4;
+			if(project.h >= project.w){
+				while(project.w/divByX != Math.floor(project.w/divByX)){
+					divByX--;
+					if(divByX <= 0){
+						alert("Your image could not be loaded");
+						return;
+					}
+				}
+				if(project.h/divByX == Math.floor(project.h/divByX)) divByY = divByX;
+				else while(project.h/divByY != Math.floor(project.h/divByY)){
+					divByY--;
+					if(divByY <= 0){
+						alert("Your image could not be loaded");
+						return;
+					}
+				}
+			}
+			else{
+				while(project.h/divByY != Math.floor(project.h/divByY)){
+					divByY--;
+					if(divByY <= 0){
+						alert("Your image could not be loaded");
+						return;
+					}
+				}
+				if(project.w/divByY == Math.floor(project.w/divByY)) divByX = divByY;
+				else while(project.w/divByX != Math.floor(project.w/divByX)){
+					divByX--;
+					if(divByX <= 0){
+						alert("Your image could not be loaded");
+						return;
+					}
+				}
+			}
+
+			// console.log("USING DIVBY: ",divByX,divByY);
+			sectsX = divByX;
+			sectsY = divByY;
+			sectW = project.w/divByX;
+			sectH = project.h/divByY;
+
+			i_xSects.value = sectsX;
+			i_ySects.value = sectsY;
+
+			let ogSectsX = sectsX;
+			let ogSectsY = sectsY;
+
+			b_apply.onclick = function(){
+				let lastX = sectsX;
+				let lastY = sectsY;
+				sectsX = i_xSects.valueAsNumber||lastX;
+				sectsY = i_ySects.valueAsNumber||lastY;
+				if(sectsX <= 0) sectsX = 1;
+				if(sectsY <= 0) sectsY = 1;
+				sectW = project.w/sectsX;
+				sectH = project.h/sectsY;
+				i_xSects.value = sectsX;
+				i_ySects.value = sectsY;
+
+				divByX = sectsX;
+				divByY = sectsY;
+
+				canList.innerHTML = "";
+				cans = [];
+				for(let y = 0; y < sectsY; y++){
+					for(let x = 0; x < sectsX; x++){
+						let _div = document.createElement("div");
+						let _can = document.createElement("canvas");
+						_div.appendChild(_can);
+						canList.appendChild(_div);
+						cans.push(_can);
+						_div.style.width = (1/divByX*100)+"%";
+						_div.style.height = (1/divByY*100)+"%";
+						// _div.style.height = "fit-content";
+					}
+				}
+				
+				draw();
+			};
+
+			canList.innerHTML = "";
+			/**@type {HTMLCanvasElement[]} */
+			let cans = [];
+			for(let y = 0; y < sectsY; y++){
+				for(let x = 0; x < sectsX; x++){
+					let _div = document.createElement("div");
+					let _can = document.createElement("canvas");
+					_div.appendChild(_can);
+					canList.appendChild(_div);
+					cans.push(_can);
+					_div.style.width = (1/divByX*100)+"%";
+					_div.style.height = (1/divByY*100)+"%";
+				}
+			}
+
 			for(let i = 0; i < cans.length; i++){
 				let can = cans[i];
 				can.width = 500;
 				can.height = 500;
+				// can.width = sectW*sectsX;
+				// can.height = sectH*sectsY;
 			}
-			//init colors list
-			for(let i = 0; i < bm_colors.length; i++){
-				let c = bm_colors[i];
-				let div = document.createElement("div");
-				div.className = "bm_colCont";
-				div.innerHTML = `
-					<div class="bm_icon" style="background-color:${c.col};border-color:${c.border}"></div>
-					<div class="material-icons">trending_flat</div>
-					<div style="background-color:${c.col};border-color:${c.border};color:${c.text}">${i+1}</div>
+			let drawNumbers = true;
+			let invBg = false;
+			function reload(checked=false){
+				l_colors.innerHTML = `
+					<div class="bm_cont" style="border-bottom:none !important">
+						<div>Show All? <input type="checkbox" class="cb_showAll"></div>
+						<!--<div>Search <input type="text" placeholder="Color name..."></div>-->
+						<div>Draw Numbers? <input type="checkbox" class="cb_drawNumbers"></div>
+						<div>Background <button class="d_bg">Background</button></div>
+						<div><button class="b_selAll">Select All</button><button class="b_deselAll">Deselect All</button></div>
+						<br>
+						<button style="width:100%;font-size:12px;padding:5px;border-radius:0.3rem" class="b_regen">Regen With Selected Colors?</button>
+						<div><button style="font-size:12px" class="b_reset warn">Reset Regen</button></div>
+					</div>
+					<hr>
 				`;
-				l_colors.appendChild(div);
+				/**@type {HTMLInputElement} */
+				let cb_showAll = l_colors.querySelector(".cb_showAll");
+				let b_selAll = l_colors.querySelector(".b_selAll");
+				let b_deselAll = l_colors.querySelector(".b_deselAll");
+				let cb_drawNumbers = l_colors.querySelector(".cb_drawNumbers");
+				let d_bg = l_colors.querySelector(".d_bg");
+				let b_regen = l_colors.querySelector(".b_regen");
+				let b_reset = l_colors.querySelector(".b_reset");
+				cb_showAll.checked = checked;
+				cb_showAll.onclick = function(){
+					reload(this.checked);
+				};
+				b_selAll.onclick = function(){
+					useSolo = true;
+					for(let i = 0; i < bm_colors.length; i++){
+						solo[i] = true;
+					}
+					draw();
+					reload(cb_showAll.checked);
+				};
+				b_deselAll.onclick = function(){
+					useSolo = true;
+					solo = {};
+					draw();
+					reload(cb_showAll.checked);
+				};
+				cb_drawNumbers.onclick = function(){
+					drawNumbers = this.checked;
+					draw();
+				};
+				cb_drawNumbers.checked = drawNumbers;
+				createDropdown(0,["None","Black","White"],[],(i,d)=>{
+					let col = [null,"black","white"][i];
+					for(let i = 0; i < cans.length; i++){
+						let can = cans[i];
+						can.parentElement.style.background = col;
+					}
+					d_bg.open();
+				},d_bg,false,null,"d",true);
+				b_regen.onclick = function(){
+					whitelist = [];
+					if(checked){
+						for(let i = 0; i < bm_colors.length; i++){
+							if(solo[i]) whitelist.push(i);
+						}
+					}
+					else{
+						for(let i = 0; i < bm_colors.length; i++){
+							if(usedColors[i] == null) continue;
+							if(solo[i]) whitelist.push(i);
+						}
+					}
+					draw();
+					reload();
+				};
+				b_reset.onclick = function(){
+					whitelist = null;
+					b_selAll.click();
+				};
+
+				//init colors list
+				for(let i = 0; i < bm_colors.length; i++){
+					let c = bm_colors[i];
+					if(!cb_showAll.checked) if(usedColors[i] == null) continue;
+					let div = document.createElement("div");
+					div.className = "bm_colCont_main";
+					let name = c.name.split("_").map(v=>v[0].toUpperCase()+v.substring(1)).join(" ");
+					div.innerHTML = `
+						<!--<div class="label"><span>${name}</span><span class="prev" style="color:${c.col};background-color:${c.text};padding:3px 6px;border-radius:0.2rem;margin-left:5px">#${i}</span></div>-->
+						<div class="label"><span>${name}</span><span class="prev" style="opacity:0.75;background-color:white;padding:3px 6px;border-radius:0.2rem;margin-left:5px">x${usedColors[i]??0}</span></div>
+						<div class="bm_colCont">
+							<input type="checkbox" class="cb">
+							<div class="bm_icon" style="background-color:${c.col};border-color:${c.border}"></div>
+							<div class="material-icons">trending_flat</div>
+							<div style="background-color:${c.col};border-color:${c.border};color:${c.text}">${i+1}</div>
+						</div>
+					`;
+					l_colors.appendChild(div);
+					let cb = div.querySelector(".cb");
+					cb.onclick = function(){
+						if(this.checked){
+							useSolo = true;
+							solo[i] = true;
+						}
+						else{
+							delete solo[i];
+							if(Object.keys(solo).length == 0){
+								// useSolo = false;
+								useSolo = true;
+							}
+						}
+						draw();
+					};
+					if(solo[i]) cb.checked = true;
+				}
 			}
 			//init canvas grid
-			let size = project.w*project.h;
-			let buf = new Uint8ClampedArray(size);
-			let n = rasterizeFrame(project.frameI);
-			let k = 0;
-			for(let ky = 0; ky < 3; ky++)
-			for(let kx = 0; kx < 3; kx++){
-				let c = cans[k];
-				let toggled = false;
-				let td = c.parentElement;
-				td.onclick = function(){
-					toggled = !toggled;
-					if(toggled) td.classList.add("toggled");
-					else td.classList.remove("toggled");
-				};
-				let ct = c.getContext("2d");
-				for(let i = 0; i < 16; i++){
-					for(let j = 0; j < 16; j++){
-						let w = c.width/16;
-						let x = i*w+w/2;
-						let y = j*w+w/2;
-						let x1 = i+16*kx;
-						let y1 = j+16*ky;
-						
-						// ,buf[x1+y1*project.w]
-						let cInd = (x1+y1*project.w)*4;
-						let ind = getClosestBrickColorInd([n.buf[cInd],n.buf[cInd+1],n.buf[cInd+2]]);
-						let color = bm_colors[ind];
-						ct.beginPath();
-						ct.arc(x,y,w/2*0.9,0,Math.PI*2);
-						ct.fillStyle = color.col;
-						ct.fill();
-						ct.strokeStyle = color.border;
-						ct.lineWidth = 2;
-						ct.stroke();
-						ind++;
-						let textWidth = ct.measureText(ind).width;
-						let textHeight = w*0.5;
-						ct.font = `${textHeight}px Arial`;
-						ct.fillStyle = color.text;
-						ct.fillText(ind,x-textWidth/2,y+textHeight/2-2); //<-- TEXT ON OR OFF HERE
-					}
-				}
-				k++;
+			let usedColors = [];
+			let useSolo = true;
+			let solo = {};
+			let whitelist = null;
+			let resoScale = 12;
+			for(let i = 0; i < bm_colors.length; i++){
+				solo[i] = true;
 			}
+			function draw(){
+				for(let i = 0; i < cans.length; i++){
+					let can = cans[i];
+					can.width = sectW*sectsX*resoScale;
+					can.height = sectH*sectsY*resoScale;
+				}
+				if(sectW > sectH){
+					canList.style.width = null;
+					canList.style.height = "auto";
+				}
+				else{
+					canList.style.height = "100%";
+					canList.style.width = null;
+				}
+				canList.style.aspectRatio = (sectW/sectH);
+				let size = project.w*project.h;
+				let buf = new Uint8ClampedArray(size);
+				let n = rasterizeFrame(project.frameI);
+				let k = 0;
+				usedColors = [];
+				for(let ky = 0; ky < sectsX; ky++)
+				for(let kx = 0; kx < sectsY; kx++){
+					let c = cans[k];
+					let toggled = false;
+					let td = c.parentElement;
+					td.onclick = function(){
+						toggled = !toggled;
+						if(toggled){
+							td.classList.add("toggled");
+							td.style.width = "100%";
+							td.style.height = "100%";
+						}
+						else{
+							td.classList.remove("toggled");
+							td.style.width = (1/divByX*100)+"%";
+							td.style.height = (1/divByY*100)+"%";
+						}
+					};
+					let ct = c.getContext("2d");
+					for(let i = 0; i < sectW; i++){
+						for(let j = 0; j < sectH; j++){
+							let w = c.width/sectW;
+							let h = c.height/sectH;
+							let x = i*w+w/2;
+							let y = j*h+h/2;
+							let x1 = i+sectW*kx;
+							let y1 = j+sectH*ky;
+							
+							// ,buf[x1+y1*project.w]
+							let cInd = (x1+y1*project.w)*4;
+							let ind = getClosestBrickColorInd([n.buf[cInd],n.buf[cInd+1],n.buf[cInd+2]],whitelist);
+							let color = bm_colors[ind];
+							if(!usedColors[ind]) usedColors[ind] = 0;
+							usedColors[ind]++;
+							if(useSolo) if(!solo[ind]) continue;
+							ct.beginPath();
+							ct.arc(x,y,w/2*0.9,0,Math.PI*2);
+							ct.fillStyle = color.col;
+							ct.fill();
+							ind++;
+							if(drawNumbers){
+								ct.strokeStyle = color.border;
+								ct.lineWidth = 2;
+								ct.stroke();
+								let textWidth = ct.measureText(ind).width;
+								let textHeight = w*0.5;
+								ct.font = `${textHeight}px Arial`;
+								ct.fillStyle = color.text;
+								if(i == 0 && j == 0){
+									x = w/2-textWidth/2-1;
+									y = h/2-0.5;
+								}
+								ct.fillText(ind,x-textWidth/2,y+textHeight/2-2); //<-- TEXT ON OR OFF HERE
+							}
+						}
+					}
+					k++;
+				}
+			}
+			draw();
+			reload();
 		} break;
 		case "runScript":{
 			/**@type {HTMLTextAreaElement} */
@@ -9731,7 +10013,6 @@ function openContext(id,x,y,temp,level,b){
 			_loadCtx(id,[
 				"View as Brick Mosaic...",
 			],[],function(i,d){
-				d.style.width = "150px";
 				if(i == 0){
 					d.onclick = function(){
 						closeAllCtxMenus();
@@ -9795,7 +10076,7 @@ function openContext(id,x,y,temp,level,b){
 				"Export As SS",
 				"File Recovery",
 				`AutoSave: <span style="color:${autoSave?"limegreen":"red"}">${autoSave?"ON":"OFF"}</span>`,
-				"<span class='prev' style='color:darkgray;background-color:black'>Legacy File System:</span>",
+				"<span class='prev' style='color:darkgray'>Legacy File System:</span>",
 				"New (Legacy)",
 				"Open (Legacy)",
 				"Save As (Legacy)",
@@ -11070,26 +11351,26 @@ function init2(){
 
 	//
 
-	let request = indexedDB.open("qs-main",8);
+	// let request = indexedDB.open("qs-main",parseInt(localStorage.getItem("db-ver")));
+	let request = indexedDB.open("qs-main");
 	request.onsuccess = (e)=>{
 		db = e.target.result;
 
-		// try{db.createObjectStore("filesTesting",{keyPath:"name"})}
-		// catch(e){console.log(e)}
-
 		console.log("Loaded database");
+	};
+	request.onerror = (e)=>{
+		console.error("Failed to load database");
+		console.error(e);
 	};
 	request.onupgradeneeded = (e)=>{
 		let db = e.target.result;
 
-		// db.deleteObjectStore("recentFiles");
-		// db.createObjectStore("recentFiles",{keyPath:"name"});
-		// try{db.createObjectStore("filesTesting",{keyPath:"name"})}
-		// catch(e){
-		// 	console.log(e);
-		// }
+		try{db.createObjectStore("recentFiles",{keyPath:"name"});}
+		catch(e){}
 	};
 }
+// if(localStorage.getItem("db-ver") == null) localStorage.setItem("db-ver",0);
+// localStorage.setItem("db-ver",parseInt(localStorage.getItem("db-ver"))+1);
 /**@type {IDBDatabase} */
 let db;
 async function getRecentFilesList(){
@@ -11448,26 +11729,26 @@ let bm_colors = [
 	// new BMCol("dark_green","green"),
 	// new BMCol("lime_green","limegreen")
 	new BMCol("black","#212121","white"),
-	new BMCol("blue","#0057A6"),
+	new BMCol("blue","#0057A6","white"),
 	new BMCol("bright_green","#10CB31"),
 	new BMCol("bright_light_blue","#BCD1ED"),
 	new BMCol("bright_light_orange","#FFC700"),
 	new BMCol("bright_light_yellow","#FFF08C"),
 	new BMCol("bright_pink","#F7BCDA"),
-	new BMCol("brown","#6B3F22"),
+	new BMCol("brown","#6B3F22","white"),
 	new BMCol("coral","#FF8172"),
 	new BMCol("dark_azure","#009FE0"),
-	new BMCol("dark_blue","#243757"),
-	new BMCol("dark_bluish_gray","#595D60"),
-	new BMCol("dark_brown","#50372F"),
-	new BMCol("dark_green","#2E5543"),
+	new BMCol("dark_blue","#243757","white"),
+	new BMCol("dark_bluish_gray","#595D60","white"),
+	new BMCol("dark_brown","#50372F","white"),
+	new BMCol("dark_green","#2E5543","white"),
 	new BMCol("dark_nougat","#CE7942"),
-	new BMCol("dark_orange","#B35408"),
+	new BMCol("dark_orange","#B35408","white"),
 	new BMCol("dark_pink","#EF5BB3"),
-	new BMCol("dark_red","#6A0E15"),
+	new BMCol("dark_red","#6A0E15","white"),
 	new BMCol("dark_tan","#B89869"),
 	new BMCol("dark_turquoise","#00A29F"),
-	new BMCol("green","#00923D"),
+	new BMCol("green","#00923D","white"),
 	new BMCol("lavender","#D3BDE3"),
 	new BMCol("light_aqua","#CFEFEA"),
 	new BMCol("light_bluish_gray","#AFB5C7"),
@@ -11476,7 +11757,7 @@ let bm_colors = [
 	new BMCol("light_pink","#F2D3D1"),
 	new BMCol("light_salmon","#FCC7B7"),
 	new BMCol("lime","#C4E000"),
-	new BMCol("magenta","#B72276"),
+	new BMCol("magenta","#B72276","white"),
 	new BMCol("medium_azure","#6ACEE0"),
 	new BMCol("medium_blue","#82ADD8"),
 	new BMCol("medium_lavender","#C689D9"),
@@ -11487,8 +11768,8 @@ let bm_colors = [
 	new BMCol("olive_green","#ABA953"),
 	new BMCol("orange","#FF7E14"),
 	new BMCol("pink","#F5CDD6"),
-	new BMCol("red","#B30006"),
-	new BMCol("reddish_brown","#82422A"),
+	new BMCol("red","#B30006","white"),
+	new BMCol("reddish_brown","#82422A","white"),
 	new BMCol("rust","#B24817"),
 	new BMCol("sand_blue","#8899AB"),
 	new BMCol("tan","#EED9A4"),
@@ -11502,7 +11783,7 @@ let bm_colors = [
 	// new BMCol("trans-dark_pink","#CE1D9B"),
 	new BMCol("chrome_silver","#DCDCDC"),
 	new BMCol("flat_silver","#8D949C"),
-	new BMCol("pearl_dark_gray","#666660"),
+	new BMCol("pearl_dark_gray","#666660","white"),
 	new BMCol("pearl_gold","#E79E1D"),
 	new BMCol("pearl_light_gold","#E7AE5A"),
 	new BMCol("metallic_gold","#B8860B"),
