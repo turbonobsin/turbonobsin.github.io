@@ -42,7 +42,7 @@
 				<div id="b_design" name="info" info="Toggle On/Off New Modern Design" pos="d" class="material-icons miFlex" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">brush</div>
 				<div id="b_zen" name="info" info="Toggle zen mode on or off (Hides all menus except top bar and canvas)" pos="d" class="material-icons miFlex" onclick="toggleZen()" style="color:darkslategray;font-size:18px;padding:5px;padding-bottom:0px">visibility</div>
 				<div class="ex" id="l_ver">...</div>
-				<div id="b_chan" class="ex material-icons" style="margin:0px;color:gray !important;padding:0px;margin-top:4px" name="info" info="Show Channelog">help</div>
+				<div id="b_chan" class="ex material-icons" style="margin:0px;color:gray !important;padding:0px;font-size:16px;font-style:normal" name="info" info="Show Channelog">help</div>
 			<!-- </div> -->
 
 			<div style="margin-left:auto" id="fileName" name="info" info="File Name: The current open file's name." pos="l"></div>
@@ -65,6 +65,9 @@
 			<div id="info_l" name="info" info="Info Box: Displays info of hovered parts of the editor.">No info.</div><div id="coordsStart_l" name="info" info="Start Coords: Displays the last position you clicked in pixels.">Start (0,0)</div><div id="coords_l" name="info" info="Cursor Coords: Displays the current cursor position in pixels.">Cursor (0,0)</div>
 		</div>
 		<div id="menus">
+			<div class="menu" id="menu_pickStaticLayer">
+				<div class="menuHeader"><span class="menuTitle">Pick Layer Reference</span><button class="closeWindow_b">X</button></div>
+			</div>
 			<div class="menu" id="menu_brickMosaic">
 				<div class="menuHeader"><span class="menuTitle">Brick Mosaic View</span><button class="closeWindow_b">X</button></div>
 				<div class="bm_view">
@@ -284,10 +287,10 @@
 									<div id="prev_menu" class="material-icons" style="margin-right:5px">menu</div>
 									<div style="margin-right:5px">Preview</div>
 									<div style="display:flex;margin-left:auto;margin-right:-3px;align-items:center">
-										<input type="range" id="prev_speed" style="width:75px;margin-top:-1px" value="1" min="1" max="60" step="1">
+										<input type="range" id="prev_speed" style="width:75px" value="1" min="1" max="60" step="1">
 										<span style="width:20px">0</span>
 									</div>
-									<div id="prev_play" class="material-icons" name="info" info="Pause/Play Previewer" kb="preview.togglePlay" style="translate:0px 2px">play_arrow</div>
+									<div id="prev_play" class="material-icons" name="info" info="Pause/Play Previewer" kb="preview.togglePlay">play_arrow</div>
 								</div>
 								<!-- <input type="range" id="prev_scale" style="width:85px" value="0"> -->
 								<div style="display:flex">
@@ -301,7 +304,7 @@
 						
 					</div>
 					<div class="cont" id="color">
-						<span class="title flex" style="border-bottom:solid 1px darkgray;border-right:solid 1px darkgray;margin-top:-2px;display:flex !important;gap:18px"><div class="material-icons">menu</div><div>Color</div></span>
+						<span class="title flex" style="border-bottom:solid 1px darkgray;border-right:solid 1px darkgray;display:flex !important;gap:18px"><div class="material-icons">menu</div><div>Color</div></span>
 						<div id="colorDiv">
 							<div id="colorCur"></div>
 							<canvas id="colorArea"></canvas>
@@ -459,7 +462,7 @@
 						<div id="histList"></div>
 					</div>
 					<div class="cont dragT" nofix="true" id="layers" style="margin-top:auto;flex-shrink:0;height:600px">
-						<div id="layerOptions">
+						<div id="layerOptions" class="optionList">
 							<span class="title">Layers</span>
 							<div class="material-icons mi" style="margin-left:auto">
 								<span onclick="moveLayer(img.curLayer.ind,img.curLayer.ind+1)">arrow_upward</span>

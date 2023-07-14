@@ -410,7 +410,37 @@ const _chnlogL = [
 		"Added 'Regen With Selected Colors?' and reset regen",
 		"Added ability to load mosaics of different sizes and resolutions, as long as both the width and height are divisible by the same number",
 		"Added GUI to manually change the section amounts, buggy if not using the same x sections as y sections"
-	]
+	],
+	[
+		"Version: 1.5.1 (6-28-23)",
+		"Added layer type property and different colors as well as a letter to visually show in the layers panel",
+		"Added layer type support in History and saving/opening .qs files",
+		"Changed addLayer button to be a dropdown that lets you select which type of layer to add (Local, Global, or Static)",
+		"Added Global Layer functionality but looses connection when deleting layers, looking into global layer IDs next",
+		"Updated Layer Option Buttons to new design like like Frame Option Buttons"
+	],
+	[
+		"Version: 1.5.2 (6-29-23)",
+		"Something probably."
+	],
+	[
+		"Version: 1.5.3 (7-12-23)",
+		"More work done on Global Layers",
+		"Added GlobalID property to global layers"
+	],
+	[
+		"Version: 1.5.4 (7-13-23)",
+		"Finished Global Layers - !",
+		"Fixed [settings, keybinds, theme, ...] to be aligned properly on the header bar",
+		"Fixed Show Channelog button so that it is lined up properly and made it not italic to more match the new theme",
+		"Fixed container header material-icon alignment",
+		"Added option to create a BACKGROUND LAYER with a yellowy color identifier",
+		"Just started a little bit of background layers",
+		"Fixed remaining alignment issues"
+	],
+	// [
+	// 	"Version: 1.5.5a (7-14-23)",
+	// ]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
 
@@ -586,7 +616,15 @@ function createNewProject(name,w,h){
 		objs:[],
 
 		og:null,
-		ref:null
+		ref:null,
+
+		layerId:0,
+
+		//v1.5.3 stuff
+		global:[],
+
+		//v1.5.4 stuff
+		bgLayers:[]
 	};
 	data.og = data;
 	return data;
@@ -711,7 +749,7 @@ function createFrame_html(i){
 	op.style.display = "flex";
 	op.style.float = "right";
 	op.style.height = "19px";
-	op.style.transform = "translateY(1px)";
+	op.style.marginTop = "-1.5px";
 	// op.style.marginLeft = "auto";
 	op.frameI = i;
 	/*let b = document.createElement("button");
@@ -772,6 +810,35 @@ function cloneOps(ops){
 	if(ops.obj) o.obj = ops.obj.clone();
 	return o;
 }
+function finishAddFrame(frame,clone=false){
+	if(project.frames.length <= 1) return false;
+	let frameI = project.frames.indexOf(frame);
+	let ref = project.frames[project.frameI-1];
+	// if(frame == ref) ref = project.frames[1];
+
+	// if(clone) selectFrame(project.frames.indexOf(ref),false);
+	// else selectFrame(frameI,false);
+	selectFrame(frameI,false);
+
+	let global = [];
+	let bgLayers = [];
+	for(let i = 0; i < ref.layers.length; i++){
+		let layer = ref.layers[i];
+		if(layer.type == 1) global.push(layer);
+		else if(layer.type == 3) bgLayers.push(layer);
+	}
+	for(let i = 0; i < global.length; i++){
+		let layer = global[i];
+		if(clone){
+			// let frameInd = project.frames.indexOf(frame);
+			// let frameInd = frameI;
+			// cloneLayer(layer.ind-1,frameInd,true,frameInd-1);
+			cloneLayerFrom(layer.ind,frameI-1,layer.ind,frameI,true);
+		}
+		else createLayer_bare(layer.ind,layer.name,true,layer.ops,false,layer.type,true);
+	}
+	return true;
+}
 function cloneFrame(li,ti,bare=false){
 	let lastLayerI = img.curLayer.ind;
 	let lf = project.frames[li];
@@ -781,13 +848,17 @@ function cloneFrame(li,ti,bare=false){
 	project.frameI = ti;
 	img = f;
 	for(let i = 0; i < lf.layers.length; i++){
-		let l = createLayer_bare(i,lf.layers[i].name,false,cloneOps(lf.layers[i].ops));
+		let layer = lf.layers[i];
+		if(layer.type != 0) continue;
+		let l = createLayer_bare(i,layer.name,false,cloneOps(layer.ops));
 		f.layers.splice(i,0,l);
-		l.nob.buf = cloneBuf(lf.layers[i].nob.buf,nob.size);
+		l.nob.buf = cloneBuf(layer.nob.buf,nob.size);
 	}
+	let finish = finishAddFrame(img,true);
 	if(!bare){
 		loadFrame(f);
-		_histAdd(HistIds.full,null,"Clone Frame");
+		if(!finish) _histAdd(HistIds.full,null,"Clone Frame");
+		else _histAdd(HistIds.full,null,"Clone Frame (With Globals)");
 	}
 	else project.frameI = temp;
 	reconstructLayersDiv();
@@ -811,10 +882,12 @@ function createFrame(i,bare=false,noUpdate=false){
 	if(!noUpdate) createFrame_html(i);
 	let temp = project.frameI;
 	project.frameI = i;
+	let finish = finishAddFrame(frame);
 	if(!bare){
 		// project.frameI = i;
 		loadFrame(project.frames[project.frameI]);
-		_histAdd(HistIds.createFrame,i);
+		if(!finish) _histAdd(HistIds.createFrame,i);
+		else _histAdd(HistIds.full,null,"Create Frame (With Globals)");
 	}
 	else project.frameI = temp;
 	if(!noUpdate) updateFramesDiv();
@@ -872,10 +945,13 @@ function selectLayer_bare(i,noUpdate=false){
 	}
 	//todo - visually update the selected layer
 }
-function createLayer(i,name,ops){
+function createLayer(i,type,name,ops){
 	if(name == null) name = "Layer "+i;
+	while(project.frames[0].layers.some(v=>v.name == name)){
+		name = name+"_copy";
+	}
 	if(i == null) i = img.layers.length;
-	createLayer_bare(i,name,true,ops);
+	createLayer_bare(i,name,true,ops,false,type);
 	/*histAdd({
 		id:HistEvt.createLayer,
 		i
@@ -883,7 +959,7 @@ function createLayer(i,name,ops){
 	selectLayer(i);
 	//histAdd_all("Create-layer: "+i);
 	if(ops?!ops.obj:true) _histAdd(HistIds.createLayer,{
-		i,name,ops
+		i,name,ops,type
 	});
 	else _histAdd(HistIds.full,null,"Create Obj Layer");
 }
@@ -896,27 +972,46 @@ function selectFrame(i,noUpdate=false){
 		reconstructFramesDiv(true); //maybe don't need this?
 	}
 }
-function cloneLayer(i,frameI,bare=false){
+function cloneLayer(i,frameI,bare=false,frameFromInd=null){
+	let tmp;
+	if(frameFromInd != null) img = project.frames[frameFromInd];
 	let layer = img.layers[i];
-	let rem = null;
+	if(frameFromInd != null) img = tmp;
+	if(layer.type != 0){
+		alert("You can only clone LOCAL layers for now");
+		if(tmp) img = tmp;
+		return;
+	}
+	// let rem = null;
 	if(!layer){
 		console.warn("no layer found");
 		return;
 	}
 	if(frameI != null){
 		selectFrame(frameI);
-		rem = deepClone(sel2Frames);
+		// rem = deepClone(sel2Frames);
 	}
 	i = img.layers.length-1;
 	let ops = {};
 	if(layer.ops){
 		if(layer.ops.obj) ops.obj = layer.ops.obj.clone();
 	}
-	let l = createLayer_bare(i+1,layer.name,true,ops);
+	let l = createLayer_bare(i+1,layer.name,true,ops,false,layer.type,true);
 	l.nob.buf = cloneBuf(layer.nob.buf,layer.nob.size);
 	selectLayer_bare(i+1);
 	if(!bare) _histAdd(HistIds.full,null,(frameI!=null?"Clone to other frames":"Clone Layer")); //to-do - make this dedicated
 	//if(rem) sel2Frames = rem;
+}
+function cloneLayerFrom(fromLayerI,fromFrameI,toLayerI,toFrameI,bare=false){
+	let tmpFrameI = project.frameI;
+	let fromLayer = project.frames[fromFrameI].layers[fromLayerI];
+	let ops = {};
+	if(fromLayer.ops) if(fromLayer.ops.obj) ops.obj = fromLayer.ops.obj.clone();
+	selectFrame(toFrameI,true);
+	let l = createLayer_bare(toLayerI,fromLayer.name,true,ops,false,fromLayer.type,true);
+	l.nob.buf = cloneBuf(fromLayer.nob.buf,fromLayer.nob.size);
+	if(!bare) _histAdd(HistIds.full,null,("Clone Layer to other frames")); //to-do - make this dedicated
+	selectFrame(tmpFrameI,true);
 }
 function deleteLayer(i){
 	//let name = img.layers[i].name;
@@ -931,9 +1026,27 @@ function deleteLayer(i){
 	}
 	else _histAdd(HistIds.deleteLayer,i);
 }
-function deleteLayer_bare(i,noUpdate=false){
+function deleteLayer_bare(i,noUpdate=false,isSub=false){
+	let tmpLayer = img.layers[i];
+	let tmpFrame = img;
 	img.layers.splice(i,1);
 	if(!noUpdate) layers_d.removeChild(layers_d.children[img.layers.length-i]);
+	if(!isSub){
+		if(tmpLayer.type == 1) for(let j = 0; j < project.frames.length; j++){
+			if(j == project.frameI) continue;
+			let frame = project.frames[j];
+			for(let k = 0; k < frame.layers.length; k++){
+				let layer = frame.layers[k];
+				if(layer.type == 1){
+					if(layer.globalID == tmpLayer.globalID){
+						img = frame;
+						deleteLayer_bare(k,true,true);
+					}
+				}
+			}
+		}
+	}
+	img = tmpFrame;
 }
 function toggleLayerVisibility(i,bare=false,val){
 	let l = img.layers[i];
@@ -948,17 +1061,26 @@ function toggleLayerVisibility(i,bare=false,val){
 }
 function createLayer_html(i,name,ops={}){
 	let l = img.layers[i];
+	if(!l){
+		console.warn("CREATE LAYER_HTML: LAYER NOT FOUND");
+		return;
+	}
 	let dmain = document.createElement("div");
 	let dset = document.createElement("div");
 	dset.className = "dset";
 	let num = document.createElement("div");
 	num.className = "lnum";
-	num.innerHTML = i+1;
-	dset.appendChild(num);
+	num.textContent = i+1;
+
 	let vis = document.createElement("div");
-	vis.innerHTML = "visibility";
+	vis.textContent = "visibility";
 	vis.className = "material-icons";
-	dset.appendChild(vis);
+
+	let type = document.createElement("div");
+	type.textContent = ["L","G","S","B"][l.type||0];
+	type.style.marginTop = "auto";
+	dset.style.setProperty("--bg-col",`var(--layer-${["local","global","static","gstatic"][l.type||0]})`);
+	
 	if(false){
 		let del = document.createElement("div");
 		del.innerHTML = "-";
@@ -966,10 +1088,14 @@ function createLayer_html(i,name,ops={}){
 		dset.appendChild(del);
 	}
 	let set = document.createElement("div");
-	set.innerHTML = "settings";
+	set.textContent = "settings";
 	set.classList.add("material-icons");
 	set.classList.add("settings");
 	set.style.marginTop = "auto";
+
+	dset.appendChild(num);
+	dset.appendChild(vis);
+	dset.appendChild(type);
 	dset.appendChild(set);
 
 	//
@@ -1038,7 +1164,8 @@ function createLayer_html(i,name,ops={}){
 	if(img.layers.length != 0) layers_d.insertBefore(dmain,layers_d.firstChild);
 	if(l) toggleLayerVisibility(i,true,l.visible);
 }
-function createLayer_bare(i,name,visual=true,ops={},noUpdate=false){
+function createLayer_bare(i,name,visual=true,ops={},noUpdate=false,type=0,isSub=false){
+	name = checkName(type,name);
 	can.width = project.w;
 	can.height = project.h;
 	let l = {
@@ -1050,6 +1177,7 @@ function createLayer_bare(i,name,visual=true,ops={},noUpdate=false){
 			brightness:1,
 			contrast:1
 		},
+		type,
 		ops //maybe temp? 
 		//ops:cloneOps(ops)
 	};
@@ -1063,6 +1191,41 @@ function createLayer_bare(i,name,visual=true,ops={},noUpdate=false){
 		updateLayersDiv();
 	}
 	if(noUpdate) img.layers.splice(i,0,l);
+
+	if(!isSub){
+		if(type == 1){
+			l.globalID = project.global.push(name)-1;
+			let curFrame = project.frameI;
+			for(let j = 0; j < project.frames.length; j++){
+				if(j == curFrame) continue;
+				selectFrame(j);
+				// console.log("CREATED FROM SUB");
+				createLayer_bare(Math.min(img.layers.length,i),name,visual,ops,noUpdate,type,true);				
+			}
+			selectFrame(curFrame);
+		}
+		else if(type == 3 && false){
+			l.bgID = project.bgLayers.push(name)-1;
+			let curFrame = project.frameI;
+			for(let j = 0; j < project.frames.length; j++){
+				if(j == curFrame) continue;
+				selectFrame(j);
+				// console.log("CREATED FROM SUB");
+				createLayer_bare(Math.min(img.layers.length,i),name,visual,ops,noUpdate,type,true);				
+			}
+			selectFrame(curFrame);
+		}
+	}
+	else{
+		if(type == 1){
+			let globalID = project.global.indexOf(name);
+			if(globalID == -1){
+				alert("A Serious issue has occured with global layers.");
+				console.error("A Serious issue has occured with global layers.");
+			}
+			l.globalID = globalID;
+		}
+	}
 
 	return l;
 	//else layers_d.appendChild(d);
@@ -1210,16 +1373,24 @@ tools_menu.onclick = function(){
 //Layers
 var layers_d = document.getElementById("layerList");
 var loptions_d = document.getElementById("layerOptions");
-loptions_d.children[3].onclick = function(){
-	createLayer(img.curLayer?img.curLayer.ind+1:img.layers.length);
-};
+createDropdown(0,["Local Layer","Global Layer","Static Layer","Background Layer"],[],(i,l,div)=>{
+	createLayer(img.curLayer?img.curLayer.ind+1:img.layers.length,i);
+	// if(i == 2){
+		
+	// }
+	// else createLayer(img.curLayer?img.curLayer.ind+1:img.layers.length,i);
+},loptions_d.children[3],true);
+// loptions_d.children[3].onclick = function(){
+// 	createLayer(img.curLayer?img.curLayer.ind+1:img.layers.length,0);
+// };
 function updateLayersDiv(){
 	for(let i = 0; i < img.layers.length; i++){
 		let l = img.layers[i];
 		let ll = layers_d.children[img.layers.length-i-1];
+		if(!ll) return;
 		ll.children[1].children[0].innerHTML = l.name;
 		ll.children[0].children[0].innerHTML = i+1;
-		ll.children[1].onclick = function(){
+		ll.children[1].onmousedown = function(){
 			selectLayer(l.ind);
 		};
 		ll.children[0].children[1].onclick = function(){
@@ -1246,6 +1417,10 @@ function updateLayersDiv(){
 		],(j,a)=>{
 			let l1 = l2[j];
 			if(j == 1){ //Merge Down
+				if(l.type != 0){
+					alert("Only LOCAL Layers can be merged down at this time.");
+					return;
+				}
 				if(!img.layers[i-1]) return;
 				let l2 = img.layers[i-1];
 				l2.nob.drawImage_basic(rasterizeLayer(l),0,0);
@@ -1254,6 +1429,10 @@ function updateLayersDiv(){
 				_histAdd(HistIds.full,null,"Merge layer down");
 			}
 			if(j == 2){ //Add to highlighted
+				if(l.type != 0){
+					alert("Only LOCAL Layers can be added to other frames.");
+					return;
+				}
 				for(let i1 = 0; i1 < sel2Frames.length; i1++){
 					let f1 = sel2Frames[i1];
 					let ff = project.frames[f1];
@@ -1501,7 +1680,8 @@ function _histAdd(id,data,name){
 			frameI:project.frameI,
 			w:project.w,
 			h:project.h,
-			objs:[]
+			objs:[],
+			global:JSON.parse(JSON.stringify(project.global))
 		};
 		for(let i = 0; i < project.objs.length; i++){
 			let o = project.objs[i];
@@ -1540,7 +1720,9 @@ function _histAdd(id,data,name){
 					visible:layer.visible,
 					buf:cloneBuf(layer.nob.buf,nob.size),
 					settings:deepClone(layer.settings),
-					ops
+					type:layer.type,
+					ops,
+					globalID:layer.globalID
 				});
 			}
 			d.frames.push(d2);
@@ -1759,6 +1941,7 @@ function _runHist(){
 			project.handle = _hand;
 			project.unsaved = _unsaved;
 			project.legacyName = _legacyName;
+			project.global = JSON.parse(JSON.stringify(e.global));
 			//project.objs = _objs;
 			project.w = e.w;
 			project.h = e.h;
@@ -1802,6 +1985,8 @@ function _runHist(){
 					l.nob.buf = cloneBuf(layer.buf,nob.size);
 					l.ind = b;
 					l.settings = layer.settings;
+					l.type = layer.type;
+					l.globalID = layer.globalID;
 					//reconstructLayersDiv();
 				}
 				f.curLayer = f.layers[frame.curLayer];
@@ -1848,7 +2033,7 @@ function _runHist(){
 					}*/
 				break;
 				case HistIds.createLayer:
-					createLayer_bare(e.data.i,e.data.name,true,e.data.ops);
+					createLayer_bare(e.data.i,e.data.name,true,e.data.ops,false,e.data.type||0);
 					selectLayer_bare(e.data.i);
 				break;
 				case HistIds.deleteLayer:
@@ -5554,8 +5739,44 @@ function resetView(){
 }
 resetView();
 
-function renameLayer(l,name,html,bare=false){
-	l.name = name;
+function checkName(type,name){
+	let found = false;
+	do{
+		found = false;
+		if(type == 1){
+			one: for(let i = 0; i < project.frames.length; i++){
+				let frame = project.frames[i];
+				for(let j = 0; j < frame.layers.length; j++){
+					let layer = frame.layers[j];
+					if(layer.type != 1) if(layer.name == name){
+						found = true;
+						break one;
+					}
+				}
+			}
+		}
+		if(type == 0) if(img.layers.some(v=>v.name == name)) found = true;
+		if(type == 1) if(img.layers.some(v=>v.type == 1 && v.name == name)) found = true;
+
+		if(found) name = name+"_copy";
+	}
+	while(found);
+	return name;
+}
+function renameLayer(l,name,html,bare=false,isSub=false){
+	if(!isSub) l.name = checkName(l.type,name);
+	else l.name = name;
+	if(!isSub) if(l.type == 1){
+		for(const f of project.frames){
+			for(const layer of f.layers){
+				if(layer.type != 1) continue;
+				if(layer.globalID != l.globalID) continue;
+				project.global[l.globalID] = l.name;
+				renameLayer(layer,l.name,html,true,true);
+				// if(layer.name == l.name) renameLayer(layer,l.name,html,bare,true);
+			}
+		}
+	}
 	if(!html) html = layers_d.children[img.layers.length-l.ind-1].children[1].children[0];
 	else html.innerHTML = name;
 	if(!bare) _histAdd(HistIds.renameLayer,{l:l.ind,n:name,ref:html},"Rename Layer");
@@ -6626,6 +6847,9 @@ async function file_save(){
 				for(let j = 0; j < frame.layers.length; j++){
 					let l = frame.layers[j];
 					let prefix = "";
+					if(l.type == 1) prefix += "G,"; //Global Layer
+					else if(l.type == 2) prefix += "S,"; //Static Layer
+					else if(l.type == 3) prefix += "B,"; //Background Layer (Global Static Layer)
 					if(l.ops.obj) prefix += "o,";
 					if(!l.visible) prefix += "h,";
 					
@@ -7637,6 +7861,10 @@ let draggingFrames = [];
 function updateFramesDiv(){
 	for(let i = 0; i < project.frames.length; i++){
 		let d = frames_d.children[i];
+		if(!d){
+			// console.warn("ERROR: Updating frames Div, frame was not found")
+			return;
+		}
 		if(i == project.frameI) d.classList.add("sel");
 		else d.classList.remove("sel");
 		d.children[0].children[0].innerHTML = i+1;
@@ -11351,8 +11579,8 @@ function init2(){
 
 	//
 
-	// let request = indexedDB.open("qs-main",parseInt(localStorage.getItem("db-ver")));
-	let request = indexedDB.open("qs-main");
+	let request = indexedDB.open("qs-main",parseInt(localStorage.getItem("db-ver")));
+	// let request = indexedDB.open("qs-main");
 	request.onsuccess = (e)=>{
 		db = e.target.result;
 
@@ -11369,8 +11597,8 @@ function init2(){
 		catch(e){}
 	};
 }
-// if(localStorage.getItem("db-ver") == null) localStorage.setItem("db-ver",0);
-// localStorage.setItem("db-ver",parseInt(localStorage.getItem("db-ver"))+1);
+if(localStorage.getItem("db-ver") == null) localStorage.setItem("db-ver",0);
+localStorage.setItem("db-ver",parseInt(localStorage.getItem("db-ver"))+1);
 /**@type {IDBDatabase} */
 let db;
 async function getRecentFilesList(){
@@ -11619,7 +11847,7 @@ function reloadObjsList(){
 		createDropdown(0,list,[],(j,a)=>{
 			let la = list[j];
 			if(la == "Add to frame"){
-				createLayer(1,obj_names[o.type]+": "+o.name,{obj:o.clone()});
+				createLayer(1,0,obj_names[o.type]+": "+o.name,{obj:o.clone()});
 			}
 			else if(la == "Set Width & Height"){
 				let w = prompt("Please input camera width: ",o.width) || 16;

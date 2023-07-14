@@ -112,6 +112,7 @@ body.dark{
     border-radius:50rem;
     border:solid 1px var(--n_border);
     background-color:var(--n_headerCol);
+    align-items:center;
     /* background:linear-gradient(10deg,aliceblue 50%,lightskyblue) !important; */
 }
 .menuBar .vr{
@@ -208,9 +209,6 @@ body.dark{
     padding:7px;
     border-radius:0.3rem;
     margin:5px;
-}
-.menuBar .miFlex{
-    translate:0px 1px;
 }
 
 #canvas > *{

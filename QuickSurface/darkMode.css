@@ -131,7 +131,7 @@ button:active{
 }
 
 #layerOptions > div{
-    background-color:#565656 !important;
+    /* background-color:#565656 !important; */
     color:white;
     border-color:darkgray;
 }
@@ -139,16 +139,17 @@ button:active{
     background-color:#232323;
     color:white;
 }
-#layerList .dlayer:hover{
+/* #layerList .dlayer:hover{
     background-color:#565656;
-}
+} */
 #layerList > div.sel > .dset{
-    background-color:darkslategray !important;
+    /* --bg-col:darkslategray;
+    background-color:var(--bg-col,darkslategray) !important; */
     color:white;
 }
 #layerList > div > .dset{
     background-color:black;
-    color:gray;
+    /* color:gray; */
 }
 
 #color div{

@@ -471,16 +471,54 @@ function nobDecrypt(/**@type {HTMLImageElement}*/image,name){
             let tags = split[0].split(",");
             let isObj = false;
             let visible = true;
+            let type = 0;
+            let realName = split[1];
             for(const tag of tags){
                 if(tag == "o") isObj = true;
                 else if(tag == "h") visible = false;
+                else if(tag == "G") type = 1;
+                else if(tag == "S") type = 2;
+                else if(tag == "B") type = 3;
             }
-            layerList.push({
+            // if(type == 1 && k != 0) continue;
+            if(type == 1){
+                let ind = project.global.indexOf(realName);
+                // let ind = project.global.findIndex(v=>v.name == layerName);
+                // let ind = project.global.
+                if(ind == -1){
+                    project.global.push(realName);
+                    // project.global.push({
+                    //     name:layerName,
+                    //     layers:[]
+                    //     // ranges?:[]
+                    // });
+                }
+                // let dat = project.global[ind];
+                // dat.layers.push({
+                //     frame:k,
+                //     layer:i1,
+                //     visible,
+                //     isObj,
+                //     type
+                // });
+                layerList.push({
+                    frame:k,
+                    layer:i1,
+                    name:split[1],
+                    visible,
+                    isObj,
+                    type,
+                    globalID:project.global.indexOf(realName)
+                });
+                continue;
+            }
+            else layerList.push({
                 frame:k,
                 layer:i1,
-                name:split[1],
+                name:realName,
                 visible,
-                isObj
+                isObj,
+                type
             });
         }
     }
@@ -528,11 +566,13 @@ function nobDecrypt(/**@type {HTMLImageElement}*/image,name){
         selectFrame(layerData.frame,true);
         let name = layerData.name;
         if(layerData.isObj) name = name.substring(1);
-        let layer = createLayer_bare(layerData.layer,name,false,{},true);
+        let layer = createLayer_bare(layerData.layer,name,false,{},true,layerData.type,true);
         if(!layerData.isObj) layer.nob.buf = cell;
         layer.visible = layerData.visible;
 
         if(layerData.isObj) layer.ops.rendered = true;
+
+        if(layerData.type == 1) layer.globalID = layerData.globalID;
         
         ind++;
 
