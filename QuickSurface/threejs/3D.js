@@ -89,10 +89,10 @@ function init3D(){
 
 	// scene.remove(cube);
 
-	let skin_texture = new THREE.TextureLoader().load('/models/skin.png');
+	let skin_texture = new THREE.TextureLoader().load('models/skin.png');
 	globalThis.skin_texture = skin_texture;
 
-	let player = loader.load("/models/mainPlayer.glb",(/**@type {{scene:THREE.Group}}*/s)=>{
+	let player = loader.load("models/mainPlayer.glb",(/**@type {{scene:THREE.Group}}*/s)=>{
 		console.log("loaded player");
 		console.log(s);
 		scene.add(s.scene);
