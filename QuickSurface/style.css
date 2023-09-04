@@ -1021,10 +1021,10 @@ body{
 		font-size:10px;
 		background-color:whitesmoke;
 	}
-	#toolBar button{
+	/* #toolBar button{
 		font-size:10px;
 		height:16px;
-	}
+	} */
 	
 	#fileName{
 		margin-left:auto;
@@ -1034,6 +1034,7 @@ body{
 		justify-content:space-between;
 		margin-right:1rem !important;
 		background-color:var(--name-bg);
+		height:20px;
 	}
 	#fileName div{
 		background-color:inherit;
@@ -1402,6 +1403,18 @@ body{
 	image-rendering:pixelated;
 	width:calc(100% - 12.5px) !important;
 	min-width:115px;
+}
+#threeCan{
+	/* aspect-ratio:1; */
+	border:solid 1px gray;
+	margin:5px;
+	background-image:var(--grid);
+	background-size:15px;
+	image-rendering:pixelated;
+	width:calc(100% - 12.5px) !important;
+	min-width:115px;
+
+	height:auto !important;
 }
 #prev_play{
 	cursor:pointer;
@@ -1954,4 +1967,85 @@ div.optionList > div{
 	width:18px;
 	height:18px;
 	font-size:16px;
+}
+
+/*  */
+
+#menu_pickLayerRef{
+	max-width:500px;
+	text-align:center;
+	padding-bottom:1.5rem;
+}
+#menu_pickLayerRef .pickList{
+	min-height:100px;
+	padding:0.5rem;
+	display:flex;
+	flex-wrap:wrap;
+	/* justify-content:center; */
+	gap:0.5rem;
+	margin-bottom:1rem;
+	max-height:50vh;
+	overflow-y:scroll;
+}
+.newSearch{
+	padding:0.3rem;
+	border:none;
+	outline:solid 1px gainsboro;
+}
+.newSearch:focus{
+	outline:solid 2px white;
+}
+.menu button{
+	padding:0.3rem 0.5rem !important;
+}
+.menu button{
+	filter:brightness(1.2) contrast(0.75);
+}
+
+.layerCard{
+	--header:firebrick;
+	--bg:var(--frameHeader);
+	background-color:var(--bg);
+	/* padding:0.5rem; */
+	color:white;
+	font-size:12px;
+	min-width:80px;
+	width:fit-content;
+	height:fit-content;
+	cursor:pointer;
+	border:solid 1px gray;
+	display:flex;
+	flex-direction:column;
+}
+.layerCard.sel{
+	outline:solid 2px var(--text-color);
+}
+.layerCard:hover{
+	/* background-color:var(--header); */
+}
+.layerCard .cardTitle{
+	padding:0.2rem 0.3rem;
+	user-select:none;
+	background-color:var(--header);
+	text-align:left;
+}
+.layerCard canvas{
+	border:solid 1px gray;
+	background:var(--grid);
+	background-size:10px;
+	image-rendering:pixelated;
+	margin:0.2rem;
+}
+
+.threejs-canvas{
+	position:absolute;
+	top:100px;
+	left:0px;
+	width:40vw !important;
+	height:unset !important;
+	z-index:999;
+}
+
+.hide{
+	display:none !important;
 }

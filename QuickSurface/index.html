@@ -65,8 +65,35 @@
 			<div id="info_l" name="info" info="Info Box: Displays info of hovered parts of the editor.">No info.</div><div id="coordsStart_l" name="info" info="Start Coords: Displays the last position you clicked in pixels.">Start (0,0)</div><div id="coords_l" name="info" info="Cursor Coords: Displays the current cursor position in pixels.">Cursor (0,0)</div>
 		</div>
 		<div id="menus">
-			<div class="menu" id="menu_pickStaticLayer">
+			<div class="menu" id="menu_pickLayerRef">
 				<div class="menuHeader"><span class="menuTitle">Pick Layer Reference</span><button class="closeWindow_b">X</button></div>
+				<div class="pickList">
+					No layers found.
+					<!-- <div class="layerCard">
+						<div class="cardTitle">Layer 1</div>
+						<canvas width="32" height="32"></canvas>
+					</div>
+					<div class="layerCard">
+						<div class="cardTitle">Layer 1</div>
+						<canvas width="32" height="32"></canvas>
+					</div>
+					<div class="layerCard">
+						<div class="cardTitle">Layer 1</div>
+						<canvas width="32" height="32"></canvas>
+					</div>
+					<div class="layerCard">
+						<div class="cardTitle">Layer 1</div>
+						<canvas width="32" height="32"></canvas>
+					</div>
+					<div class="layerCard">
+						<div class="cardTitle">Layer 1</div>
+						<canvas width="32" height="32"></canvas>
+					</div> -->
+				</div>
+				<div class="flex-sb">
+					<input type="text" class="newSearch i_search" placeholder="Search Layers...">
+					<button class="newButton b_confirm">Confirm</button>
+				</div>
 			</div>
 			<div class="menu" id="menu_brickMosaic">
 				<div class="menuHeader"><span class="menuTitle">Brick Mosaic View</span><button class="closeWindow_b">X</button></div>
@@ -298,6 +325,7 @@
 									<span style="width:20px">0</span> -->
 								</div>
 								<canvas id="prevCan"></canvas>
+								<canvas id="threeCan" class="hide"></canvas>
 							</div>
 						</div>
 						<!-- main editor -->
@@ -524,6 +552,7 @@
 		<script src="conversions.js"></script>
 		<script src="NobsinEngine.js"></script>
 		<script src="encrypt.js"></script>
+		<script type="module" src="threejs/3D.js"></script>
 		<script src="script.js"></script>
 		<!-- <script src="debugger.js"></script> -->
 		<!--<script src="conversions.js"></script>

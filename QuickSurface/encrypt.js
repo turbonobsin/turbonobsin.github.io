@@ -473,11 +473,15 @@ function nobDecrypt(/**@type {HTMLImageElement}*/image,name){
             let visible = true;
             let type = 0;
             let realName = split[1];
+            let staticID = 0;
             for(const tag of tags){
                 if(tag == "o") isObj = true;
                 else if(tag == "h") visible = false;
                 else if(tag == "G") type = 1;
-                else if(tag == "S") type = 2;
+                else if(tag[0] == "S"){
+                    type = 2;
+                    staticID = parseInt(tag.substring(2)) || 0;
+                }
                 else if(tag == "B") type = 3;
             }
             // if(type == 1 && k != 0) continue;
@@ -504,11 +508,26 @@ function nobDecrypt(/**@type {HTMLImageElement}*/image,name){
                 layerList.push({
                     frame:k,
                     layer:i1,
-                    name:split[1],
+                    name:realName,
                     visible,
                     isObj,
                     type,
                     globalID:project.global.indexOf(realName)
+                });
+                continue;
+            }
+            else if(type == 2){ //Static
+                let ind = project.static.indexOf(realName);
+                if(ind == -1) project.static.push(realName);
+                layerList.push({
+                    frame:k,
+                    layer:i1,
+                    name:realName,
+                    visible,
+                    isObj,
+                    type,
+                    staticID
+                    // staticID:project.static.indexOf(realName)
                 });
                 continue;
             }
@@ -573,6 +592,7 @@ function nobDecrypt(/**@type {HTMLImageElement}*/image,name){
         if(layerData.isObj) layer.ops.rendered = true;
 
         if(layerData.type == 1) layer.globalID = layerData.globalID;
+        else if(layerData.type == 2) layer.staticID = layerData.staticID;
         
         ind++;
 

@@ -438,8 +438,39 @@ const _chnlogL = [
 		"Just started a little bit of background layers",
 		"Fixed remaining alignment issues"
 	],
+	[
+		"Version: 1.5.5 (7-14-23)",
+		"Fully finished Global Layers",
+		"Added: Saving files now add to file recents list",
+	],
+	[
+		"Version: 1.5.6 (7-15-23)",
+		"Idea: import spritesheets as animation",
+		"Started adding Pick Layer Reference Menu",
+		"Added ability to close any menu by pressing Escape",
+		"Changed basic button styling (except toolBar) to be larger and easier to click (also better constrast in menus)",
+		"Added css for Pick Layer Ref Menu"
+	],
+	[
+		"Version: 1.5.7 (7-16-23)",
+		"Fixed new weird button sizing",
+		"Fixed height on FileName button",
+		"Added functionality to 'pickLayerRef' Menu but there may be bugs, also search doesn't work yet and static layers don't get synced yet"
+	],
+	[
+		"Version: 1.5.8 (7-17-23)",
+		"Fixed loading static layers when loading files",
+		"Added staticID to be stored within the static tag in the file format",
+		"Static layers and cloning from static layers works but when cloning it will erase the layer data - !",
+		"Fixed undo so that it between states if you stayed on the same frame it will keep you on the same layer, feels more intuitive now"
+	],
+	[
+		"Version: 1.5.9 (9-3-23)",
+		"Basic implimentation of 3D Player Viewer"
+	]
 	// [
-	// 	"Version: 1.5.5a (7-14-23)",
+	// 	"Version: 1.5.9 (7-18-23)",
+	// 	""
 	// ]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
@@ -624,7 +655,10 @@ function createNewProject(name,w,h){
 		global:[],
 
 		//v1.5.4 stuff
-		bgLayers:[]
+		bgLayers:[],
+
+		//v1.5.5 stuff
+		static:[],
 	};
 	data.og = data;
 	return data;
@@ -1061,6 +1095,29 @@ function toggleLayerVisibility(i,bare=false,val){
 }
 function createLayer_html(i,name,ops={}){
 	let l = img.layers[i];
+	let isSub = false;
+	
+	if(l.type == 2){
+		let static = l.parent;
+		// outer: for(let j = 0; j < project.frames.length; j++){
+		// 	let frame = project.frames[j];
+		// 	for(let k = 0; k < frame.layers.length; k++){
+		// 		let layer = frame.layers[k];
+		// 		if(layer == l) continue;
+		// 		if(layer.staticID == l.staticID){
+		// 			static = layer;
+		// 			break outer;
+		// 		}
+		// 	}
+		// }
+		if(static) if(static != l){
+			console.log("STATIC:",static);
+			name = static.name;
+			isSub = true;
+			l.parent = static;
+		}
+	}
+	
 	if(!l){
 		console.warn("CREATE LAYER_HTML: LAYER NOT FOUND");
 		return;
@@ -1119,7 +1176,7 @@ function createLayer_html(i,name,ops={}){
 	d.className = "dlayer";
 	let s = document.createElement("span");
 	s.innerHTML = name;
-	s.onclick = function(){
+	if(!isSub) s.onclick = function(){
 		if(!this.innerHTML.includes("input")){
 			let inp = document.createElement("input");
 			inp.value = this.innerHTML;
@@ -1164,7 +1221,7 @@ function createLayer_html(i,name,ops={}){
 	if(img.layers.length != 0) layers_d.insertBefore(dmain,layers_d.firstChild);
 	if(l) toggleLayerVisibility(i,true,l.visible);
 }
-function createLayer_bare(i,name,visual=true,ops={},noUpdate=false,type=0,isSub=false){
+function createLayer_bare(i,name,visual=true,ops={},noUpdate=false,type=0,isSub=false,staticID=null){
 	name = checkName(type,name);
 	can.width = project.w;
 	can.height = project.h;
@@ -1182,8 +1239,14 @@ function createLayer_bare(i,name,visual=true,ops={},noUpdate=false,type=0,isSub=
 		//ops:cloneOps(ops)
 	};
 	l.nob.pixelCount = 0;
-	l.nob.buf = new Uint8ClampedArray(l.nob.size);
-	l.nob.dep = new Uint8ClampedArray(l.nob.ssize);
+	if(type == 0 || type == 1){
+		l.nob.buf = new Uint8ClampedArray(l.nob.size);
+		l.nob.dep = new Uint8ClampedArray(l.nob.ssize);
+	}
+	else if(type == 2 || type == 3){
+		l.nob.buf = new Uint8ClampedArray(l.nob.size);
+		l.nob.dep = new Uint8ClampedArray(l.nob.ssize);
+	}
 	//
 	if(visual){
 		img.layers.splice(i,0,l);
@@ -1193,7 +1256,7 @@ function createLayer_bare(i,name,visual=true,ops={},noUpdate=false,type=0,isSub=
 	if(noUpdate) img.layers.splice(i,0,l);
 
 	if(!isSub){
-		if(type == 1){
+		if(type == 1){ //Global
 			l.globalID = project.global.push(name)-1;
 			let curFrame = project.frameI;
 			for(let j = 0; j < project.frames.length; j++){
@@ -1204,7 +1267,10 @@ function createLayer_bare(i,name,visual=true,ops={},noUpdate=false,type=0,isSub=
 			}
 			selectFrame(curFrame);
 		}
-		else if(type == 3 && false){
+		else if(type == 2){ //Static
+			l.staticID = project.static.push(name)-1;
+		}
+		else if(type == 3 && false){ //Background
 			l.bgID = project.bgLayers.push(name)-1;
 			let curFrame = project.frameI;
 			for(let j = 0; j < project.frames.length; j++){
@@ -1224,6 +1290,19 @@ function createLayer_bare(i,name,visual=true,ops={},noUpdate=false,type=0,isSub=
 				console.error("A Serious issue has occured with global layers.");
 			}
 			l.globalID = globalID;
+		}
+		else if(type == 2){
+			let n = l.nob;
+			for(let i = 0; i < project.frames.length; i++){
+				let frame = project.frames[i];
+				for(let j = 0; j < frame.layers.length; j++){
+					let layer = frame.layers[j];
+					if(layer.type == 2) if(layer.staticID == img.curLayer.staticID){
+						layer.nob.buf = n.buf;
+					}
+				}
+			}
+			updateLayersDiv();
 		}
 	}
 
@@ -1373,8 +1452,23 @@ tools_menu.onclick = function(){
 //Layers
 var layers_d = document.getElementById("layerList");
 var loptions_d = document.getElementById("layerOptions");
-createDropdown(0,["Local Layer","Global Layer","Static Layer","Background Layer"],[],(i,l,div)=>{
-	createLayer(img.curLayer?img.curLayer.ind+1:img.layers.length,i);
+createDropdown(0,["Local Layer","Global Layer","Static Layer","Background Layer","(Clone from Static Layer)"],[],async (i,l,div)=>{
+	if(i == 4){ //Clone from Static Layer: select reference
+		requestAnimationFrame(async ()=>{
+			let layer = await openMenu("pickLayerRef").layer;
+			if(layer == null) return;
+			console.log("PICKED LAYER: ",layer);
+			if(layer.type != 2){
+				console.warn("ERR: wrong layer type somehow");
+				return;
+			}
+			let l = createLayer_bare(img.curLayer?img.curLayer.ind+1:img.layers.length,layer.name,true,{},false,2,true,layer.staticID);
+			l.staticID = layer.staticID;
+			l.parent = layer;
+			_histAdd(HistIds.full,null,"Clone STATIC Layer");
+		});
+	}
+	else createLayer(img.curLayer?img.curLayer.ind+1:img.layers.length,i);
 	// if(i == 2){
 		
 	// }
@@ -1388,7 +1482,11 @@ function updateLayersDiv(){
 		let l = img.layers[i];
 		let ll = layers_d.children[img.layers.length-i-1];
 		if(!ll) return;
-		ll.children[1].children[0].innerHTML = l.name;
+		if(l.type == 2){
+			ll.children[1].children[0].textContent = project.static[l.staticID];
+			// if(l.parent) ll.children[1].children[0].innerHTML = l.parent.name;
+		}
+		if(l.type == 0 || l.type == 1) ll.children[1].children[0].innerHTML = l.name;
 		ll.children[0].children[0].innerHTML = i+1;
 		ll.children[1].onmousedown = function(){
 			selectLayer(l.ind);
@@ -1681,7 +1779,8 @@ function _histAdd(id,data,name){
 			w:project.w,
 			h:project.h,
 			objs:[],
-			global:JSON.parse(JSON.stringify(project.global))
+			global:JSON.parse(JSON.stringify(project.global)),
+			static:JSON.parse(JSON.stringify(project.static))
 		};
 		for(let i = 0; i < project.objs.length; i++){
 			let o = project.objs[i];
@@ -1690,7 +1789,6 @@ function _histAdd(id,data,name){
 				state:o.getState()
 			};
 			d.objs.push(d1);
-			console.log("LOG: ",d1);
 		}
 		for(let i = 0; i < project.frames.length; i++){
 			let frame = project.frames[i];
@@ -1722,7 +1820,8 @@ function _histAdd(id,data,name){
 					settings:deepClone(layer.settings),
 					type:layer.type,
 					ops,
-					globalID:layer.globalID
+					globalID:layer.globalID,
+					staticID:layer.staticID
 				});
 			}
 			d.frames.push(d2);
@@ -1755,6 +1854,21 @@ function _histAdd(id,data,name){
 
 	for(let i = 0; i < project.frames.length; i++){
 		updateFramePreview(i,1);
+	}
+
+	//UPDATE STATIC AND BACKGROUND LAYERS
+	if(img.curLayer.type == 2){
+		let n = img.curLayer.nob;
+		for(let i = 0; i < project.frames.length; i++){
+			let frame = project.frames[i];
+			for(let j = 0; j < frame.layers.length; j++){
+				let layer = frame.layers[j];
+				if(layer.type == 2) if(layer.staticID == img.curLayer.staticID){
+					layer.nob.buf = n.buf;
+				}
+			}
+		}
+		updateLayersDiv();
 	}
 }
 //
@@ -1942,6 +2056,7 @@ function _runHist(){
 			project.unsaved = _unsaved;
 			project.legacyName = _legacyName;
 			project.global = JSON.parse(JSON.stringify(e.global));
+			project.static = JSON.parse(JSON.stringify(e.static));
 			//project.objs = _objs;
 			project.w = e.w;
 			project.h = e.h;
@@ -1957,6 +2072,7 @@ function _runHist(){
 				project.objs.push(a);
 			}
 			reloadObjsList();
+			let staticData = [];
 			for(let a = 0; a < e.frames.length; a++){
 				let f = createFrame(a,true);
 				f.layers = [];
@@ -1987,6 +2103,24 @@ function _runHist(){
 					l.settings = layer.settings;
 					l.type = layer.type;
 					l.globalID = layer.globalID;
+					l.staticID = layer.staticID;
+					if(l.type == 2){
+						outer: for(let i1 = 0; i1 < project.frames.length; i1++){
+							let frame1 = project.frames[i1];
+							for(let j1 = 0; j1 < frame1.layers.length; j1++){
+								let layer1 = frame1.layers[j1];
+								if(layer1 == layer) continue;
+								if(layer1.type == 2) if(layer1.staticID == layer.staticID){
+									l.parent = [i1,j1];
+									break outer;
+								}
+							}
+						}
+						let stat = staticData[l.staticID];
+						if(!stat) staticData[l.staticID] = l;
+						else l.nob.buf = stat.nob.buf;
+					}
+					// l.parent = project.frames[layer?.parent[0]]?.layers[layer?.parent[1]];
 					//reconstructLayersDiv();
 				}
 				f.curLayer = f.layers[frame.curLayer];
@@ -2001,6 +2135,23 @@ function _runHist(){
 			loadFrame(project.frames[project.frameI]);
 			//let layerI = project.frames[project.frameI].curLayer.ind;
 			selectLayer_bare(e.frames[e.frameI].curLayer);
+			
+			//UPDATE STATIC AND BACKGROUND LAYERS
+			// for(const name of project.static){
+			// 	if(img.curLayer.type == 2){
+			// 		let n = img.curLayer.nob;
+			// 		for(let i = 0; i < project.frames.length; i++){
+			// 			let frame = project.frames[i];
+			// 			for(let j = 0; j < frame.layers.length; j++){
+			// 				let layer = frame.layers[j];
+			// 				if(layer.type == 2) if(layer.staticID == img.curLayer.staticID){
+			// 					layer.nob.buf = n.buf;
+			// 				}
+			// 			}
+			// 		}
+			// 		updateLayersDiv();
+			// 	}
+			// }
 		}
 		else{
 			if(project.frameI != e.f) if(project.frames[e.f]){
@@ -2117,6 +2268,9 @@ function isToolLockingHist(){
 	return false;
 }
 function undo(){
+	let lastFrame = project.frameI;
+	let lastLayer = img.curLayer.ind;
+	
 	if(isToolLockingHist()) return;
 
 	if(project.histI < 0) project.histI = 0;
@@ -2128,6 +2282,10 @@ function undo(){
 
 	_runHist();
 	_updateHistDiv();
+
+	if(lastFrame == project.frameI){
+		selectLayer_bare(lastLayer);
+	}
 }
 function redo(){
 	if(isToolLockingHist()) return;
@@ -3390,6 +3548,7 @@ let preview = {
 		createDropdown(0,[
 			"Toggle Camera ",
 			"Select Camera ",
+			"Toggle 3D Player"
 			// "Cam Mode: off [...]"
 		],[],(i,d)=>{
 			if(i == 0){
@@ -3398,7 +3557,7 @@ let preview = {
 			}
 			else if(i == 1){
 				let name = prompt("Please type the name of the camera object you want to use:","Camera 1");
-				if(name == null) return;
+				if(name == null) return; 
 				let cam = null;
 				function check(){
 					for(let i = 0; i < project.objs.length; i++){
@@ -3414,8 +3573,17 @@ let preview = {
 				}
 				t.cam = cam;
 			}
-			else if(i == 2){
-
+			else if(i == 2){ //Toggle 3D Player
+				let threeCan = document.getElementById("threeCan");
+				if(threeCan.classList.contains("hide")){
+					threeCan.classList.remove("hide");
+					prevCan.classList.add("hide");
+					if(!loaded3D) init3D();
+				}
+				else{
+					threeCan.classList.add("hide");
+					prevCan.classList.remove("hide");
+				}
 			}
 		},t.dd_menu,true,(i,d)=>{
 			if(i == 0){
@@ -4578,6 +4746,7 @@ let fkeySY = 0;
 let fkeyOn = false;
 let noScrollMode = false;
 function keydown(/**@type {KeyboardEvent}*/e){
+	if(document.activeElement.tagName.toLowerCase() == "input") return;
 	if(prompKeyChord) return;
 	let key = e.key.toLowerCase();
 	if(false) if(key == "l"){ //test
@@ -4751,6 +4920,13 @@ function keydown(/**@type {KeyboardEvent}*/e){
 	}
 }
 document.addEventListener("keydown",function(e){
+	if(e.key.toLowerCase() == "escape") if(areMenusOpen()){
+		if(tmpOnCloseMenu){
+			tmpOnCloseMenu();
+			tmpOnCloseMenu = null;
+		}
+		closeAllCtxMenus();
+	}
 	if(document.activeElement.tagName.toLowerCase() == "textarea") return;
 	if(document.activeElement.tagName.toLowerCase() == "input") return;
 	keydown(e);
@@ -6780,7 +6956,7 @@ function autoSaveF(){
 		autoSaveF();
 	},7000);
 }
-async function file_save(){
+async function file_save(wasSaveAs=false){
 	keys.s = false;
 
 	if(project.legacyName){
@@ -6848,7 +7024,7 @@ async function file_save(){
 					let l = frame.layers[j];
 					let prefix = "";
 					if(l.type == 1) prefix += "G,"; //Global Layer
-					else if(l.type == 2) prefix += "S,"; //Static Layer
+					else if(l.type == 2) prefix += `S-${l.staticID},`; //Static Layer
 					else if(l.type == 3) prefix += "B,"; //Background Layer (Global Static Layer)
 					if(l.ops.obj) prefix += "o,";
 					if(!l.visible) prefix += "h,";
@@ -7122,6 +7298,7 @@ async function file_save(){
 			blob = await new Promise(resolve=>{
 				_can.toBlob(resolve,"image/png");
 			});
+			if(wasSaveAs) addFileToRecents(newHandle,_can.toDataURL());
 		} break;
 		case "png":
 			console.log("saving as png...");
@@ -7178,7 +7355,7 @@ async function file_saveAs(){
 	project.name = newHandle.name;
 
 	project.legacyName = null; //forces legacy files to become NBGs
-	file_save();
+	file_save(true);
 }
 async function file_exportAs(){
 	let tCan = document.createElement("canvas");
@@ -7537,7 +7714,7 @@ async function file_open(/**@type {FileSystemFileHandle}*/fileHandle,isCustom=fa
 				openFileBase(e,type,fileData.name,fileHandle);
 				console.log("TOTAL FILE LOAD TIME: ",performance.now()-startTime);
 			});
-			if(!isCustom) addFileToRecents(fileHandle);
+			// if(!isCustom) addFileToRecents(fileHandle,fileData);
 		} break;
 		case "png":
 		case "jpg":
@@ -8149,6 +8326,10 @@ for(let i = 0; i < close_bs.length; i++){
 		this.parentNode.parentNode.style.visibility = "hidden";
 		menus_d.style.backgroundColor = "unset";
 		menus_d.style.zIndex = 0;
+		if(tmpOnCloseMenu){
+			tmpOnCloseMenu();
+			tmpOnCloseMenu = null;
+		}
 	};
 }
 var menus_d = document.getElementById("menus");
@@ -8274,6 +8455,7 @@ function getClosestBrickColorInd(col1,whitelist){
 	return min;
 }
 
+let tmpOnCloseMenu;
 function openMenu(id,atr){ //"openFiles"
 	// if(id == "brickMosaic") if(project.w != 48 || project.h != 48){
 	// 	alert("Brick Mosaics are currently only supported with images of dimension 48x48. Yours is "+project.w+"x"+project.h);
@@ -8298,7 +8480,67 @@ function openMenu(id,atr){ //"openFiles"
 	if(id == "brickMosaic") menus_d.style.backdropFilter = "blur(3px)";
 	menus_d.style.zIndex = 4;
 	let list_d, list;
+	tmpOnCloseMenu = null;
+	let retData = d;
 	switch(id){
+		case "pickLayerRef":{
+			let data = {
+				/**@type {Promise<any>} */
+				layer:null,d
+			};
+
+			let sel = -1;
+			let list = [];
+
+			let pickList = d.querySelector(".pickList");
+			let i_search = d.querySelector(".i_search");
+			/**@type {HTMLButtonElement} */
+			let b_confirm = d.querySelector(".b_confirm");
+			data.layer = new Promise(resolve=>{
+				b_confirm.onclick = function(){
+					closeAllCtxMenus();
+					resolve(list[sel]);
+				};
+				tmpOnCloseMenu = function(){
+					resolve(null);
+				};
+			});
+
+			let reqType = 2;
+			for(let i = 0; i < project.frames.length; i++){
+				let frame = project.frames[i];
+				for(let j = 0; j < frame.layers.length; j++){
+					let layer = frame.layers[j];
+					if(layer.type == reqType) if(!list.some(v=>v.staticID == layer.staticID)) list.push(layer);
+				}
+			}
+			
+			if(list.length == 0) pickList.textContent = "No layers found.";
+			else pickList.textContent = "";
+			for(let i = 0; i < list.length; i++){
+				let l = list[i];
+				let div = document.createElement("div");
+				div.className = "layerCard";
+				div.innerHTML = `
+					<div class="cardTitle">${l.name}</div>
+					<canvas width="32" height="32" class="canv"></canvas>
+				`;
+				pickList.appendChild(div);
+				let canv = div.querySelector(".canv");
+				canv.width = l.nob.width;
+				canv.height = l.nob.height;
+				canv.getContext("2d").putImageData(new ImageData(l.nob.buf,l.nob.width,l.nob.height),0,0);
+				div.addEventListener("mousedown",e=>{
+					sel = i;
+					for(let j = 0; j < pickList.children.length; j++){
+						pickList.children[j].classList.remove("sel");
+					}
+					div.classList.add("sel");
+				});
+			}
+
+			retData = data;
+		} break;
 		case "brickMosaic":{
 			/**@type {HTMLElement} */
 			// let view = d.querySelector(".bm_view");
@@ -8933,7 +9175,7 @@ function openMenu(id,atr){ //"openFiles"
 			reload();
 		} break;
 	}
-	return d;
+	return retData;
 }
 let newMenuMode = 0;
 document.getElementById("menu_new").getElementsByClassName("menuFooter")[0].children[0].onclick = function(){
@@ -9197,6 +9439,7 @@ function closeAllCtxMenus(){
 	for(let i = 0; i < ll.length; i++){
 		ll[i].style.visibility = "hidden";
 	}
+	tmpOnCloseMenu = null;
 }
 function closeAllCtxLowerLvl(lvl){
 	for(let i = 0; i < ctxes.children.length; i++){
@@ -11752,7 +11995,9 @@ function hide(e,v){
 function toggleDesign(){
 	new_design = !new_design;
 	localStorage.setItem("useNewDesign",new_design);
-	document.head.children[6].disabled = !new_design;
+	let ele = document.querySelector(".new_design");
+	ele.disabled = !new_design;
+	// document.head.children[6].disabled = !new_design;
 }
 b_design.onclick = function(){
 	toggleDesign();
