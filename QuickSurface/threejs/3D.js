@@ -26,20 +26,21 @@ function init3D(){
 		canvas:newCan
 	});
 	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.sortObjects = false;
 	// document.body.appendChild( renderer.domElement );
 	// renderer.domElement.classList.add("threejs-canvas");
 
 	// let light = new THREE.AmbientLight(0xffffff,1000);
 	// scene.add(light);
-	const directionalLight = new THREE.DirectionalLight( 0xffffff, 2 );
+	const directionalLight = new THREE.DirectionalLight( 0xffffff, 4 );
 	directionalLight.position.set(50,50,50);
 	directionalLight.lookAt(0,0,0);
-	// scene.add( directionalLight );
+	scene.add( directionalLight );
 
-	const directionalLight2 = new THREE.DirectionalLight( 0xffffff, 1 );
+	const directionalLight2 = new THREE.DirectionalLight( 0xffffff, 2.5 );
 	directionalLight2.position.set(-30,-30,-50);
 	directionalLight2.lookAt(0,0,0);
-	// scene.add( directionalLight2 );
+	scene.add( directionalLight2 );
 	
 	cube.position.y -= 5;
 	// scene.add( cube );
@@ -99,8 +100,14 @@ function init3D(){
 		_s = s.scene;
 		
 		for(let c of s.scene.children){
-			c.material = new THREE.MeshBasicMaterial({map:c.material.map});
-			c.material.needsUpdate = true;
+			c.material = new THREE.MeshStandardMaterial({map:c.material.map});
+			/**@type {THREE.MeshBasicMaterial} */
+			let mat = c.material;
+			mat.needsUpdate = true;
+			mat.transparent = true;
+			mat.side = THREE.DoubleSide;
+			// mat.depthWrite = false;
+			// console.log(c.name,c);
 		}
 	});
 	// loaderFBX.load("/models/player2.fbx",(s)=>{
