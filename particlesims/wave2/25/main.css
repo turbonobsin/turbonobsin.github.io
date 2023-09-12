@@ -1,0 +1,12 @@
+body{
+    background-color:white;
+    
+    filter:invert(1);
+    background-color:black;
+}
+#can{
+    background-color:white;
+    width:100%;
+    border:solid 1px gray;
+    image-rendering:pixelated;
+}
