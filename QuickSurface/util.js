@@ -167,6 +167,7 @@ function registerDragSide(t,side,tt,nofix=false){
 	let sw = rect.width;
 	let sh = rect.height;
 	function onmove(x,y,e,ref){
+		console.log("--ON MOVE--");
 		if(t.n_ondrag) t.n_ondrag(t);
 		// let rect = can.parentNode.getBoundingClientRect();
 		// let cell = rect.width/img.w;

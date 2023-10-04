@@ -14,11 +14,16 @@ let material = new THREE.MeshBasicMaterial( { map:texture } );
 let cube = new THREE.Mesh( geometry, material );
 let _s;
 
+/**@type {OrbitControls} */
+let controls, /**@type {GLTFLoader}*/loader, /**@type {FBXLoader}*/loaderFBX;
+/**@type {THREE.Scene} */
+let scene;
+
 globalThis.loaded3D = false;
 function init3D(){
 	globalThis.loaded3D = true;
 	
-	const scene = new THREE.Scene();
+	scene = new THREE.Scene();
 	const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 	
 	let newCan = document.getElementById("threeCan")
@@ -60,9 +65,9 @@ function init3D(){
 	
 	animate();
 	
-	const controls = new OrbitControls( camera, renderer.domElement );
-	const loader = new GLTFLoader();
-	const loaderFBX = new FBXLoader();
+	controls = new OrbitControls( camera, renderer.domElement );
+	loader = new GLTFLoader();
+	loaderFBX = new FBXLoader();
 	// const loader = new OBJLoader();
 
 	// loader.load(
@@ -90,6 +95,17 @@ function init3D(){
 
 	// scene.remove(cube);
 
+	
+	// loaderFBX.load("/models/player2.fbx",(s)=>{
+	// 	console.log("loaded player fbx");
+	// 	console.log(s);
+	// 	scene.add(s);
+	// });
+	
+	console.log("Finished loading 3D.");
+}
+
+function load3D_player(){
 	let skin_texture = new THREE.TextureLoader().load('models/skin.png');
 	globalThis.skin_texture = skin_texture;
 
@@ -110,15 +126,16 @@ function init3D(){
 			// console.log(c.name,c);
 		}
 	});
-	// loaderFBX.load("/models/player2.fbx",(s)=>{
-	// 	console.log("loaded player fbx");
-	// 	console.log(s);
-	// 	scene.add(s);
-	// });
-	
-	console.log("Finished loading 3D.");
+}
+function load3D_cube(){
+	let cube = new THREE.Mesh(new THREE.BoxGeometry(5,5,5,1,1,1),new THREE.MeshStandardMaterial({color:0xffffff}));
+	scene.add(cube);
+	_s = scene;
+	globalThis._s = _s;
+	if(project.name.endsWith+"_n") new_skin_texture_n = new THREE.DataTexture(nob.buf,img.w,img.h);
 }
 
+let new_skin_texture_n;
 function update3D(){
 	let image = document.createElement("canvas");
 	image.width = img.w;
@@ -180,8 +197,10 @@ function update3D(){
 		for(const s of _s.children){
 			/**@type {THREE.MeshStandardMaterial} */
 			let mat = s.material;
+			if(!mat) continue;
 
 			mat.map = new_skin_texture;
+			// mat.normalMap = new_skin_texture_n;
 
 			// mat.transparent = true;
 			// mat.side = THREE.DoubleSide;
@@ -197,6 +216,8 @@ globalThis.init3D = function(){
 globalThis.update3D = function(){
 	update3D();
 };
+globalThis.load3D_player = load3D_player;
+globalThis.load3D_cube = load3D_cube;
 
 // init3D();
 

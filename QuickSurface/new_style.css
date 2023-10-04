@@ -27,8 +27,12 @@
 
     --shade:#eee;
     --fore:white;
+    /* --fore:rgba(255,255,255,0.9); */
 
 }
+/* .cont{
+    backdrop-filter:blur(8px) brightness(1.2) contrast(0.4);
+} */
 body.dark{
     --shade:#222;
     --fore:#000;

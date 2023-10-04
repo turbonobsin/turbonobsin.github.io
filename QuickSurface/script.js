@@ -467,11 +467,53 @@ const _chnlogL = [
 	[
 		"Version: 1.5.9 (9-3-23)",
 		"Basic implimentation of 3D Player Viewer"
+	],
+	[
+		"Version: 1.6.0 (?)",
+		"Don't know what I did today"
+	],
+	[
+		"Version: 1.6.1 (9-13-23)",
+		"Start of RPE"
+	],
+	[
+		"Version: 1.6.2 (9-22-23)",
+		"worked some more on RPE"
+	],
+	[
+		"Version: 1.6.3 (9-25-23)",
+		"Fixed objs panel to have overflow-x hidden"
+	],
+	[
+		"Version: 1.6.4 (9-29-23)",
+		"Added currently open resource pack",
+		"Added list to show all the item textures in the resource pack",
+		"Added ability to open a texture from the pack as a project",
+		"Added ability when saving texture from texture pack, no save as box opens and saves directly to the pack",
+		"Accedentally broke opening mutilple files from resource pack"
+	],
+	[
+		"Version: 1.6.5 (9-30-23)",
+		"Fixed opening multiple files from resource pack from resourcepack"
+	],
+	[
+		"Version: 1.6.6 (10-1-23)",
+		"...many things..."
+	],
+	[
+		"Version: 1.6.7 (10-2-23)",
+		"RPE Structure menu",
+		"...",
+		"Check commit"
+	],
+	[
+		"Version: 1.6.8 (10-3-23)",
+		"Fixed panning using spacebar (this has been a bug for over a year! xD)",
+		"Added recent files support for pngs",
+		"RPE now mostly complete for basic features (still lacking create new pack from scratch though)",
+		"But you can now edit images, edit text files, save each of those, add new images or text files",
+		"Fixed material-symbols-outlined support"
 	]
-	// [
-	// 	"Version: 1.5.9 (7-18-23)",
-	// 	""
-	// ]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
 
@@ -627,7 +669,13 @@ fileName_l.addEventListener("mousedown",e=>{
 	fileName_l.onmousedown = null;
 	fileName_l.open();
 });
-function createNewProject(name,w,h){
+async function asyncCreateNewProject(name,w,h,handle,/**@type {RP}*/fromRP){
+	if(handle) for(const p of allProjects){
+		if(await p.handle?.isSameEntry(handle)) return p;
+	}
+	return createNewProject(name,w,h,handle,fromRP);
+}
+function createNewProject(name,w,h,handle,/**@type {RP}*/fromRP){
 	fileName_l.innerHTML = name;
 	let data = {
 		name,
@@ -659,6 +707,10 @@ function createNewProject(name,w,h){
 
 		//v1.5.5 stuff
 		static:[],
+
+		//v1.6.4
+		fromRP,
+		handle
 	};
 	data.og = data;
 	return data;
@@ -1618,6 +1670,7 @@ function getImg(){
 function reconstructLayersDiv(){
 	layers_d.innerHTML = "";
 	let im = getImg();
+	if(!im) return;
 	for(let i = 0; i < im.layers.length; i++){
 		createLayer_html(i,im.layers[i].name,im.layers[i].ops);
 	}
@@ -3548,7 +3601,8 @@ let preview = {
 		createDropdown(0,[
 			"Toggle Camera ",
 			"Select Camera ",
-			"Toggle 3D Player"
+			"Toggle 3D Player",
+			"Toggle 3D Cube"
 			// "Cam Mode: off [...]"
 		],[],(i,d)=>{
 			if(i == 0){
@@ -3579,6 +3633,20 @@ let preview = {
 					threeCan.classList.remove("hide");
 					prevCan.classList.add("hide");
 					if(!loaded3D) init3D();
+					load3D_player();
+				}
+				else{
+					threeCan.classList.add("hide");
+					prevCan.classList.remove("hide");
+				}
+			}
+			else if(i == 3){ //Toggle 3D Cube
+				let threeCan = document.getElementById("threeCan");
+				if(threeCan.classList.contains("hide")){
+					threeCan.classList.remove("hide");
+					prevCan.classList.add("hide");
+					if(!loaded3D) init3D();
+					load3D_cube();
 				}
 				else{
 					threeCan.classList.add("hide");
@@ -4306,7 +4374,8 @@ function setPan(x,y){
 	}
 }
 
-var zoomSpeed = 1.1;//1.04;
+// var zoomSpeed = 1.1;//1.04;
+var zoomSpeed_g = 1.1;//1.04;
 var zoom = 1;
 var pan = [0,0];
 var scaleX = 0.5;
@@ -4314,7 +4383,8 @@ var scaleY = 0.5;
 let zoomMode = 0;
 setZoom(zoom);
 setPan(pan[0],pan[1]);
-function runZoom(dir,speed=1){
+function runZoom(dir,speed=1,zoomSpeed){
+	if(!zoomSpeed) zoomSpeed = zoomSpeed_g;
 	if(!overCanvas) return;
 	let lastX = canvas.offsetLeft+project.w*zoom;
 	let lastY = canvas.offsetTop+project.h*zoom;
@@ -4339,7 +4409,34 @@ function runZoom(dir,speed=1){
 	pan[1] += offY*scaleY;
 	setPan(pan[0],pan[1]);
 }
+
+let newTouchpadScrolling = true;
 function onwheel(/**@type {WheelEvent}*/e){
+	let difX = e.deltaX-e.movementX;
+	let difY = e.deltaY-e.movementY;
+	let isTouchpad = (Math.max(Math.abs(difX),Math.abs(difY)) < 40);
+	if(newTouchpadScrolling) if(overCanvas) if(isTouchpad){
+		console.log("using touchpad");
+		e.preventDefault();
+
+		if(e.ctrlKey) e.preventDefault();
+
+		if(e.ctrlKey){
+			let v = e.deltaY < 0 ? -1 : 1;
+			// console.log(e.deltaY);
+			// runZoom(v,1/1,Math.min(Math.max(Math.abs(e.deltaY*10),0.6),2));
+			runZoom(v,1/1,1.07);
+			// else if(zoomMode == 0) runZoom(v,1/20);
+			// else if(zoomMode == 1) runZoom(v1,1/20);
+		}
+		else{
+			let speed = -0.7;
+			setPan(pan[0]+e.deltaX*speed,pan[1]+e.deltaY*speed);
+		}
+		
+		return;
+	}
+
 	let v1 = e.deltaY;
 	let v = e.deltaY < 0 ? -1 : 1;
 	if(!noScrollMode) if(keys.f){
@@ -4352,9 +4449,10 @@ function onwheel(/**@type {WheelEvent}*/e){
 	else if(zoomMode == 0) runZoom(v,1/20);
 	else if(zoomMode == 1) runZoom(v1,1/20);
 }
-document.onwheel = function(e){
-	onwheel(e);
-};
+// document.onwheel = function(e){
+// 	onwheel(e);
+// };
+document.addEventListener("wheel",onwheel,{passive:false});
 
 var cx = 0;
 var cy = 0;
@@ -4817,7 +4915,7 @@ function keydown(/**@type {KeyboardEvent}*/e){
 		}
 	}
 	else if(key == " "){
-		_mouseup(0);
+		if(tempTool != Tools.pan) _mouseup(0);
 		startTempTool(Tools.pan);
 	}
 
@@ -5438,6 +5536,7 @@ function getCol(b,prev=false,darken=false){
 	return c;
 }
 function _mouseup(button){
+	console.log("MOUSE UP: ",button);
 	mouseDown[button] = false;
 	dragRef = null;
 	ecx = cx;
@@ -5816,6 +5915,7 @@ function _mousemove(/**@type {MouseEvent}*/e){
 	//if(mouseDown[0]) if(scx >= 0 && scy >= 0 && scx < img.w && scy < img.h) img.overCanvas = true;
 
 	if(uniDrag){
+		console.log("MOVING...");
 		let lx = cx-uniDragX;
 		let ly = cy-uniDragY;
 		let xx = uniDrag.sx+lx;
@@ -5832,6 +5932,7 @@ function _mousemove(/**@type {MouseEvent}*/e){
 
 	if(!uniDrag) if(overCanvas || img.curLayer.nob.pixelCount > 0) switch(curTool){
 		case Tools.pan:
+			console.log("PANNING...",mouseDown[0]);
 			if(mouseDown[0] || mouseDown[1]){
 				setPan(toolData[curTool].spx+(x-smx),toolData[curTool].spy+(y-smy));
 			}
@@ -6974,6 +7075,11 @@ async function file_save(wasSaveAs=false){
 		updateFileName();
 		return;
 	}
+	// if(project.fromRP) if(curRP == project.fromRP){
+		
+		
+	// 	return;
+	// }
 
 	let newHandle = project.handle;
 	if(!newHandle){
@@ -7305,6 +7411,7 @@ async function file_save(wasSaveAs=false){
 			blob = await new Promise(resolve => can.toBlob(resolve,"image/png"));
 			//new Blob([nob.buf.buffer],{type:"application/octet-stream"});
 			console.log("SAVED PNG:",await blob.arrayBuffer());
+			if(wasSaveAs) addFileToRecents(newHandle);
 			break;
 		case "cnbg":
 			console.log("SAVING COMPRESSED NBG");
@@ -7623,6 +7730,22 @@ function addFileToRecents(fileHandle,blobURL){
 		});
 		addReq.onsuccess = e=>console.log("Stored file in DB successfully");
 		addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
+	});
+}
+function addRPToRecents(name,handle){
+	requestAnimationFrame(async ()=>{
+		let transaction = db.transaction(["recentRP"],"readwrite");
+		let store = transaction.objectStore("recentRP");
+		
+		transaction = db.transaction(["recentRP"],"readwrite");
+		store = transaction.objectStore("recentRP");
+		let addReq = store.put({
+			name,
+			file:handle,
+			date:Date.now()
+		});
+		addReq.onsuccess = e=>console.log("Stored RP in DB successfully");
+		addReq.onerror = e=>console.log("Error, failed to stored RP in DB",e);
 	});
 }
 async function file_open(/**@type {FileSystemFileHandle}*/fileHandle,isCustom=false){
@@ -8455,6 +8578,64 @@ function getClosestBrickColorInd(col1,whitelist){
 	return min;
 }
 
+// Resource Packs
+class RP{
+	constructor(/**@type {FileSystemDirectoryHandle}*/dirHandle){
+		this.dirHandle = dirHandle;
+	}
+	/**@type {FileSystemDirectoryHandle} */
+	dirHandle;
+}
+/**@type {RP} */
+let curRP;
+
+function selectRP(rp){
+	curRP = rp;
+}
+
+let rpeImageCache = {};
+
+async function createProjectFromFile(_name,_file){
+	let img = document.createElement("img");
+
+	let file = await _file.getFile();
+	let url = URL.createObjectURL(file);
+	img.src = url;
+
+	return new Promise(resolve=>{
+		img.onload = async function(){
+			let p = await asyncCreateNewProject(_name,img.width,img.height,_file,curRP);
+			let isNew = (p ? addProject(p) : false);
+			let _can1, _ctx1;
+
+			if(isNew){
+				project = p;
+				createFrame(0);
+				createLayer_bare(0,"Main Layer");
+				_can1 = document.createElement("canvas");
+				_can1.width = img.width;
+				_can1.height = img.height;
+				_ctx1 = _can1.getContext("2d");
+				_ctx1.drawImage(img,0,0);
+				loadProject(project);
+			}
+			else loadProject(p);
+			closeAllCtxMenus();
+		
+			if(isNew){
+				let buf = _ctx1.getImageData(0,0,_can1.width,_can1.height).data;
+				project.frames[0].layers[0].nob.buf = buf;
+		
+				_histAdd(HistIds.full,null,"Load data");
+			}
+
+			addFileToRecents(_file);
+		};
+	});
+}
+
+let toggles = [];
+let rpeStructureScrollTop = 0;
 let tmpOnCloseMenu;
 function openMenu(id,atr){ //"openFiles"
 	// if(id == "brickMosaic") if(project.w != 48 || project.h != 48){
@@ -8483,6 +8664,531 @@ function openMenu(id,atr){ //"openFiles"
 	tmpOnCloseMenu = null;
 	let retData = d;
 	switch(id){
+		case "RPE":{
+			let l_fileName = d.querySelector(".l-rpe-file-name");
+			let b_openPack = d.querySelector(".b-rpe-open-pack");
+			let b_openRecent = d.querySelector(".b-rpe-open-recent");
+			let textureList = d.querySelector(".texture-list");
+			let structureList = d.querySelector(".rpe-structure");
+			let b_showImages = d.querySelector(".b-show-images");
+			let b_textEditor = d.querySelector(".b-text-editor");
+			let d_text = d.querySelector(".rpe-text-editor");
+			let textarea = d.querySelector(".ta-rpe");
+			let b_save = d.querySelector(".b-save");
+			let b_fileName = d.querySelector(".b-file-name");
+
+			/**@type {{ele:HTMLElement,file:FileSystemFileHandle}} */
+			let openTextFile;
+
+			b_openPack.onclick = async function(){
+				handle = await window.showDirectoryPicker({
+					id:"RPE",
+					mode:"readwrite"
+				});
+
+				let rp = new RP(handle);
+				selectRP(rp);
+				addRPToRecents(handle.name,handle);
+				
+				loadPack();
+			};
+			(async ()=>{
+				let list = await getRecentRPList();
+				let nameList = list.map(v=>v.name);
+				createDropdown(0,nameList,[],async (i,d)=>{
+					// await openRecentRP(list,i);
+					// closeAllCtxMenus();
+					// openMenu("RPE");
+
+					// loadPack();
+				},b_openRecent,true,(i,d)=>{
+					let text = d.textContent;
+					d.innerHTML = `
+						<div style="width:100%;padding:0.3rem">${text}</div>
+						<div class="material-icons" style="color:white;background-color:red;margin:0px 3px;border-radius:inherit">close</div>
+					`;
+					d.style = "display:flex;align-items:center;height:100%;padding:0px";
+					d.children[0].onclick = async function(){
+						await openRecentRP(list,i);
+						closeAllCtxMenus();
+						openMenu("RPE");
+						loadPack();
+					};
+					d.children[1].onclick = async function(){
+						let trans = db.transaction(["recentRP"],"readwrite");
+						let store = trans.objectStore("recentRP");
+						let file = list[i];
+						let getReq = store.get(nameList[i]);
+						async function reload(){
+							list = await getRecentRPList();
+							nameList = list.map(v=>v.name);
+							d.innerHTML = `<div style="width:100%;padding:0.3rem;text-align;center">--- removed ---</div>`;
+
+							closeAllCtxMenus();
+							openMenu("RPE");
+						}
+						let res = await new Promise(resolve=>{
+							getReq.onsuccess = e=>{
+								resolve(e.target.result);
+							};
+							getReq.onerror = e=>{
+								alert("Failed to retrieve RP, check console");
+								console.log("Failed to retrieve RP",e);
+								resolve(null);
+							};
+						});
+						if(!res){
+							reload();
+							return;
+						}
+						if(res.name != file.name){
+							alert("Failed to delete, change was detected");
+							reload();
+							return;
+						}
+						else{
+							let deleteReq = store.delete(nameList[i]);
+							deleteReq.onsuccess = e=>{
+								console.log("Succcessfully removed RP from recents list");
+								reload();
+							};
+							deleteReq.onerror = e=>{
+								alert("Failed to remove RP from recents list, check console");
+								console.log("Failed to remove RP from recents list",e);
+							};
+						}
+					};
+				},null,true);
+			})();
+
+			function clearSelList(){
+				let list2 = structureList.querySelectorAll(".sel");
+				for(const ele of list2){
+					ele.classList.remove("sel");
+				}
+			}
+
+			async function loadPack(){
+				rpeStructureScrollTop = structureList.scrollTop;
+				let lastToggles = [...toggles];
+
+				/**@type {FileSystemDirectoryHandle} */
+				let handle;
+				
+				if(!curRP){
+					return;
+				}
+
+				handle = curRP.dirHandle;
+					
+				l_fileName.textContent = handle.name;
+				let assets = await handle.getDirectoryHandle("assets").catch(e=>{});
+				let mcAssets = (assets ? await assets.getDirectoryHandle("minecraft").catch(e=>{}) : null);
+				let textures = (mcAssets ? await mcAssets.getDirectoryHandle("textures").catch(e=>{}) : null);
+				let tex_block = (textures ? await textures.getDirectoryHandle("block").catch(e=>{}) : null);
+				let tex_item = (textures ? await textures.getDirectoryHandle("item").catch(e=>{}) : null);
+
+				let doneLoading = false;
+				async function loadStructure(){
+					doneLoading = false;
+
+					structureList.textContent = "";
+
+					let allItems = [];
+					async function createLevel(parent,label="",/**@type {FileSystemDirectoryHandle}*/folder,noHeader=false,path=""){
+						if(!noHeader) path += label+"/";
+						
+						let div = document.createElement(noHeader ? "div" : "li");
+						if(!noHeader) div.classList.add("not-single");
+						let header = document.createElement("div");
+						header.innerHTML = `
+							<div>
+								<div>${label}</div>
+								<div class="material-icons">expand_more</div>
+							</div>
+							<button class="b-rpe-add material-icons">add</button>
+						`;
+						header.className = "header";
+						let ul = document.createElement("ul");
+						if(!noHeader) div.appendChild(header);
+						else ul.style.paddingLeft = "0px";
+						div.appendChild(ul);
+						parent.appendChild(div);
+
+						let toggle = true;
+						let expand = header.children[0].children[1];
+						// doneLoading = true;
+						// ul.style.display = "none";
+						// expand.textContent = "expand_less";
+						// header.classList.add("closed");
+						header.children[0].onclick = function(){
+							toggle = !toggle;
+							if(toggle){
+								ul.style.display = null;
+								expand.textContent = "expand_more";
+								header.classList.remove("closed");
+								if(doneLoading) toggles.push(path);
+							}
+							else{
+								ul.style.display = "none";
+								expand.textContent = "expand_less";
+								header.classList.add("closed");
+								// let index = toggles.indexOf(async v=>await v.folder.isSameEntry(folder));
+								let index = toggles.indexOf(path);
+								if(doneLoading){
+									toggles.splice(index,1);
+									// console.warn("deleted toggle: ",path);
+								}
+							}
+						};
+						header.children[1].onclick = function(){
+							if(!toggle) header.children[0].click();
+							let tmp = document.createElement("div");
+							tmp.className = "d-rpe-add-cont";
+							tmp.innerHTML = `
+								<div class="flex-sb">
+									<div>New File</div>
+									<button class="b-cancel-add">Cancel</button>
+								</div>
+								<div class="d-rpe-add">
+									<input type="text">
+									<button class="b-confirm-add material-icons small-add-btn">add</button>
+								</div>
+							`;
+							ul.insertBefore(tmp,ul.children[0]);
+							let b_confirmAdd = tmp.querySelector(".b-confirm-add");
+							let b_cancelAdd = tmp.querySelector(".b-cancel-add");
+							let i_fileName = tmp.querySelector("input");
+							b_confirmAdd.onclick = async function(){
+								let name = i_fileName.value;
+								if(name.length == 0) return;
+								tmp.parentElement.removeChild(tmp);
+								let _list = name.split(".");
+								let ext = _list[_list.length-1];
+								let file = await folder.getFileHandle(name,{
+									create:true
+								});
+								if(ext == "png"){
+									let tmp2 = document.createElement("canvas");
+									tmp2.width = 16;
+									tmp2.height = 16;
+									tmp2.toBlob(async blob=>{
+										let writer = await file.createWritable();
+										await writer.write(blob);
+										await writer.close();
+										
+										await loadPack();
+
+										let p = await createProjectFromFile(name,file);
+										loadProject(p);
+									},"image/png");
+								}
+								else{
+									loadPack();
+								}
+							};
+							b_cancelAdd.onclick = function(){
+								tmp.parentElement.removeChild(tmp);
+							};
+						};
+						if(!noHeader){
+							// let check = toggles.indexOf(async v=>await v.folder.isSameEntry(folder));
+							// let check = false;
+							// for(const a of toggles){
+							// 	if(a.folder.isSameEntry(folder)){
+							// 		check = true;
+							// 		break;
+							// 	}
+							// }
+							let check = toggles.includes(path);
+
+							header.children[0].click();
+							if(check) header.children[0].click();
+						}
+						// console.log("TOGGLES",toggles);
+
+						registerInfo(header.children[1],"Add File");
+
+						for await (const [key,/**@type {FileSystemDirectoryHandle}*/value] of folder.entries()){
+							// let div = document.createElement("ul");
+							// div.textContent = key;
+							// structureList.appendChild(div);
+
+							if(value instanceof FileSystemDirectoryHandle) createLevel(ul,key,value,false,path);
+							else createItem(ul,key,value,folder);
+						}
+					}
+					function createItem(parent,label="",/**@type {FileSystemFileHandle}*/file,/**@type {FileSystemDirectoryHandle}*/folder){
+						let li = document.createElement("li");
+						li.textContent = label;
+						allItems.push(label);
+
+						let _list = label.split(".");
+						let ext = _list[_list.length-1];
+
+						if(ext == "png"){
+							li.classList.add("texture");
+
+							let isNormal = label.endsWith("_n.png");
+							let isSpec = label.endsWith("_s.png");
+							let isEmm = label.endsWith("_e.png") || label.endsWith("_g.png");
+							let addIndent = false;
+
+							if(isNormal) li.classList.add("normalMap");
+							else if(isSpec) li.classList.add("specMap");
+							else if(isEmm) li.classList.add("emmMap");
+
+							if(isNormal || isSpec || isEmm) addIndent = true;
+
+							if(addIndent){
+								li.style.marginLeft = "12px";
+								li.style.opacity = 0.8;
+							}
+						}
+						else if(ext == "json") li.classList.add("json");
+
+						// 
+						
+						if(ext == "png") li.onclick = function(e){
+							if(e.altKey){
+								if(!confirm(`Are you sure you want to delete the file ${label} ?`)) return;
+								folder.removeEntry(label);
+								li.parentElement.removeChild(li);
+								
+								return;
+							}
+							
+							b_showImages.click();
+							createProjectFromFile(label,file);
+							clearSelList();
+						};
+						else if(_list.length == 1 || ["txt","",null,"properties","json","toml","xml","html","js","java","mcmeta"].includes(ext)){
+							li.onclick = async function(e){
+								if(e.altKey){
+									if(!confirm(`Are you sure you want to delete the file ${label} ?`)) return;
+									folder.removeEntry(label);
+								}
+
+								b_textEditor.click();
+								clearSelList();
+								li.classList.add("sel");
+								
+								b_fileName.textContent = file.name;
+								textarea.value = "";
+								openTextFile = {
+									file,
+									ele:li
+								};
+								textarea.value = await (await file.getFile()).text();
+							};
+						}
+
+						// 
+						
+						parent.appendChild(li);
+					}
+					// createLevel(structureList,"assets",assets,true);
+					await createLevel(structureList,":ROOT:",handle,true);
+
+					// setTimeout(()=>{
+					// 	doneLoading = true;
+					// 	alert("done loading");
+					// },1000);
+					// doneLoading = true;
+				}
+				loadStructure();
+
+				b_save.onclick = async function(){
+					if(!openTextFile) return;
+					let write = await openTextFile.file.createWritable();
+					await write.write(new Blob([textarea.value]));
+					await write.close();
+
+					openTextFile.ele.classList.remove("unsaved");
+					b_fileName.classList.remove("unsaved");
+				};
+				textarea.oninput = function(){
+					if(!openTextFile) return;
+					openTextFile.ele.classList.add("unsaved");
+					b_fileName.classList.add("unsaved");
+				};
+				textarea.onkeydown = function(e){
+					let key = e.key.toLowerCase();
+					let openList = ["(","[","{",'"',"'","`"];
+					let closeList = [")","]","}",'"',"'","`"];
+					if(key == "s" && e.ctrlKey){
+						e.preventDefault();
+						b_save.click();
+					}
+					if(key == "a" && e.ctrlKey){
+						e.preventDefault();
+						textarea.selectionStart = 0;
+						textarea.selectionEnd = textarea.value.length;
+					}
+					if(key == "tab"){
+						e.preventDefault();
+						let start = textarea.selectionStart+1;
+						textarea.value = textarea.value.substring(0,textarea.selectionStart)+"\t"+textarea.value.substring(textarea.selectionEnd);
+						textarea.selectionStart = start;
+						textarea.selectionEnd = start;
+					}
+					if(openList.includes(key)){
+						e.preventDefault();
+						let start = textarea.selectionStart+1;
+						textarea.value = textarea.value.substring(0,textarea.selectionStart)+key+closeList[openList.indexOf(key)]+textarea.value.substring(textarea.selectionEnd);
+						textarea.selectionStart = start;
+						textarea.selectionEnd = start;
+					}
+					if(key == "enter"){
+						let lastChar = textarea.value.substring(textarea.selectionStart-1,textarea.selectionStart);
+						let str = "\n\t\n";
+						let cnt2 = 0;
+						let strExtra = "";
+						function findTabs(){
+							let i = textarea.selectionStart;
+							// 
+							console.log("SUB:","["+textarea.value.substring(0,i)+"]");
+							let cnt = 0;
+							while(true){
+								let char = textarea.value[i];
+								// if(char == "\t") strExtra += "\t";
+								i--;
+								cnt++;
+								if(char == "\n"){
+									break;
+								}
+								if(i < 0) break;
+							}
+							i = textarea.selectionStart-cnt+2;
+							// if(!openList.includes(lastChar)) i -= 1;
+							console.log("NEW:","["+textarea.value.substring(0,i)+"]",cnt);
+							while(true){
+								let char = textarea.value[i];
+								if(char != "\t") break;
+								strExtra += "\t";
+								i++;
+								cnt2++;
+							}
+							console.log("COUNTED TABS: ",strExtra);
+							str = "\n"+strExtra+"\t\n"+strExtra;
+						}
+						findTabs();
+						let start = textarea.selectionStart+str.length-1-cnt2;
+						if(openList.includes(lastChar)){
+							e.preventDefault();
+							textarea.value = textarea.value.substring(0,textarea.selectionStart)+str+textarea.value.substring(textarea.selectionEnd);
+							textarea.selectionStart = start;
+							textarea.selectionEnd = start;
+						}
+						// else{
+						// 	e.preventDefault();
+						// 	str = "\n"+strExtra;
+						// 	let start = textarea.selectionStart+str.length;
+						// 	textarea.value = textarea.value.substring(0,textarea.selectionStart)+str+textarea.value.substring(textarea.selectionEnd);
+						// 	textarea.selectionStart = start;
+						// 	textarea.selectionEnd = start;
+						// }
+					}
+					if(key == "backspace"){
+						let start = textarea.selectionStart-1;
+						let lastChar = textarea.value.substring(textarea.selectionStart-1,textarea.selectionStart);
+						let curChar = textarea.value.substring(textarea.selectionStart,textarea.selectionStart+1);
+						if(openList.includes(lastChar) && closeList.includes(curChar)){
+							e.preventDefault();
+							textarea.value = textarea.value.substring(0,textarea.selectionStart-1)+textarea.value.substring(textarea.selectionEnd+1);
+							textarea.selectionStart = start;
+							textarea.selectionEnd = start;
+						}
+					}
+				};
+
+				textureList.textContent = "";
+				let amt = 0;
+				async function gen(key,/**@type {FileSystemFileHandle}*/val){
+					if(key.endsWith("_n.png")) return;
+					if(key.endsWith("_s.png")) return;
+					// console.log(key,val);
+					let div = document.createElement("div");
+					div.innerHTML = `
+						<div>${key}</div>
+						<img>
+					`;
+					let img = div.querySelector("img");
+					// let url = rpeImageCache[key];
+					let url = null;
+					if(!url){
+						setTimeout(async function(){
+							let file = await val.getFile();
+							url = URL.createObjectURL(file);
+							img.src = url;
+							// rpeImageCache[key] = url;
+						},4*amt);
+					}
+					else{
+						img.src = url;
+					}
+					amt++;
+
+					let divCont = document.createElement("div");
+					divCont.appendChild(div);
+					textureList.appendChild(divCont);
+
+					// textureList.appendChild(div);
+
+					img.onclick = async function(){						
+						let p = await asyncCreateNewProject(key,img.width,img.height,val,curRP);
+						let isNew = (p ? addProject(p) : false);
+						let _can1, _ctx1;
+
+						if(isNew){
+							project = p;
+							createFrame(0);
+							createLayer_bare(0,"Main Layer");
+							_can1 = document.createElement("canvas");
+							_can1.width = img.width;
+							_can1.height = img.height;
+							_ctx1 = _can1.getContext("2d");
+							_ctx1.drawImage(img,0,0);
+							loadProject(project);
+						}
+						else loadProject(p);
+						closeAllCtxMenus();
+
+						if(isNew){
+							let buf = _ctx1.getImageData(0,0,_can1.width,_can1.height).data;
+							project.frames[0].layers[0].nob.buf = buf;
+
+							_histAdd(HistIds.full,null,"Load data");
+						}
+					};
+				}
+				if(tex_item) for await (const [key,val] of tex_item.entries()){
+					gen(key,val);
+					// await wait(50);
+				}
+				if(tex_block) for await (const [key,val] of tex_block.entries()){
+					gen(key,val);
+					// await wait(50);
+				}
+
+				setTimeout(()=>{
+					structureList.scrollTop = rpeStructureScrollTop;
+					doneLoading = true;
+					toggles = [...lastToggles];
+				},200);
+			}
+			// if(curRP) loadPack();
+			b_showImages.onclick = function(){
+				textureList.classList.remove("hide");
+				d_text.classList.add("hide");
+				clearSelList();
+			};
+			b_textEditor.onclick = function(){
+				textureList.classList.add("hide");
+				d_text.classList.remove("hide");
+				if(openTextFile) openTextFile.ele.classList.add("sel");
+			};
+		} break;
 		case "pickLayerRef":{
 			let data = {
 				/**@type {Promise<any>} */
@@ -10483,6 +11189,7 @@ function openContext(id,x,y,temp,level,b){
 		case "tools":{
 			_loadCtx(id,[
 				"View as Brick Mosaic...",
+				"Open RPE..."
 			],[],function(i,d){
 				if(i == 0){
 					d.onclick = function(){
@@ -10490,7 +11197,12 @@ function openContext(id,x,y,temp,level,b){
 						openMenu("brickMosaic");
 					};
 				}
-				else if(i == 1) closeAllCtxMenus();
+				else if(i == 1){
+					d.onclick = function(){
+						closeAllCtxMenus();
+						openMenu("RPE");
+					};
+				}
 			},x,y,temp,level,b);
 		} break;
 		case "scripts":{
@@ -11137,6 +11849,7 @@ function canCloseProject(p){
 	return confirm("Unsaved progress, are you sure you want to close it?");
 }
 function addProject(p1){
+	if(allProjects.includes(p1)) return;
 	allProjects.push(p1);
 	let d = document.createElement("div");
 	d.textContent = p1.name;
@@ -11181,6 +11894,8 @@ function addProject(p1){
 	if(project == p1) d.className = "sel";
 	nameDiv.appendChild(d);
 	updateFileName();
+
+	return true;
 }
 function loadProject(p){
 	resizeImage(p.w,p.h,true);
@@ -11503,10 +12218,11 @@ document.addEventListener("keydown",e=>{
 	// console.log("Code: ",e.keyCode,e.key);
 	let key = e.key.toLowerCase();
 	if(document.activeElement.tagName.toLowerCase() == "input") if(e.ctrlKey) return;
-	if(e.shiftKey && key == "c"){
+	if(e.shiftKey && key == "c" && !e.ctrlKey){
 		//temp draw circle
 		// let useFill = confirm("Fill?");
 		let d = parseInt(prompt("Diameter?"));
+		if(!d) return;
 		// let d = 64;
 		let r = (d/2);
 		let useFill = false;
@@ -11834,9 +12550,17 @@ function init2(){
 		console.error(e);
 	};
 	request.onupgradeneeded = (e)=>{
+		/**@type {IDBDatabase} */
 		let db = e.target.result;
 
-		try{db.createObjectStore("recentFiles",{keyPath:"name"});}
+		try{
+			db.createObjectStore("recentFiles",{keyPath:"name"});
+		}
+		catch(e){}
+
+		try{
+			db.createObjectStore("recentRP",{keyPath:"name"});
+		}
 		catch(e){}
 	};
 }
@@ -11858,6 +12582,20 @@ async function getRecentFilesList(){
 		};
 	});
 }
+async function getRecentRPList(){
+	let trans = db.transaction(["recentRP"],"readwrite");
+	let req = trans.objectStore("recentRP").getAll();
+	return new Promise(resolve=>{
+		req.onsuccess = e=>{
+			resolve(e.target.result.sort((a,b)=>(b.date||0)-(a.date||0)));
+		};
+		req.onerror = e=>{
+			alert("Error when getting RP files list, see console");
+			console.error(e);
+			resolve([]);
+		};
+	});
+}
 async function openRecentFile(list,i){
 	let data = list[i];
 	if(!data){
@@ -11872,6 +12610,25 @@ async function openRecentFile(list,i){
 		return;
 	}
 	await file_open(file,true);
+}
+async function openRecentRP(list,i){
+	let data = list[i];
+	if(!data){
+		console.warn("Could not find file.");
+		return;
+	}
+	console.log("...Attempting to open RP... ",data.name,data);
+	/**@type {FileSystemHandle} */
+	let file = data.file;
+	let perm = await file.requestPermission({
+		mode:"readwrite"
+	});
+	if(perm != "granted"){
+		console.log("Permission was not granted to open file");
+		return;
+	}
+	// await file_open(file,true);
+	curRP = new RP(data.file);
 }
 
 /**
@@ -11988,6 +12745,7 @@ const b_zen = document.getElementById("b_zen");
 const color_d = document.getElementById("color");
 const preview_d = document.getElementById("preview");
 const b_design = document.getElementById("b_design");
+const b_rpe = document.getElementById("b_rpe");
 function hide(e,v){
 	if(v) e.style.visibility = "unset"; //visible
 	else e.style.visibility = "hidden"; //hidden
@@ -12404,3 +13162,11 @@ if(curTheme == "dark") document.body.classList.add("dark");
 //END
 
 autoSaveF();
+
+async function wait(delay){
+	return new Promise(resolve=>{
+		setTimeout(function(){
+			resolve();
+		},delay);
+	});
+}
