@@ -1627,13 +1627,15 @@ function updateLayersDiv(){
 		let l = img.layers[i];
 		let ll = layers_d.children[img.layers.length-i-1];
 		if(!ll) return;
+		if(!ll.children[1]) continue;
+		if(!ll.children[1].children[0]) continue;
 		if(l.type == 2){
 			ll.children[1].children[0].textContent = project.static[l.staticID];
 			// if(l.parent) ll.children[1].children[0].innerHTML = l.parent.name;
 		}
-		if(l.type == 0 || l.type == 1) ll?.children[1]?.children[0]?.innerHTML = l.name; //()()() - error - need to fix
-		ll.children[0].children[0]?.innerHTML = i+1;
-		ll.children[1]?.onmousedown = function(){
+		if(l.type == 0 || l.type == 1) ll.children[1].children[0].innerHTML = l.name; //()()() - error - need to fix
+		ll.children[0].children[0].innerHTML = i+1;
+		ll.children[1].onmousedown = function(){
 			selectLayer(l.ind);
 		};
 		ll.children[0].children[1].onclick = function(){
