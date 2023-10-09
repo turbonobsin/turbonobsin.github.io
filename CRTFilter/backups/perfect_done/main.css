@@ -1,0 +1,6 @@
+canvas{
+    /* width:100%; */
+    border:solid 1px gray;
+    image-rendering:pixelated;
+    background-color:black;
+}
