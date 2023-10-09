@@ -229,3 +229,34 @@ body.dark{
 .frameDiv > .header{
     border-bottom:none !important;
 }
+#toolBar{
+    padding:0px;
+    /* padding-bottom:8px; */
+    /* margin-top:-6px; */
+    height:auto;
+    display:flex;
+}
+#toolData{
+    margin-top:0px;
+    display:flex;
+    align-items:center;
+    padding-bottom:4px;
+}
+#toolData > div{
+    display:flex;
+    align-items:center;
+}
+#toolData input{
+    /* margin:0px !important; */
+    margin-top:0px !important;
+    margin-bottom:0px !important;
+    /* margin-left:-7px !important; */
+}
+#toolBar > div:first-child{
+    display:flex;
+    align-items:center;
+    margin-left:5px;
+}
+#toolBar span{
+    margin-top:-1.5px;
+}

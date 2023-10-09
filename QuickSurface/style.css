@@ -2218,3 +2218,29 @@ button.b-rpe-add{
 	padding:10px;
 	text-wrap:nowrap;
 }
+
+#menu_recovery{
+	width:500px;
+}
+
+.rcv-prev-img{
+	image-rendering:pixelated;
+	height:100%;
+	/* overflow:auto; */
+	/* max-width:100px; */
+	/* margin-top:-6px; */
+	height:50px;
+}
+
+.flex-input-cont{
+	display:flex !important;
+	align-items:center;
+	/* height:20px; */
+}
+.flex-input-cont > button{
+	height:18px;
+	width:18px;
+}
+.flex-input-cont > input{
+	height:15px !important;
+}

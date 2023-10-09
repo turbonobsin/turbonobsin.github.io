@@ -4,11 +4,14 @@
  *
  * AUTHORS: Turbo Nobsin
  *
- * VERSION: q1.4.0 (QUICK SURFACE EDITION)
- * DATE: 6-15-23
- * Last Update: 9-2-22
+ * VERSION: q1.4.1 (QUICK SURFACE EDITION)
+ * DATE: 10-4-23
+ * Last Update: 6-15-23
  *
  * WHATS NEW?
+ *  - fixed select to be included when calling specifically drawPixel_dep
+ * 
+ * q1.4.0:
  * 	- Fixed old drawCircle and drawCircle_dep so they work with history undo buffer
  *  - Added Bresenham's Circle Algorithm
  */
@@ -2304,9 +2307,18 @@ class NobsinCtx{
 		drawPixel_ind(ind,r,g,b,a,replace=false){
 			if(r == -1) if(g == 2 || g == 3){ //special mode if r == -1
 				ind = Math.floor(ind/4);
-				if(g == 2) img.select2[ind] = 1;
-				else img.select2[ind] = 0;
-				img.selCount++;
+				if(!sel2Frames.length){
+					if(g == 2) img.select2[ind] = 1;
+					else img.select2[ind] = 0;
+					img.selCount++;
+				}
+				else for(const i of sel2Frames){
+					let frame = project.frames[i];
+					if(!frame) continue;
+					if(g == 2) frame.select2[ind] = 1;
+					else frame.select2[ind] = 0;
+					frame.selCount++;
+				}
 				return;
 			}
 			let list;
@@ -2453,6 +2465,22 @@ class NobsinCtx{
 				}
 				return;
 			}
+			if(c[0] == -1) if(c[1] == 2 || c[1] == 3){ //special mode if r == -1
+				ind = Math.floor(ind/4);
+				if(!sel2Frames.length){
+					if(c[1] == 2) img.select2[ind] = 1;
+					else img.select2[ind] = 0;
+					img.selCount++;
+				}
+				else for(const i of sel2Frames){
+					let frame = project.frames[i];
+					if(!frame) continue;
+					if(c[1] == 2) frame.select2[ind] = 1;
+					else frame.select2[ind] = 0;
+					frame.selCount++;
+				}
+				return;
+			}
 			if(this.dep[iD] < dep){
 				// this.buf[ind] = Math.floor(r);
 				// this.buf[ind+1] = Math.floor(g);
@@ -2532,6 +2560,30 @@ class NobsinCtx{
 				}
 			}
 			return 1;
+		}
+		// Added 10/5/23
+		drawImage_fast(data,x=0,y=0){
+			if(!data) return;
+			x = Math.floor(x);
+			y = Math.floor(y);
+			let w = data.w;
+			let h = data.h;
+			if(w == 0) return;
+			if(h == 0) return;
+			if(!data.data) return;
+			if(data.data.length == 0) return;
+
+			let i = 0;
+			let b = this.buf;
+			for(let y1 = 0; y1 < h; y1++){
+				for(let x1 = 0; x1 < w; x1++){
+					b[i] = data.data[i];
+					b[i+1] = data.data[i+1];
+					b[i+2] = data.data[i+2];
+					b[i+3] = data.data[i+3];
+					i += 4;
+				}
+			}
 		}
 		drawImage_basic(data,x=0,y=0,camera=false){
 			if(!data) return;

@@ -513,9 +513,44 @@ const _chnlogL = [
 		"RPE now mostly complete for basic features (still lacking create new pack from scratch though)",
 		"But you can now edit images, edit text files, save each of those, add new images or text files",
 		"Fixed material-symbols-outlined support"
-	]
+	],[
+		"Version: 1.6.9 (10-4-23)",
+		"Added ability to drag to select multiple frames",
+		"Added multi-frame drawing, erasing, and draw selection",
+		"Added selection masking support to multi-frame drawing",
+		"Added basic fill tool multi-frame support",
+		"Fixed mulit-frame undo-redo support with selected frames and selections in frames",
+		"Added most of .QS file recovery support (mostly everything except for reopening the files and single frame previews (but this isn't quite as urgent))"
+	],
+	[
+		"Version: 1.7.0 (10-5-23)",
+		"Fixed preview for qs recovery",
+		"Added ability to load files from qs recovery (done!)",
+		"Fix keybinds system to support new keybinds",
+		"Added global fill bucket support to multi-frame drawing",
+		"Added flip selection by x or y axis",
+		"Added crop to selection",
+		"Fixed deselect so that it deselects all selection on all frames",
+		"Fixed rectangle select so it works with multi-frame drawing",
+		"Potential glitch? - when using multi-frame drawing with fill tool and the current frame isn't a selected frame it will only fill on selected frames and not the current frame too",
+		"Fixed some centering issues on the toolbar",
+		"Changed main canvas draw/update to be significantly more performant (4fps to 180-270fps)"
+	],[
+		"Version: 1.7.1 (10-6-23)",
+		"Fixed fill tool to work when changing the color of non transparent things after new update",
+		"Fixed fill tool in larger resolution canvases",
+		"Fixed periodic error of drag uni ranges not being detected properly",
+		"Added willReadFrequently tags that may possibly improve performance"
+	],
+	// [
+	// 	"Version: 1.7.2a (10-9-23)",
+	// 	""
+	// ]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
+
+// Experimental Settings
+let editMultiFrames = true;
 
 //GIF CAPTURING
 let capturer = {start:()=>{},stop:()=>{},save:()=>{}};
@@ -546,6 +581,7 @@ if(!localStorage.sessionId) localStorage.sessionId = 0;
 // if(!localStorage.recoveryFiles) localStorage.recoveryFiles = "[]";
 let recoveryFiles = {};
 let sessionId = parseInt(localStorage.sessionId);
+let tempSessionId = sessionId;
 localStorage.sessionId++;
 const maxStoredSessions = 30;
 function initFileRecovery(){
@@ -571,17 +607,72 @@ function initFileRecovery(){
 	}
 }
 initFileRecovery();
-function addRecoveryBackup(){
-	if(project.handle) return;
-	if(project.hist.length <= 1) return;
-	if(project.legacyName) return;
-	if(!autoSave) return;
+async function addRecoveryBackup(){
+	if(project.handle) return -1;
+	if(project.hist.length <= 1) return -2;
+	if(project.legacyName) return -3;
+	if(!autoSave) return -4;
 	console.log("saved...");
-	let name = "rcv@"+sessionId+"@"+project.name;
-	// console.log("Making recovery backup of... ",name);
-	let str = getFileStr();
-	// if(localStorage[name]) localStorage[name+"@old"] = localStorage[name];
-	localStorage[name] = str;
+	if(project.name.endsWith(".nbg")){
+		let name = "rcv@"+sessionId+"@"+project.name;
+		// console.log("Making recovery backup of... ",name);
+		let str = getFileStr();
+		// if(localStorage[name]) localStorage[name+"@old"] = localStorage[name];
+		localStorage[name] = str;
+	}
+	else{
+		console.log("SAVED QS RECOVERY FILE");
+		let {blob,_can} = await saveQSFile(false,null);
+		let url = _can.toDataURL("image/png");
+		
+		let transaction = db.transaction(["recoveryQS"],"readwrite");
+		let store = transaction.objectStore("recoveryQS");
+		// let index = store.index("name");
+		// let countReq = store.count(project.name);
+		// let count = await new Promise(resolve=>{
+		// 	countReq.onsuccess = function(){
+		// 		resolve(countReq.result);
+		// 	};
+		// });
+
+		let _can2 = document.createElement("canvas");
+		_can2.width = nob.width;
+		_can2.height = nob.height;
+		let _ctx2 = _can2.getContext("2d");
+		_ctx2.putImageData(new ImageData(nob.buf,nob.width,nob.height),0,0);
+		let prevURL = _can2.toDataURL("image/png");
+
+		if(thisSessionRecoveryFiles.includes(project.name)){
+			let addReq = store.put({
+				// _id:sessionId+thisSessionRecoveryFiles.indexOf(project.name),
+				// _id:tempSessionId,
+				_id:sessionId+"-"+thisSessionRecoveryFiles.indexOf(project.name),
+				name:project.name,
+				i:sessionId,
+				url,
+				prevURL,
+				date:Date.now()
+			});
+			addReq.onsuccess = e=>console.log("UPDATED file in DB successfully");
+			addReq.onerror = e=>console.log("Error, failed to UPDATE file in DB",e);
+		}
+		else{
+			thisSessionRecoveryFiles.push(project.name);
+			let addReq = store.add({
+				// _id:tempSessionId,
+				_id:sessionId+"-"+thisSessionRecoveryFiles.indexOf(project.name),
+				name:project.name,
+				i:sessionId,
+				url,
+				prevURL,
+				date:Date.now()
+			});
+			// tempSessionId++;
+			// localStorage.sessionId = tempSessionId;
+			addReq.onsuccess = e=>console.log("ADDED file in DB successfully");
+			addReq.onerror = e=>console.log("Error, failed to ADD file in DB",e);
+		}
+	}
 }
 setInterval(function(){
 	addRecoveryBackup();
@@ -592,10 +683,10 @@ const arms_d = document.getElementById("arms");
 const canvas = document.getElementById("canvas");
 /**@type {HTMLCanvasElement} */
 const can = document.getElementById("can");
-const ctx = can.getContext("2d");
+const ctx = can.getContext("2d",{willReadFrequently:true});
 /**@type {HTMLCanvasElement} */
 const prev = document.getElementById("prev");
-const pCtx = prev.getContext("2d");
+const pCtx = prev.getContext("2d",{willReadFrequently:true});
 pCtx.imageSmoothingEnabled = false;
 const overlay = document.getElementById("overlay");
 const back = document.getElementById("back");
@@ -609,7 +700,7 @@ const shape = document.getElementById("shape");
 const prevCan = document.getElementById("prevCan");
 prevCan.width = 256;
 prevCan.height = 256;
-const prevCtx = prevCan.getContext("2d");
+const prevCtx = prevCan.getContext("2d",{willReadFrequently:true});
 var cw_xy = {
 	x:0,
 	y:0
@@ -812,6 +903,7 @@ function moveLayer(i,toI,bare=false){
 function createFrame_html(i){
 	let d = document.createElement("div");
 	d.className = "frameDiv";
+	if(sel2Frames.includes(i)) d.classList.add("sel2");
 	let head = document.createElement("div");
 	head.className = "header";
 	let num = document.createElement("div");
@@ -1024,7 +1116,8 @@ function selectLayer_bare(i,noUpdate=false){
 	if(!noUpdate){
 		for(let j = img.layers.length-1; j >= 0; j--){
 			let l = layers_d.children[j];
-			l.className = "";
+			if(!l) continue;
+			l.className = ""; //()()() - error need to fix
 		}
 		layers_d.children[img.layers.length-i-1].className = "sel";
 		updateLayersDiv();
@@ -1538,9 +1631,9 @@ function updateLayersDiv(){
 			ll.children[1].children[0].textContent = project.static[l.staticID];
 			// if(l.parent) ll.children[1].children[0].innerHTML = l.parent.name;
 		}
-		if(l.type == 0 || l.type == 1) ll.children[1].children[0].innerHTML = l.name;
-		ll.children[0].children[0].innerHTML = i+1;
-		ll.children[1].onmousedown = function(){
+		if(l.type == 0 || l.type == 1) ll?.children[1]?.children[0]?.innerHTML = l.name; //()()() - error - need to fix
+		ll.children[0].children[0]?.innerHTML = i+1;
+		ll.children[1]?.onmousedown = function(){
 			selectLayer(l.ind);
 		};
 		ll.children[0].children[1].onclick = function(){
@@ -1718,7 +1811,6 @@ function updateHistDiv(){
 	}
 }
 function rasterizeLayer(l){
-	let n = new NobsinCtx(ctx);
 	/**@type {Obj | Armature} */
 	let o = l.ops.obj;
 	if(l.visible) if(l.ops.rendered){
@@ -1754,6 +1846,14 @@ function rasterizeLayer(l){
 			l.nob.pixelCount = 0;
 		}*/
 	}
+
+	return {
+		loaded:true,w:nob.width,h:nob.height,
+		data:l.nob.buf
+		// data:cloneBuf(l.nob.buf,l.nob.buf.size)
+	};
+
+	let n = new NobsinCtx(ctx);
 	let b = l.nob.buf;
 	let nb = new Uint8ClampedArray(nob.size);
 	n.buf = nb;
@@ -1833,7 +1933,9 @@ function _histAdd(id,data,name){
 			h:project.h,
 			objs:[],
 			global:JSON.parse(JSON.stringify(project.global)),
-			static:JSON.parse(JSON.stringify(project.static))
+			static:JSON.parse(JSON.stringify(project.static)),
+
+			sel2Frames:[...sel2Frames]
 		};
 		for(let i = 0; i < project.objs.length; i++){
 			let o = project.objs[i];
@@ -1889,8 +1991,22 @@ function _histAdd(id,data,name){
 			name,
 			id,data,
 			f:project.frameI,
-			l:img.curLayer.ind
+			l:img.curLayer.ind,
+
+			sel2Frames:[...sel2Frames]
 		};
+		if(sel2Frames.length) if(id == HistIds.select){
+			d.selects = [];
+			for(const i of sel2Frames){
+				if(i == project.frameI) continue;
+				let f = project.frames[i];
+				if(f) d.selects.push({
+					ind:i,
+					buf:cloneBuf(f.select2,nob.ssize),
+					selCount:f.selCount
+				});
+			}
+		}
 		project.hist.push(d);
 		project.histI++;
 	}
@@ -2064,6 +2180,37 @@ function histAll(e,isUndo=false){
 		deleteLayer_bare(i);
 	}*/
 }
+function applyMultiDraw(nob,callback){
+	if(!editMultiFrames) return;
+	// if(!nob) return;
+	if(!callback) return;
+	for(let i = 0; i < sel2Frames.length; i++){
+		let frameI = sel2Frames[i];
+		let frame = project.frames[frameI];
+		if(!frame) continue;
+		let curLayerI = img?.curLayer?.ind;
+		let nob1 = frame.layers[curLayerI]?.nob;
+		if(!nob1) continue;
+		if(nob1 == nob) continue;
+		callback(nob1);
+	}
+}
+function applyMultiDrawFrames(frame0,callback){
+	if(sel2Frames.length == 0 || !editMultiFrames){
+		if(!frame0) callback(img);
+		return;
+	}
+	
+	if(!editMultiFrames) return;
+	if(!callback) return;
+	for(let i = 0; i < sel2Frames.length; i++){
+		let frameI = sel2Frames[i];
+		let frame = project.frames[frameI];
+		if(!frame) continue;
+		if(frame == frame0) continue;
+		callback(frame);
+	}
+}
 function _runHist(){
 	let last = null;
 	let lastI = -1;
@@ -2079,6 +2226,8 @@ function _runHist(){
 	//console.log("--START");
 	for(let i = lastI; i <= project.histI; i++){
 		let e = project.hist[i];
+		let selFramesList = (e.sel2Frames ? [...e.sel2Frames] : []);
+		sel2Frames = selFramesList;
 		if(e.full){
 			let l = document.getElementsByClassName("aPoint");
 			for(const a of l) a.style.visibility = "hidden";
@@ -2226,6 +2375,9 @@ function _runHist(){
 						let c = JSON.parse(cs);
 						for(let i = 0; i < list.length; i++){
 							l.nob.drawPixel_ind(list[i],c[0],c[1],c[2],c[3]);
+							applyMultiDraw(l.nob,n=>{
+								n.drawPixel_ind(list[i],c[0],c[1],c[2],c[3]);
+							});
 						}
 					}
 					//SINGLE:
@@ -2262,11 +2414,21 @@ function _runHist(){
 					//img.select = deepClone(e.data);
 					img.select2 = cloneBuf(e.data.a,nob.ssize);
 					img.selCount = e.data.c;
+					if(e.selects) for(const {ind,buf,selCount} of e.selects){
+						let f = project.frames[ind];
+						if(!f) continue;
+						f.select2 = cloneBuf(buf,nob.ssize);
+						f.selCount = selCount;
+					}
 				break;
 				case HistIds.deselect:
 					//img.select = [];
-					img.select2 = new Uint8ClampedArray(nob.ssize);
-					img.selCount = 0;
+					// img.select2 = new Uint8ClampedArray(nob.ssize);
+					// img.selCount = 0;
+					for(const frame of project.frames){
+						frame.select2.fill(0);
+						frame.selCount = 0;
+					}
 				break;
 				case HistIds.moveFrame:
 					moveFrame(e.data.f,e.data.t,true);
@@ -2308,7 +2470,7 @@ function _runHist(){
 	updateUndoCtxB();
 	updateRedoCtxB();
 	updateFileName();
-	reconstructFramesDiv();
+	reconstructFramesDiv(true);
 	setZoom(zoom);
 }
 function _updateHistDiv(){
@@ -2527,7 +2689,7 @@ function drawPixel_ind(/**@type {NobsinCtx}*/n,ind,r,g,b,a,replace,dep,override)
 			n.drawPixel_ind_dep(ind,0,0,0,0,true,dep);
 		break;
 		case DrawMode.select:
-			addToSelect(ind,0,0,keys.alt);
+			addToSelect(img,ind,0,0,keys.alt);
 		break;
 	}
 }
@@ -2755,9 +2917,13 @@ function genToolSettings(i){
 				b1.className = "button";
 				b1.innerHTML = "+";
 				d.appendChild(l);
-				d.appendChild(b);
-				d.appendChild(inp);
-				d.appendChild(b1);
+				let flxCont = document.createElement("div");
+				flxCont.className = "flex-input-cont";
+				flxCont.appendChild(b);
+				flxCont.appendChild(inp);
+				flxCont.appendChild(b1);
+				d.appendChild(flxCont);
+
 				td_d.appendChild(d);
 			}
 			break;
@@ -3685,6 +3851,7 @@ function updateFramePreview(i,skip){
 	c.getContext("2d").putImageData(new ImageData(n.buf,project.w,project.h),0,0);
 }
 
+let _perf_displayTime = 0;
 function update(){
 	window.requestAnimationFrame(update);
 	nob.pixelCount = 0;
@@ -3785,10 +3952,24 @@ function update(){
 	//
 
 	//SELECT DEP
-	if(img.selCount != 0) for(let i = 0; i < nob.ssize; i++){
-		if(img.curLayer.nob.dep){
-			img.curLayer.nob.dep[i] = (drawUnder ? 254 : 250);
-			if(img.select2[i]) img.curLayer.nob.dep[i] = 0;
+	if(!sel2Frames.length){
+		if(img.selCount != 0) for(let i = 0; i < nob.ssize; i++){
+			if(img.curLayer.nob.dep){
+				img.curLayer.nob.dep[i] = (drawUnder ? 254 : 250);
+				if(img.select2[i]) img.curLayer.nob.dep[i] = 0;
+			}
+		}
+	}
+	else{
+		for(const i of sel2Frames){
+			let frame = project.frames[i];
+			if(!frame) continue;
+			if(frame.selCount != 0) for(let i = 0; i < nob.ssize; i++){
+				if(frame.curLayer.nob.dep){
+					frame.curLayer.nob.dep[i] = (drawUnder ? 254 : 250);
+					if(frame.select2[i]) frame.curLayer.nob.dep[i] = 0;
+				}
+			}
 		}
 	}
 
@@ -3848,11 +4029,12 @@ function update(){
 				}
 				// console.log("CALC: ",this.dep[dInd],dd);
 				if(prev || ar[4][0] == -1){
-					drawPencil(nob,ts.shapeMode,false,...ar);
+					// drawPencil(nob,ts.shapeMode,false,...ar);
+					drawPencil(nob,ts.shapeMode,false,ar[0],ar[1],ar[2],ar[3],ar[4],ar[5],ar[6],ar[4][0] == -1);
 					// nob.drawLine_smart(...ar);
 				}
 				else{
-					drawPencil(nob,ts.shapeMode,true,...ar);
+					drawPencil(nob,ts.shapeMode,true,ar[0],ar[1],ar[2],ar[3],ar[4],ar[5],ar[6],true);
 					// nob.drawLine_smart_dep(...ar);
 				}
 			}
@@ -4160,9 +4342,17 @@ function update(){
 		}
 	}
 	//layers
-	for(let i = 0; i < img.layers.length; i++){
+	let _start1 = performance.now();
+	ctx.clearRect(0,0,nob.width,nob.height);
+	let tmpCan = document.createElement("canvas");
+	let tmpCtx = tmpCan.getContext("2d");
+	tmpCan.width = nob.width;
+	tmpCan.height = nob.height;
+	if(true) for(let i = 0; i < img.layers.length; i++){
 		if(!layers_d.children[i]) continue;
 		let l = img.layers[i];
+
+		let updateC = (previewUpdateTimer == 15);
 
 		let i2 = img.layers.length-i-1;
 		let c = layers_d?.children[i2]?.children[1]?.children[1];
@@ -4171,28 +4361,41 @@ function update(){
 		let h = ctx.canvas.height;
 		let skip = 1;
 		if(project.w > 128 || project.h > 128) skip = Math.ceil(Math.max(project.w,project.h)/128);
-		pCtx.canvas.width /= skip;
-		pCtx.canvas.height /= skip;
-		let n = new NobsinCtx(pCtx);
-		n.buf = new Uint8ClampedArray(n.size);
+		let n;
+		if(updateC){
+			pCtx.canvas.width /= skip;
+			pCtx.canvas.height /= skip;
+			n = new NobsinCtx(pCtx);
+			n.buf = new Uint8ClampedArray(n.size);
+		}
 		let lr = rasterizeLayer(l);
-		n.drawImage_basic_skip(lr,0,0,skip);
-		c.width = pCtx.canvas.width;
-		c.height = pCtx.canvas.height;
-		if(c.width > c.height){
-			c.style.width = "80px";
-			c.style.height = "unset";
+		if(updateC){
+			n.drawImage_basic_skip(lr,0,0,skip);
+			c.width = pCtx.canvas.width;
+			c.height = pCtx.canvas.height;
+			if(c.width > c.height){
+				c.style.width = "80px";
+				c.style.height = "unset";
+			}
+			else if(c.width < c.height){
+				c.style.width = "unset";
+				c.style.height = "80px";
+			}
+			c.getContext("2d").putImageData(new ImageData(n.buf,n.width,n.height),0,0);
+			pCtx.canvas.width = w;
+			pCtx.canvas.height = h;
 		}
-		else if(c.width < c.height){
-			c.style.width = "unset";
-			c.style.height = "80px";
-		}
-		c.getContext("2d").putImageData(new ImageData(n.buf,n.width,n.height),0,0);
-		pCtx.canvas.width = w;
-		pCtx.canvas.height = h;
 
-		if(l.visible) nob.drawImage_basic(lr,0,0);
+		if(l.visible){
+			tmpCtx.clearRect(0,0,nob.width,nob.height);
+			tmpCtx.putImageData(new ImageData(lr.data,nob.width,nob.height),0,0);
+			ctx.drawImage(tmpCan,0,0);
+		}
+
+		// if(l.visible) nob.drawImage_basic(lr,0,0);
+		// if(l.visible) nob.drawImage_fast(lr,0,0);
 	}
+	_perf_displayTime = performance.now()-_start1;
 	if(previewUpdateTimer == 0){
 		//frames
 		let skip = 1;
@@ -4316,7 +4519,7 @@ function update(){
 	//drawBezier(pNob,bez,0,0);
 	//
 
-	ctx.putImageData(new ImageData(nob.buf,nob.width,nob.height),0,0);
+	// ctx.putImageData(new ImageData(nob.buf,nob.width,nob.height),0,0);
 	pCtx.putImageData(new ImageData(pNob.buf,pNob.width,pNob.height),0,0);
 }
 var bez = nobCreateBezier([
@@ -4414,7 +4617,7 @@ let newTouchpadScrolling = true;
 function onwheel(/**@type {WheelEvent}*/e){
 	let difX = e.deltaX-e.movementX;
 	let difY = e.deltaY-e.movementY;
-	let isTouchpad = (Math.max(Math.abs(difX),Math.abs(difY)) < 40);
+	let isTouchpad = (Math.max(Math.abs(difX),Math.abs(difY)) < 100);
 	if(newTouchpadScrolling) if(overCanvas) if(isTouchpad){
 		console.log("using touchpad");
 		e.preventDefault();
@@ -4526,23 +4729,23 @@ function resetTool(i){
 		break;
 	}
 }
-function addToSelect(ind,x,y,remove=false){
+function addToSelect(frame,ind,x,y,remove=false){
 	if(x < 0) return;
 	if(y < 0) return;
 	if(x >= project.w) return;
 	if(y >= project.h) return;
 	let ii = Math.floor(ind/4);
 	if(remove){
-		if(img.select2[ii]){
-			img.select2[ii] = 0;
-			img.selCount--;
+		if(frame.select2[ii]){
+			frame.select2[ii] = 0;
+			frame.selCount--;
 		}
 		//let i = img.select.indexOf(ind);
 		//if(i != -1) img.select.splice(i,1);
 	}
-	else if(!img.select2[ii]){
-		img.select2[ii] = 1;
-		img.selCount++;
+	else if(!frame.select2[ii]){
+		frame.select2[ii] = 1;
+		frame.selCount++;
 	}
 	//else if(!img.select.includes(ind)) img.select.push(ind);
 }
@@ -4634,7 +4837,10 @@ function confirmTool(i){
 				let len = img.selCount;
 				for(let y = 0; y < td.h; y++){
 					for(let x = 0; x < td.w; x++){
-						addToSelect(ind,td.sx+x,td.sy+y,keys.alt);
+						addToSelect(img,ind,td.sx+x,td.sy+y,keys.alt);
+						applyMultiDrawFrames(img,f=>{
+							addToSelect(f,ind,td.sx+x,td.sy+y,keys.alt);
+						});
 						ind += 4;
 					}
 					ind += project.w*4;
@@ -4741,6 +4947,32 @@ async function fs_saveFile(blob) {
 	// close the file and write the contents to disk.
 	await writableStream.close();
 }
+
+function getSelBounds2(frame,layerI){
+	let s = frame.select2;
+	let l = frame.layers[layerI];
+	if(!l) return;
+	let n = l.nob;
+	if(!n) return;
+	let left = 99999;
+	let top = 99999;
+	let right = -99999;
+	let bottom = -99999;
+
+	let i = 0;
+	for(let y = 0; y < n.height; y++) for(let x = 0; x < n.width; x++){
+		if(s[i]){
+			if(x < left) left = x;
+			if(x > right) right = x;
+			if(y < top) top = y;
+			if(y > bottom) bottom = y;
+		}
+		i++;
+	}
+
+	return [left,top,right,bottom];
+}
+
 //
 const editFunc = {
 	selectAll:function(){
@@ -4759,8 +4991,12 @@ const editFunc = {
 	deselect:function(){
 		if(!isToolLockingHist()) if(img.selCount > 0){
 			//img.select = [];
-			img.select2 = new Uint8ClampedArray(nob.ssize);
-			img.selCount = 0;
+			// img.select2 = new Uint8ClampedArray(nob.ssize);
+			// img.selCount = 0;
+			for(const frame of project.frames){
+				frame.select2.fill(0);
+				frame.selCount = 0;
+			}
 			_histAdd(HistIds.deselect);
 		}
 	},
@@ -4825,6 +5061,142 @@ const editFunc = {
 		}
 		img.curLayer.nob.buf = b;
 		_histAdd(HistIds.full,null,"Flip Y");
+	},
+	selectionFlipX:function(){
+		let bounds = getSelBounds2(project.frames[project.frameI],img.curLayer.ind);
+		bounds[2]++;
+		bounds[3]++;
+		let w = bounds[2]-bounds[0];
+		let h = bounds[3]-bounds[1];
+
+		let n = img.curLayer.nob;
+
+		let b = cloneBuf(n.buf,nob.size);
+		let startI = (bounds[0]+bounds[1]*nob.width)*4;
+		let i = startI + w*4;
+		let i2 = startI;
+		for(let y = 0; y < h; y++){
+			for(let x = 0; x < w; x++){
+				b[i2] = 0;
+				b[i2+1] = 0;
+				b[i2+2] = 0;
+				b[i2+3] = 0;
+				i2 += 4;
+			}
+			i2 += nob.width*4;
+			i2 -= w*4;
+		}
+
+		i = startI + w*4 - 4;
+		i2 = startI;
+		
+		for(let y = 0; y < h; y++){
+			for(let x = 0; x < w; x++){
+				b[i2] = n.buf[i];
+				b[i2+1] = n.buf[i+1];
+				b[i2+2] = n.buf[i+2];
+				b[i2+3] = n.buf[i+3];
+				img.select2[Math.floor(i2/4)] = 1;
+				i2 += 4;
+				i -= 4;
+			}
+			i2 += nob.width*4;
+			i2 -= w*4;
+			i += nob.width*4;
+			i += w*4;
+		}
+		n.buf = b;
+		_histAdd(HistIds.full,null,"Selection Flip X");
+	},
+	selectionFlipY:function(){
+		let bounds = getSelBounds2(project.frames[project.frameI],img.curLayer.ind);
+		bounds[2]++;
+		bounds[3]++;
+		let w = bounds[2]-bounds[0];
+		let h = bounds[3]-bounds[1];
+
+		let n = img.curLayer.nob;
+
+		let b = cloneBuf(n.buf,nob.size);
+		let startI = (bounds[0]+bounds[1]*nob.width)*4;
+		let i = startI + w*4;
+		let i2 = startI;
+		for(let y = 0; y < h; y++){
+			for(let x = 0; x < w; x++){
+				b[i2] = 0;
+				b[i2+1] = 0;
+				b[i2+2] = 0;
+				b[i2+3] = 0;
+				i2 += 4;
+			}
+			i2 += nob.width*4;
+			i2 -= w*4;
+		}
+
+		// i = startI + (nob.height-1)*w*4;
+		i = startI + (h-1)*nob.width*4;
+		i2 = startI;
+		
+		for(let y = 0; y < h; y++){
+			for(let x = 0; x < w; x++){
+				console.log("FROM-TO: ",i," - ",i2);
+				b[i2] = n.buf[i];
+				b[i2+1] = n.buf[i+1];
+				b[i2+2] = n.buf[i+2];
+				b[i2+3] = n.buf[i+3];
+				img.select2[Math.floor(i2/4)] = 1;
+				i2 += 4;
+				i += 4;
+			}
+			i2 += nob.width*4;
+			i2 -= w*4;
+			i -= nob.width*4;
+			i -= w*4;
+		}
+		n.buf = b;
+		_histAdd(HistIds.full,null,"Selection Flip Y");
+	},
+	cropToSelection:function(){
+		let bounds = getSelBounds2(project.frames[project.frameI],img.curLayer.ind);
+		bounds[2]++;
+		bounds[3]++;
+		let w = bounds[2]-bounds[0];
+		let h = bounds[3]-bounds[1];
+
+		for(let i = 0; i < project.frames.length; i++){
+			let frame = project.frames[i];
+			frame.select2.fill(0);
+			frame.selCount = 0;
+			for(let j = 0; j < frame.layers.length; j++){
+				let layer = frame.layers[j];
+				let b = new Uint8ClampedArray(w*h*4);
+				let startI = (bounds[0]+bounds[1]*nob.width)*4;
+				let i = 0;
+				let i2 = startI;
+				for(let y = 0; y < h; y++){
+					for(let x = 0; x < w; x++){
+						b[i] = layer.nob.buf[i2];
+						b[i+1] = layer.nob.buf[i2+1];
+						b[i+2] = layer.nob.buf[i2+2];
+						b[i+3] = layer.nob.buf[i2+3];
+
+						i += 4;
+						i2 += 4;
+					}
+					i2 += nob.width*4;
+					i2 -= w*4;
+				}
+				layer.nob.buf = b;
+			}
+		}
+		project.w = w;
+		project.h = h;
+		resizeImage(w,h,true);
+
+		_histAdd(HistIds.full,null,"Crop to selection");
+
+		resetView();
+		reconstructFramesDiv();
 	}
 };
 function swapColors(){
@@ -4894,6 +5266,8 @@ function keydown(/**@type {KeyboardEvent}*/e){
 
 	if(isBind(keybinds.edit.deselect)) editFunc.deselect();
 	if(isBind(keybinds.edit.selectAll)) editFunc.selectAll();
+
+	if(isBind(keybinds.edit.tweakMenu)) openMenu("tweaks");
 
 	if(!isActionLocked) if(isBind(keybinds.edit.deleteSel)) toolFunc.deleteSelection();
 	//EDIT
@@ -5253,6 +5627,7 @@ function runUniRanges(e,call){
 		}
 	}
 }
+let overrideSpanFillMaxTimes = 99999;
 function _mousedown(button,e){
 	scx = cx;
 	scy = cy;
@@ -5336,7 +5711,9 @@ function _mousedown(button,e){
 			if(x >= project.w) break;
 			if(y >= project.h) break;
 			let i = (x+y*project.w)*4;
-			let b = nob.buf;
+			// let c = getTopLayerPixel(i); <-- goal eventually
+			// let b = nob.buf;
+			let b = ctx.getImageData(0,0,nob.width,nob.height).data;
 			let c = [b[i],b[i+1],b[i+2],b[i+3]];
 			if(button == 0) color[0] = c;
 			else color[1] = c;
@@ -5353,7 +5730,8 @@ function _mousedown(button,e){
 			let i2 = (x+y*project.w);
 			if(ts.drawMode != DrawMode.select) if(img.curLayer.nob.dep[i2]) break;
 			let i = i2*4;
-			let b = nob.buf;
+			// let b = nob.buf;
+			let b = ctx.getImageData(0,0,nob.width,nob.height).data;
 			let cc = [b[i],b[i+1],b[i+2],b[i+3]];
 			if(ts.drawMode != DrawMode.select) if(cc[0] == col[0] && cc[1] == col[1] && cc[2] == col[2] && cc[3] == col[3]) return;
 			if(ts.fillMode == FillMode.flood){
@@ -5364,13 +5742,13 @@ function _mousedown(button,e){
 					stack.push([x,y,i,i2]);
 					d[i2] = 1;
 					let inds = [];
-					let maxTimes = 99999;
+					let maxTimes = overrideSpanFillMaxTimes;
 					while(stack.length != 0){
 						maxTimes--;
 						if(!maxTimes){
 							let a = confirm("Do you want to keep going?");
 							if(!a) break;
-							else maxTimes = 99999;
+							else maxTimes = overrideSpanFillMaxTimes;
 						}
 						//times++;
 						let s = stack.pop();
@@ -5424,53 +5802,100 @@ function _mousedown(button,e){
 					else _histAdd(HistIds.px,img.curLayer.nob.finishRec(),"Flood fill");
 				}
 				else if(ts.fillMethod == FillMethod.recursive){
-					let l = img.curLayer.nob;
-					let cc1 = null;
-					l.dep = new Uint8ClampedArray(l.ssize);
-					function check(x1,y1){
-						let ind1 = x1+y1*l.width;
-						let ind = ind1*4;
-						if(l.dep[ind1]) return;
-						if(col[0] != -1) if(img.selCount) if(!img.select2[ind1]) return;
-						l.dep[ind1] = 1;
-						let c2 = [l.buf[ind],l.buf[ind+1],l.buf[ind+2],l.buf[ind+3]];
-						if(cc[0] == c2[0] && cc[1] == c2[1] && cc[2] == c2[2] && cc[3] == c2[3]){
-							if(col[0] == -1) l.drawPixel_ind(ind,col[0],col[1],col[2],col[3],false);
-							l.drawPixel_ind_dep(ind,col[0],col[1],col[2],col[3],false,2);
-							check(x1-1,y1);
-							check(x1+1,y1);
-							check(x1,y1-1);
-							check(x1,y1+1);
+					if(!sel2Frames.length){
+						let l = img.curLayer.nob;
+						l.dep = new Uint8ClampedArray(l.ssize);
+						function check(x1,y1){
+							let ind1 = x1+y1*l.width;
+							let ind = ind1*4;
+							// console.log(111);
+							if(l.dep[ind1]) return;
+							// console.log(222);
+							if(col[0] != -1) if(img.selCount) if(!img.select2[ind1]) return;
+							l.dep[ind1] = 1;
+							let c2 = [l.buf[ind],l.buf[ind+1],l.buf[ind+2],l.buf[ind+3]];
+							// console.log(333,cc,c2);
+							if(cc[0] == c2[0] && cc[1] == c2[1] && cc[2] == c2[2] && cc[3] == c2[3]){
+								// console.log(444);
+								if(col[0] == -1) l.drawPixel_ind(ind,col[0],col[1],col[2],col[3],false);
+								// console.log(555);
+								l.drawPixel_ind_dep(ind,col[0],col[1],col[2],col[3],false,2);
+								// console.log(666);
+								check(x1-1,y1);
+								check(x1+1,y1);
+								check(x1,y1-1);
+								check(x1,y1+1);
+							}
 						}
+						check(x,y);
+						_histAdd(HistIds.full,null,"Recursive fill");
+						l.dep = new Uint8ClampedArray(l.ssize);
 					}
-					check(x,y);
-					_histAdd(HistIds.full,null,"Recursive fill");
-					l.dep = new Uint8ClampedArray(l.ssize);
+					else{
+						applyMultiDraw(null,n=>{
+							let l = n;
+							l.dep = new Uint8ClampedArray(l.ssize);
+							function check(x1,y1){
+								let ind1 = x1+y1*l.width;
+								let ind = ind1*4;
+								if(l.dep[ind1]) return;
+								if(col[0] != -1) if(img.selCount) if(!img.select2[ind1]) return;
+								l.dep[ind1] = 1;
+								let c2 = [l.buf[ind],l.buf[ind+1],l.buf[ind+2],l.buf[ind+3]];
+								if(cc[0] == c2[0] && cc[1] == c2[1] && cc[2] == c2[2] && cc[3] == c2[3]){
+									if(col[0] == -1) l.drawPixel_ind(ind,col[0],col[1],col[2],col[3],false);
+									l.drawPixel_ind_dep(ind,col[0],col[1],col[2],col[3],false,2);
+									check(x1-1,y1);
+									check(x1+1,y1);
+									check(x1,y1-1);
+									check(x1,y1+1);
+								}
+							}
+							check(x,y);
+						});
+						_histAdd(HistIds.full,null,"Recursive fill (multi-frame)");
+						applyMultiDraw(null,n=>{
+							n.dep = new Uint8ClampedArray(n.ssize);
+						});
+					}
 				}
 			}
 			else if(ts.fillMode == FillMode.global){
-				let n = img.curLayer.nob;
-				lastSelLen = img.selCount;
-				n.initRec();
-				for(let j = 0; j < nob.size; j += 4){
-					let r = n.buf[j];
-					let g = n.buf[j+1];
-					let bl = n.buf[j+2];
-					let a = n.buf[j+3];
-					if(cc[0] == r && cc[1] == g && cc[2] == bl && cc[3] == a){
-						drawPixel_ind(img.curLayer.nob,j,col[0],col[1],col[2],col[3],false,1);
+				function run(frame,isSub=false){
+					if(!frame) return;
+					let n = frame.layers[img.curLayer.ind].nob;
+					if(!n) return;
+					lastSelLen = frame.selCount;
+					if(!isSub) n.initRec();
+					for(let j = 0; j < nob.size; j += 4){
+						let r = n.buf[j];
+						let g = n.buf[j+1];
+						let bl = n.buf[j+2];
+						let a = n.buf[j+3];
+						if(cc[0] == r && cc[1] == g && cc[2] == bl && cc[3] == a){
+							drawPixel_ind(n,j,col[0],col[1],col[2],col[3],false,1);
+						}
+					}
+					if(isSub) return;
+					if(ts.drawMode == DrawMode.select){
+						if(frame.selCount != lastSelLen){
+							_histAdd(HistIds.select,{
+								a:cloneBuf(frame.select2,nob.ssize),
+								c:frame.selCount
+							},"Global select");
+							n.finishRec();
+						}
+					}
+					else _histAdd(HistIds.px,n.finishRec(),"Global fill");
+				}
+				if(!sel2Frames.length) run(img.curLayer.nob);
+				else{
+					for(const i of sel2Frames){
+						console.warn("RAN SUB: ",i);
+						run(project.frames[i],i != sel2Frames[0]);
+						updateFramePreview(i,1);
 					}
 				}
-				if(ts.drawMode == DrawMode.select){
-					if(img.selCount != lastSelLen){
-						_histAdd(HistIds.select,{
-							a:cloneBuf(img.select2,nob.ssize),
-							c:img.selCount
-						},"Global select");
-						img.curLayer.nob.finishRec();
-					}
-				}
-				else _histAdd(HistIds.px,n.finishRec(),"Global fill");
 			}
 		}
 		break;
@@ -5915,7 +6340,6 @@ function _mousemove(/**@type {MouseEvent}*/e){
 	//if(mouseDown[0]) if(scx >= 0 && scy >= 0 && scx < img.w && scy < img.h) img.overCanvas = true;
 
 	if(uniDrag){
-		console.log("MOVING...");
 		let lx = cx-uniDragX;
 		let ly = cy-uniDragY;
 		let xx = uniDrag.sx+lx;
@@ -5959,7 +6383,7 @@ function resizeImage(w,h,bare=false){
 	nob.bottom = h-1;
 	nob.size = w*h*4;
 	nob.ssize = w*h;
-	nob.buf = new Uint8ClampedArray(nob.size);
+	if(nob?.buf?.length != nob.size) nob.buf = new Uint8ClampedArray(nob.size);
 	prev.width = w;
 	prev.height = h;
 	pNob.width = w;
@@ -5983,7 +6407,7 @@ function resizeImage(w,h,bare=false){
 		l.nob.bottom = h-1;
 		l.nob.size = w*h*4;
 		l.nob.ssize = w*h;
-		l.nob.buf = new Uint8ClampedArray(l.nob.size);
+		if(l.nob?.buf?.length != nob.size) l.nob.buf = new Uint8ClampedArray(l.nob.size);
 		l.nob.dep = new Uint8ClampedArray(l.nob.ssize);
 	}
 	if(!bare){
@@ -6062,7 +6486,7 @@ function renameLayer(l,name,html,bare=false,isSub=false){
 
 //Color
 var dummy = document.createElement("canvas");
-var dum = dummy.getContext("2d");
+var dum = dummy.getContext("2d",{willReadFrequently:true});
 function toHSL(rgb){
 	dum.fillStyle = ``;
 }
@@ -7057,6 +7481,320 @@ function autoSaveF(){
 		autoSaveF();
 	},7000);
 }
+
+async function saveQSFile(wasSaveAs,newHandle){
+	let _can = document.createElement("canvas");
+	let _ctx = _can.getContext("2d");
+
+	let width = 0;
+	let height = 0;
+	let frameWidth = project.frames[0].w;
+	let frameHeight = project.frames[0].h;
+	let totalLayers = 0;
+	let colAmt = 1;
+	for(let i = 0; i < project.frames.length; i++){
+		let frame = project.frames[i];
+		let h = 0;
+		for(let j = 0; j < frame.layers.length; j++){
+			// h += frameHeight;
+			// if(h > height) height = h;
+			totalLayers++;
+			width += frameWidth;
+		}
+	}
+	// colAmt = Math.ceil(Math.sqrt(totalLayers)); //square
+	colAmt = totalLayers; //one row
+	width = Math.ceil(frameWidth*colAmt);
+	let rowAmt = totalLayers/colAmt;
+	height = frameHeight*rowAmt;
+
+	let text = `____________0,${frameWidth},${frameHeight}\n`; //[metaWidth & metaHeight reserved x12], [version], [cellWidth], [cellHeight]
+	for(let i = 0; i < project.frames.length; i++){
+		let frame = project.frames[i];
+		let h = 0;
+		for(let j = 0; j < frame.layers.length; j++){
+			let l = frame.layers[j];
+			let prefix = "";
+			if(l.type == 1) prefix += "G,"; //Global Layer
+			else if(l.type == 2) prefix += `S-${l.staticID},`; //Static Layer
+			else if(l.type == 3) prefix += "B,"; //Background Layer (Global Static Layer)
+			if(l.ops.obj) prefix += "o,";
+			if(!l.visible) prefix += "h,";
+			
+			text += (prefix?prefix.substring(0,prefix.length-1):"")+(prefix.length?"\x01":"")+l.name;
+			if(j != frame.layers.length-1) text += ",";
+		}
+		if(i != project.frames.length-1) text += ";";
+	}
+	text += "\n";
+	
+	//System Settings
+	text += "@s\n";
+	text += "0,"+project.frameI+","+img.curLayer.ind+"\n"; //Current Frame & Layer
+	// console.log(text);
+	// for(let i = 0; i < project.objs.length; i++){
+		// let obj = project.objs[i];
+		// text += "\n@obj\n";
+
+		// text += l.ops.obj.name+"\n";
+		// text += l.ops.obj.getState()+"\n";
+	// }
+	// for(let i = 0; i < project.frames.length; i++){
+	// 	let frame = project.frames[i];
+	// 	for(let j = 0; j < frame.layers.length; j++){
+	// 		let l = frame.layers[j];
+	// 		if(l.ops.obj){
+	// 			let obj = l.ops.obj;
+	// 			let type = "";
+	// 			if(obj instanceof Armature) type = "arm";
+	// 			text += "@obj\n";
+	// 			text += i+"\n"+j+"\n"+type+"\n";
+	// 			text += obj.name+"\n";
+	// 			text += obj.getState()+"\n";
+	// 		}
+	// 	}
+	// }
+
+	//finished with generating meta string
+
+	let metaWidth = Math.ceil(text.length/height/3);
+	if(metaWidth <= 3) metaWidth = 4;
+	let metaHeight = height;
+
+	let metaWidthLen = metaWidth.toString().length;
+	let metaHeightLen = metaHeight.toString().length;
+	let reserveSize = 6;
+	text = metaWidth.toString()+text.substring(metaWidthLen);
+	text = text.substring(0,reserveSize)+metaHeight.toString()+text.substring(reserveSize+metaHeightLen);
+
+	let fullWidth = width+metaWidth+1;
+	let fullHeight = height;
+	_can.width = fullWidth;
+	_can.height = fullHeight;
+
+	let row = 0;
+	let col = 0;
+	let amt = 0;
+	for(let i = 0; i < project.frames.length; i++){
+		let frame = project.frames[i];
+		for(let j = 0; j < frame.layers.length; j++){
+			let layer = frame.layers[j];
+			if(layer.ops.obj || layer.ops.rendered) continue;
+			let n = layer.nob;
+			let buf = n.buf;
+			_ctx.putImageData(new ImageData(buf,frameWidth,frameHeight),metaWidth+1+col,row);
+			col += frameWidth;
+			amt++;
+			// if(amt >= colAmt){
+			// 	row += frameHeight;
+			// 	col = 0;
+			// 	amt = 0;
+			// }
+		}
+	}
+	function copy5(){
+		let buf = _ctx.getImageData(0,0,_can.width,_can.height).data;
+		buf = nobEncrypt(buf,_can.width,text,metaWidth,metaHeight);
+
+		let fullWidth = width+metaWidth+1;
+		let fullHeight = height;
+
+		let flippedPixels = new Uint8ClampedArray(fullWidth * fullHeight * 4);
+		for (let row = 0; row < fullHeight; row++) {
+			const rowIndex = fullHeight - row - 1;
+			const sourceOffset = rowIndex * fullWidth * 4;
+			const targetOffset = row * fullWidth * 4;
+			flippedPixels.set(buf.subarray(sourceOffset, sourceOffset + fullWidth * 4), targetOffset);
+		}
+		buf = flippedPixels;
+		
+		// Access the canvas element
+		const canvas3 = document.createElement("canvas");
+		document.body.appendChild(canvas3);
+		canvas3.style = "position:absolute;top:50%;left:50%;z-index:999;border:solid 1px red;width:50% !important;translate:-50% -50%;image-rendering:pixelated";
+
+		// Set up Three.js renderer
+		const renderer = new THREE.WebGLRenderer({ canvas: canvas3,alpha:true });
+		renderer.setClearColor(0xffffff, 0);
+		// renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+		
+		renderer.setSize(fullWidth,fullHeight);
+
+		// Create a scene
+		const scene = new THREE.Scene();
+
+		const camera = new THREE.OrthographicCamera(
+			fullWidth / -2, // Left
+			fullWidth / 2,  // Right
+			fullHeight / 2, // Top
+			fullHeight / -2, // Bottom
+			1,                      // Near plane
+			1000                    // Far plane
+		);
+		// window.innerWidth / -2, // Left
+		// window.innerWidth / 2,  // Right
+		// window.innerHeight / 2, // Top
+		// window.innerHeight / -2, // Bottom
+		camera.position.set(0, 0, 10); // Adjust camera position if needed  
+		
+		let sectW = Math.floor(fullWidth/2);
+		let sectH = fullHeight;
+		let sectSize = sectW*sectH*4;
+		let inc = 0;
+		function putMetaImg(){
+			sectW = metaWidth;
+			sectSize = sectW*sectH*4;
+			let pixels = new Uint8ClampedArray(sectSize);
+			let ind = 0;
+			let srcInd = 0;//+metaWidth*4+4;
+			for(let y = 0; y < sectH; y++){
+				for(let x = 0; x < sectW; x++){
+					pixels[ind] = buf[srcInd];
+					pixels[ind+1] = buf[srcInd+1];
+					pixels[ind+2] = buf[srcInd+2];
+					pixels[ind+3] = buf[srcInd+3];
+					ind += 4;
+					srcInd += 4;
+				}
+				srcInd += fullWidth*4;
+				srcInd -= sectW*4;
+			}
+		}
+		for(let i = 0; i < fullWidth; i += sectW){
+			let pixels = new Uint8ClampedArray(sectSize);
+			let ind = 0;
+			let srcInd = inc*sectW*4;//+metaWidth*4+4;
+			for(let y = 0; y < sectH; y++){
+				for(let x = 0; x < sectW; x++){
+					pixels[ind] = buf[srcInd];
+					pixels[ind+1] = buf[srcInd+1];
+					pixels[ind+2] = buf[srcInd+2];
+					pixels[ind+3] = buf[srcInd+3];
+					ind += 4;
+					srcInd += 4;
+				}
+				srcInd += fullWidth*4;
+				srcInd -= sectW*4;
+			}
+			
+			pixels = new Uint8Array(pixels);
+			let texture = new THREE.DataTexture(pixels,sectW,sectH);
+			texture.minFilter = THREE.NearestFilter;
+			texture.magFilter = THREE.NearestFilter;
+			texture.wrapS = THREE.ClampToEdgeWrapping;
+			texture.wrapT = THREE.ClampToEdgeWrapping;
+
+			function getTextureTest(){
+
+				// for ( let i = 0; i < size; i ++ ) {
+				// 	const stride = i * 4;
+				// 	data[ stride ] = r;
+				// 	data[ stride + 1 ] = g;
+				// 	data[ stride + 2 ] = b;
+				// 	data[ stride + 3 ] = 255;
+				// }
+				// for(let i = 0; i < size; i += 4){
+				// 	data[i] = buf[i];
+				// 	data[i+1] = buf[i+1];
+				// 	data[i+2] = buf[i+2];
+				// 	data[i+3] = buf[i+3];
+				// }
+
+				data = pixels;
+
+				// used the buffer to create a DataTexture
+				if(inc == 0){
+					console.log("data buffer: ",data);
+				}
+				const texture = new THREE.DataTexture(
+					data,sectW,sectH,
+					THREE.RGBAFormat,
+					THREE.UnsignedByteType,
+					THREE.Texture.DEFAULT_MAPPING,
+					THREE.ClampToEdgeWrapping,
+					THREE.ClampToEdgeWrapping,
+					THREE.NearestFilter,
+					THREE.NearestFilter,
+					THREE.Texture.DEFAULT_ANISOTROPY,
+					THREE.SRGBColorSpace //LinearSRGBColorSpace
+				);
+				// const texture = new THREE.DataArrayTexture(data, sectW, sectH, 1);
+				// texture.format = THREE.RGBAIntegerFormat;
+				// texture.colorSpace = THREE.LinearSRGBColorSpace;
+				// texture.premultiplyAlpha = true;
+				texture.needsUpdate = true;
+
+				return texture;
+			}
+			texture = getTextureTest();
+
+			const planeGeometry = new THREE.PlaneGeometry(sectW,sectH); // Adjust the dimensions of the plane as needed
+			// const planeMaterial = new THREE.MeshBasicMaterial({ color:"red" });
+			// const planeMaterial = new THREE.MeshBasicMaterial({ map: texture,transparent:true });
+			const planeMaterial = new THREE.MeshBasicMaterial({ map: texture,premultipliedAlpha:false,transparent:true });
+			const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+			plane.position.x = inc * sectW - fullWidth/2 + sectW/2;
+			scene.add(plane);
+
+			inc++;
+		}
+
+		renderer.render(scene, camera);
+
+		canvas3.style.width = "50%";
+		canvas3.style.height = null;
+		return canvas3;
+	}
+	function copy6(){
+		let cellX = 0;
+		for(let i = 0; i < project.frames.length; i++){
+			let frame = project.frames[i];
+			for(let j = 0; j < frame.layers.length; j++){
+				let layer = frame.layers[j];
+				_ctx.putImageData(new ImageData(layer.nob.buf,project.w,project.h),metaWidth+1+cellX,0);
+				cellX += project.w;
+			}
+		}
+		//Meta Data
+		let ind = 0;
+		let bufSize = metaWidth*metaHeight*4;
+		let buf = new Uint8ClampedArray(bufSize);
+		let x = 0;
+		let y = 0;
+		let amt = 3;
+		for(let i = 0; i < text.length; i += amt){
+			let r = text.charCodeAt(i)||0;
+			if(r == 0) break;
+			let g = text.charCodeAt(i+1)||0;
+			let b = text.charCodeAt(i+2)||0;
+
+			// ind = (x+y*fullWidth)*4;
+			buf[ind] = r;
+			buf[ind+1] = g;
+			buf[ind+2] = b;
+			buf[ind+3] = 255;
+
+			x++;
+			if(x >= metaWidth){
+				x -= metaWidth;
+				y++;
+			}
+
+			ind += 4;
+		}
+		_ctx.putImageData(new ImageData(buf,metaWidth,metaHeight),0,0);
+	}
+	copy6();
+
+	/**@type {Blob} */
+	let blob = await new Promise(resolve=>{
+		_can.toBlob(resolve,"image/png");
+	});
+	if(newHandle) if(wasSaveAs) addFileToRecents(newHandle,_can.toDataURL());
+
+	return {blob,_can};
+}
+
 async function file_save(wasSaveAs=false){
 	keys.s = false;
 
@@ -7093,330 +7831,25 @@ async function file_save(wasSaveAs=false){
 	console.log("Saving as type: ",type);
 	let startTime = performance.now();
 	/**@type {Blob} */
-	let blob = null;
+	let _blob = null;
 	let str = "";
 	switch(type){
 		case "qs":{
-			let _can = document.createElement("canvas");
-			let _ctx = _can.getContext("2d");
-
-			let width = 0;
-			let height = 0;
-			let frameWidth = project.frames[0].w;
-			let frameHeight = project.frames[0].h;
-			let totalLayers = 0;
-			let colAmt = 1;
-			for(let i = 0; i < project.frames.length; i++){
-				let frame = project.frames[i];
-				let h = 0;
-				for(let j = 0; j < frame.layers.length; j++){
-					// h += frameHeight;
-					// if(h > height) height = h;
-					totalLayers++;
-					width += frameWidth;
-				}
-			}
-			// colAmt = Math.ceil(Math.sqrt(totalLayers)); //square
-			colAmt = totalLayers; //one row
-			width = Math.ceil(frameWidth*colAmt);
-			let rowAmt = totalLayers/colAmt;
-			height = frameHeight*rowAmt;
-
-			let text = `____________0,${frameWidth},${frameHeight}\n`; //[metaWidth & metaHeight reserved x12], [version], [cellWidth], [cellHeight]
-			for(let i = 0; i < project.frames.length; i++){
-				let frame = project.frames[i];
-				let h = 0;
-				for(let j = 0; j < frame.layers.length; j++){
-					let l = frame.layers[j];
-					let prefix = "";
-					if(l.type == 1) prefix += "G,"; //Global Layer
-					else if(l.type == 2) prefix += `S-${l.staticID},`; //Static Layer
-					else if(l.type == 3) prefix += "B,"; //Background Layer (Global Static Layer)
-					if(l.ops.obj) prefix += "o,";
-					if(!l.visible) prefix += "h,";
-					
-					text += (prefix?prefix.substring(0,prefix.length-1):"")+(prefix.length?"\x01":"")+l.name;
-					if(j != frame.layers.length-1) text += ",";
-				}
-				if(i != project.frames.length-1) text += ";";
-			}
-			text += "\n";
-			
-			//System Settings
-			text += "@s\n";
-			text += "0,"+project.frameI+","+img.curLayer.ind+"\n"; //Current Frame & Layer
-			// console.log(text);
-			// for(let i = 0; i < project.objs.length; i++){
-				// let obj = project.objs[i];
-				// text += "\n@obj\n";
-
-				// text += l.ops.obj.name+"\n";
-				// text += l.ops.obj.getState()+"\n";
-			// }
-			// for(let i = 0; i < project.frames.length; i++){
-			// 	let frame = project.frames[i];
-			// 	for(let j = 0; j < frame.layers.length; j++){
-			// 		let l = frame.layers[j];
-			// 		if(l.ops.obj){
-			// 			let obj = l.ops.obj;
-			// 			let type = "";
-			// 			if(obj instanceof Armature) type = "arm";
-			// 			text += "@obj\n";
-			// 			text += i+"\n"+j+"\n"+type+"\n";
-			// 			text += obj.name+"\n";
-			// 			text += obj.getState()+"\n";
-			// 		}
-			// 	}
-			// }
-
-			//finished with generating meta string
-
-			let metaWidth = Math.ceil(text.length/height/3);
-			if(metaWidth <= 3) metaWidth = 4;
-			let metaHeight = height;
-
-			let metaWidthLen = metaWidth.toString().length;
-			let metaHeightLen = metaHeight.toString().length;
-			let reserveSize = 6;
-			text = metaWidth.toString()+text.substring(metaWidthLen);
-			text = text.substring(0,reserveSize)+metaHeight.toString()+text.substring(reserveSize+metaHeightLen);
-
-			let fullWidth = width+metaWidth+1;
-			let fullHeight = height;
-			_can.width = fullWidth;
-			_can.height = fullHeight;
-
-			let row = 0;
-			let col = 0;
-			let amt = 0;
-			for(let i = 0; i < project.frames.length; i++){
-				let frame = project.frames[i];
-				for(let j = 0; j < frame.layers.length; j++){
-					let layer = frame.layers[j];
-					if(layer.ops.obj || layer.ops.rendered) continue;
-					let n = layer.nob;
-					let buf = n.buf;
-					_ctx.putImageData(new ImageData(buf,frameWidth,frameHeight),metaWidth+1+col,row);
-					col += frameWidth;
-					amt++;
-					// if(amt >= colAmt){
-					// 	row += frameHeight;
-					// 	col = 0;
-					// 	amt = 0;
-					// }
-				}
-			}
-			function copy5(){
-				let buf = _ctx.getImageData(0,0,_can.width,_can.height).data;
-				buf = nobEncrypt(buf,_can.width,text,metaWidth,metaHeight);
-
-				let fullWidth = width+metaWidth+1;
-				let fullHeight = height;
-
-				let flippedPixels = new Uint8ClampedArray(fullWidth * fullHeight * 4);
-				for (let row = 0; row < fullHeight; row++) {
-					const rowIndex = fullHeight - row - 1;
-					const sourceOffset = rowIndex * fullWidth * 4;
-					const targetOffset = row * fullWidth * 4;
-					flippedPixels.set(buf.subarray(sourceOffset, sourceOffset + fullWidth * 4), targetOffset);
-				}
-				buf = flippedPixels;
-				
-				// Access the canvas element
-				const canvas3 = document.createElement("canvas");
-				document.body.appendChild(canvas3);
-				canvas3.style = "position:absolute;top:50%;left:50%;z-index:999;border:solid 1px red;width:50% !important;translate:-50% -50%;image-rendering:pixelated";
-
-				// Set up Three.js renderer
-				const renderer = new THREE.WebGLRenderer({ canvas: canvas3,alpha:true });
-				renderer.setClearColor(0xffffff, 0);
-				// renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-				
-				renderer.setSize(fullWidth,fullHeight);
-
-				// Create a scene
-				const scene = new THREE.Scene();
-
-				const camera = new THREE.OrthographicCamera(
-					fullWidth / -2, // Left
-					fullWidth / 2,  // Right
-					fullHeight / 2, // Top
-					fullHeight / -2, // Bottom
-					1,                      // Near plane
-					1000                    // Far plane
-				);
-				// window.innerWidth / -2, // Left
-				// window.innerWidth / 2,  // Right
-				// window.innerHeight / 2, // Top
-				// window.innerHeight / -2, // Bottom
-				camera.position.set(0, 0, 10); // Adjust camera position if needed  
-				
-				let sectW = Math.floor(fullWidth/2);
-				let sectH = fullHeight;
-				let sectSize = sectW*sectH*4;
-				let inc = 0;
-				function putMetaImg(){
-					sectW = metaWidth;
-					sectSize = sectW*sectH*4;
-					let pixels = new Uint8ClampedArray(sectSize);
-					let ind = 0;
-					let srcInd = 0;//+metaWidth*4+4;
-					for(let y = 0; y < sectH; y++){
-						for(let x = 0; x < sectW; x++){
-							pixels[ind] = buf[srcInd];
-							pixels[ind+1] = buf[srcInd+1];
-							pixels[ind+2] = buf[srcInd+2];
-							pixels[ind+3] = buf[srcInd+3];
-							ind += 4;
-							srcInd += 4;
-						}
-						srcInd += fullWidth*4;
-						srcInd -= sectW*4;
-					}
-				}
-				for(let i = 0; i < fullWidth; i += sectW){
-					let pixels = new Uint8ClampedArray(sectSize);
-					let ind = 0;
-					let srcInd = inc*sectW*4;//+metaWidth*4+4;
-					for(let y = 0; y < sectH; y++){
-						for(let x = 0; x < sectW; x++){
-							pixels[ind] = buf[srcInd];
-							pixels[ind+1] = buf[srcInd+1];
-							pixels[ind+2] = buf[srcInd+2];
-							pixels[ind+3] = buf[srcInd+3];
-							ind += 4;
-							srcInd += 4;
-						}
-						srcInd += fullWidth*4;
-						srcInd -= sectW*4;
-					}
-					
-					pixels = new Uint8Array(pixels);
-					let texture = new THREE.DataTexture(pixels,sectW,sectH);
-					texture.minFilter = THREE.NearestFilter;
-					texture.magFilter = THREE.NearestFilter;
-					texture.wrapS = THREE.ClampToEdgeWrapping;
-					texture.wrapT = THREE.ClampToEdgeWrapping;
-
-					function getTextureTest(){
-
-						// for ( let i = 0; i < size; i ++ ) {
-						// 	const stride = i * 4;
-						// 	data[ stride ] = r;
-						// 	data[ stride + 1 ] = g;
-						// 	data[ stride + 2 ] = b;
-						// 	data[ stride + 3 ] = 255;
-						// }
-						// for(let i = 0; i < size; i += 4){
-						// 	data[i] = buf[i];
-						// 	data[i+1] = buf[i+1];
-						// 	data[i+2] = buf[i+2];
-						// 	data[i+3] = buf[i+3];
-						// }
-
-						data = pixels;
-
-						// used the buffer to create a DataTexture
-						if(inc == 0){
-							console.log("data buffer: ",data);
-						}
-						const texture = new THREE.DataTexture(
-							data,sectW,sectH,
-							THREE.RGBAFormat,
-							THREE.UnsignedByteType,
-							THREE.Texture.DEFAULT_MAPPING,
-							THREE.ClampToEdgeWrapping,
-							THREE.ClampToEdgeWrapping,
-							THREE.NearestFilter,
-							THREE.NearestFilter,
-							THREE.Texture.DEFAULT_ANISOTROPY,
-							THREE.SRGBColorSpace //LinearSRGBColorSpace
-						);
-						// const texture = new THREE.DataArrayTexture(data, sectW, sectH, 1);
-						// texture.format = THREE.RGBAIntegerFormat;
-						// texture.colorSpace = THREE.LinearSRGBColorSpace;
-						// texture.premultiplyAlpha = true;
-						texture.needsUpdate = true;
-
-						return texture;
-					}
-					texture = getTextureTest();
-
-					const planeGeometry = new THREE.PlaneGeometry(sectW,sectH); // Adjust the dimensions of the plane as needed
-					// const planeMaterial = new THREE.MeshBasicMaterial({ color:"red" });
-					// const planeMaterial = new THREE.MeshBasicMaterial({ map: texture,transparent:true });
-					const planeMaterial = new THREE.MeshBasicMaterial({ map: texture,premultipliedAlpha:false,transparent:true });
-					const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-					plane.position.x = inc * sectW - fullWidth/2 + sectW/2;
-					scene.add(plane);
-
-					inc++;
-				}
-
-				renderer.render(scene, camera);
-
-				canvas3.style.width = "50%";
-				canvas3.style.height = null;
-				return canvas3;
-			}
-			function copy6(){
-				let cellX = 0;
-				for(let i = 0; i < project.frames.length; i++){
-					let frame = project.frames[i];
-					for(let j = 0; j < frame.layers.length; j++){
-						let layer = frame.layers[j];
-						_ctx.putImageData(new ImageData(layer.nob.buf,project.w,project.h),metaWidth+1+cellX,0);
-						cellX += project.w;
-					}
-				}
-				//Meta Data
-				let ind = 0;
-				let bufSize = metaWidth*metaHeight*4;
-				let buf = new Uint8ClampedArray(bufSize);
-				let x = 0;
-				let y = 0;
-				let amt = 3;
-				for(let i = 0; i < text.length; i += amt){
-					let r = text.charCodeAt(i)||0;
-					if(r == 0) break;
-					let g = text.charCodeAt(i+1)||0;
-					let b = text.charCodeAt(i+2)||0;
-
-					// ind = (x+y*fullWidth)*4;
-					buf[ind] = r;
-					buf[ind+1] = g;
-					buf[ind+2] = b;
-					buf[ind+3] = 255;
-
-					x++;
-					if(x >= metaWidth){
-						x -= metaWidth;
-						y++;
-					}
-
-					ind += 4;
-				}
-				_ctx.putImageData(new ImageData(buf,metaWidth,metaHeight),0,0);
-			}
-			copy6();
-
+			let {blob,_can} = await saveQSFile(wasSaveAs,newHandle);
+			_blob = blob;
 			console.log("TIME: ",performance.now()-startTime);
-			blob = await new Promise(resolve=>{
-				_can.toBlob(resolve,"image/png");
-			});
-			if(wasSaveAs) addFileToRecents(newHandle,_can.toDataURL());
 		} break;
 		case "png":
 			console.log("saving as png...");
-			blob = await new Promise(resolve => can.toBlob(resolve,"image/png"));
+			_blob = await new Promise(resolve => can.toBlob(resolve,"image/png"));
 			//new Blob([nob.buf.buffer],{type:"application/octet-stream"});
-			console.log("SAVED PNG:",await blob.arrayBuffer());
+			console.log("SAVED PNG:",await _blob.arrayBuffer());
 			if(wasSaveAs) addFileToRecents(newHandle);
 			break;
 		case "cnbg":
 			console.log("SAVING COMPRESSED NBG");
 			str = getFileStrC();
-			blob = new Blob([str],{type:"text/plain"});
+			_blob = new Blob([str],{type:"text/plain"});
 			break;
 		default:
 			let blob2 = await new Promise(resolve => can.toBlob(resolve,"image/png"));
@@ -7426,14 +7859,14 @@ async function file_save(wasSaveAs=false){
 			str = getFileStr();
 			//console.log("str","*pre:"+str);
 			console.log("TIME: ",performance.now()-startTime);
-			blob = new Blob([str],{type:"text/plain"});
+			_blob = new Blob([str],{type:"text/plain"});
 	}
 
 	project.unsaved = false;
 	updateFileName();
 
 	// write our file
-	if(blob) await writableStream.write(blob);
+	if(_blob) await writableStream.write(_blob);
 
 	// close the file and write the contents to disk.
 	await writableStream.close();
@@ -7500,7 +7933,7 @@ function file_export(){
 	alert("WIP - not started");
 }
 var dum = document.createElement("canvas");
-var dumCtx = dum.getContext("2d");
+var dumCtx = dum.getContext("2d",{willReadFrequently:true});
 function file_import(){
 	//from https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications
 	let inp = document.createElement("input");
@@ -7747,6 +8180,21 @@ function addRPToRecents(name,handle){
 		addReq.onsuccess = e=>console.log("Stored RP in DB successfully");
 		addReq.onerror = e=>console.log("Error, failed to stored RP in DB",e);
 	});
+}
+async function openQSFromURL(name,url){
+	let startTime = performance.now();
+	
+	let image = document.createElement("img");
+	image.src = url;
+	await new Promise(resolve=>{
+		image.onload = ()=>{
+			resolve();
+		};
+	});
+	nobDecrypt(image,name);
+
+	project.name = name;
+	console.log("TOTAL FILE LOAD TIME (FROM URL): ",performance.now()-startTime);
 }
 async function file_open(/**@type {FileSystemFileHandle}*/fileHandle,isCustom=false){
 	let startTime = performance.now();
@@ -8158,6 +8606,7 @@ function highlightFrame(i){
 	tframe.classList.add("sel2");
 }
 let draggingFrames = [];
+let startOn = false;
 function updateFramesDiv(){
 	for(let i = 0; i < project.frames.length; i++){
 		let d = frames_d.children[i];
@@ -8194,6 +8643,14 @@ function updateFramesDiv(){
 				loadFrame(project.frames[project.frameI],false);
 			}
 			if(a.down) a.down(e);
+		};
+		d.onmousedown = function(){
+			startOn = sel2Frames.includes(i);
+		};
+		d.onmousemove = function(){
+			if(g_keye.shiftKey) if(mouseDown[0]){
+				if(sel2Frames.includes(i) != startOn) highlightFrame(i);
+			}
 		};
 		let overl = d.getElementsByClassName("frameOverlay")[0];
 		overl.onmousemove = function(e){
@@ -8493,6 +8950,68 @@ function reloadRecoveryList(t,v,k){
 	}
 	t.ref = cont;
 	t.parentNode.insertBefore(cont,t.nextElementSibling);
+
+	reloadRecoveryListQS(t);
+}
+async function reloadRecoveryListQS(t){
+	let trans = db.transaction(["recoveryQS"],"readwrite");
+	let req = trans.objectStore("recoveryQS").getAll();
+	let list = await new Promise(resolve=>{
+		req.onsuccess = e=>{
+			resolve(e.target.result.sort((a,b)=>(b.date||0)-(a.date||0)));
+		};
+		req.onerror = e=>{
+			alert("Error when getting QS recovery list, see console");
+			console.error(e);
+			resolve([]);
+		};
+	});
+
+	let cont = document.createElement("div");
+	cont.className = "sub-rcv";
+
+	for(const data of list){
+		let b = document.createElement("div");
+		b.className = "flex";
+		let date = new Date(data.date);
+		b.innerHTML = `
+		<div class="flex-sb" style="gap:5px;width:100%">
+			<div>
+				<div>#${data.name} <span class="prev">- ${sessionId-data.i} sessions ago - (${date.toLocaleDateString([],{dateStyle:"short"}) + " " + date.toLocaleTimeString([],{timeStyle:"short"})})</span></div>
+				<div style="margin-left:auto;margin-top:5px"><button>Open</button><button>Delete</button></div>
+			</div>
+			<div style="margin-left:auto;max-width:150px;overflow-x:scroll">
+				<img class="rcv-prev-img" src="${data.prevURL || data.url}">
+			</div>
+		</div>
+		`;
+		cont.appendChild(b);
+		b.children[0].children[0].children[1].children[0].onclick = async function(){
+			await openQSFromURL(data.name,data.url);
+			closeAllCtxMenus();
+		};
+		b.children[0].children[0].children[1].children[1].onclick = function(){
+			let transaction = db.transaction(["recoveryQS"],"readwrite");
+			let store = transaction.objectStore("recoveryQS");
+			let res = store.delete(data._id);
+			res.onsuccess = function(){
+				b.parentElement.removeChild(b);
+			};
+			
+			// if(!confirm("Are you sure?")) return;
+			// delete localStorage[str];
+			// initFileRecovery();
+			// cont.removeChild(b);
+		};
+	}
+
+	t.ref = cont;
+	t.parentNode.insertBefore(cont,t.nextElementSibling);
+	// let par = document.createElement("div");
+	// par.className = "fileRcv";
+	// par.innerHTML = "<div>.QS File Recovery</div>";
+	// t.parentElement.parentElement.insertBefore(par,t.parentElement.parentElement.children[1]);
+	// par.appendChild(cont);
 }
 
 function getColorId(color=""){
@@ -9591,6 +10110,22 @@ function openMenu(id,atr){ //"openFiles"
 			let l = document.getElementById("fileRcv");
 			l.innerHTML = "";
 			let ok = Object.keys(recoveryFiles);
+			function createNewQSFolder(){
+				let d = document.createElement("div");
+				d.textContent = ".QS File Recovery";
+				d.ref = null;
+				d.onclick = function(){
+					if(this.ref){
+						this.ref.parentNode.removeChild(this.ref);
+						this.ref = null;
+					}
+					else{
+						reloadRecoveryListQS(this);
+					}
+				};
+				l.appendChild(d);
+			}
+			createNewQSFolder();
 			for(let i = 0; i < ok.length; i++){
 				let k = ok[i];
 				let list = [];
@@ -11576,19 +12111,19 @@ function openContext(id,x,y,temp,level,b){
 							editFunc.deselect();
 						};
 						break;
-					case 4:
+					case 4: //Flip X
 						d.onclick = ()=>{
-							alert(WIPText);
+							editFunc.selectionFlipX();
 						};
 						break;
-					case 5:
+					case 5: //Flip Y
 						d.onclick = ()=>{
-							alert(WIPText);
+							editFunc.selectionFlipY();
 						};
 						break;
-					case 6:
+					case 6: //Crop to selection
 						d.onclick = ()=>{
-							alert(WIPText);
+							editFunc.cropToSelection();
 						};
 						break;
 				}
@@ -11945,7 +12480,8 @@ var keybinds = {
 		cut:["Cut","x",true,false],
 		paste:["Paste","v",true,false],
 		resetTool:["Reset Tool","escape",false,false],
-		confirmTool:["Confirm Tool","enter",false,false]
+		confirmTool:["Confirm Tool","enter",false,false],
+		tweakMenu:["Open Tweak Menu","t",false,false]
 	},
 	color:{
 		name:"Color",
@@ -11993,7 +12529,13 @@ function kbsFirst(){
 	}
 }
 kbsFirst();
-if(localStorage.kbs) keybinds = JSON.parse(localStorage.kbs);
+if(localStorage.kbs){
+	let o = JSON.parse(localStorage.kbs);
+	let ok = Object.keys(o);
+	for(const key of ok){
+		keybinds[key] = o[key];
+	}
+}
 
 //FINISH INIT
 
@@ -12562,8 +13104,15 @@ function init2(){
 			db.createObjectStore("recentRP",{keyPath:"name"});
 		}
 		catch(e){}
+
+		try{
+			db.createObjectStore("recoveryQS",{keyPath:"_id"});
+		}
+		catch(e){}
 	};
 }
+let thisSessionRecoveryFiles = [];
+
 if(localStorage.getItem("db-ver") == null) localStorage.setItem("db-ver",0);
 localStorage.setItem("db-ver",parseInt(localStorage.getItem("db-ver"))+1);
 /**@type {IDBDatabase} */
@@ -13070,7 +13619,7 @@ function reconstructTimeline(){
 
 // Universal Brush
 
-function drawPencil(/**@type {NobsinCtx}*/nob,shapeMode=0,useDep=false,x0,y0,x1,y1,c,w,dep=0){ //shapeMode = [square,circle]
+function drawPencil(/**@type {NobsinCtx}*/nob,shapeMode=0,useDep=false,x0,y0,x1,y1,c,w,dep=0,useMultiDraw=false){ //shapeMode = [square,circle]
 	if(keys.control) dep = 252;
 	if(shapeMode == 0){
 		if(useDep) nob.drawLine_smart_dep(x0,y0,x1,y1,c,w,dep);
@@ -13104,6 +13653,19 @@ function drawPencil(/**@type {NobsinCtx}*/nob,shapeMode=0,useDep=false,x0,y0,x1,
 			if(useDep) nob.drawCircle_bres2(tx,ty,w,c,fillBrush,dep);
 			else nob.drawCircle_bres2(tx,ty,w,c,fillBrush);
 		}
+	}
+
+	// drawing on all selected frames
+	if(useMultiDraw) if(editMultiFrames) for(let i = 0; i < sel2Frames.length; i++){
+		let frameI = sel2Frames[i];
+		let frame = project.frames[frameI];
+		if(!frame) continue;
+		let curLayerI = img?.curLayer?.ind;
+		let nob1 = frame.layers[curLayerI]?.nob;
+		if(!nob1) continue;
+		if(nob1 == nob) continue;
+
+		drawPencil(nob1,shapeMode,useDep,x0,y0,x1,y1,c,w,dep,false);
 	}
 }
 
@@ -13169,4 +13731,129 @@ async function wait(delay){
 			resolve();
 		},delay);
 	});
+}
+
+
+/**
+ * 
+ * @param {HTMLElement} t 
+ * @param {*} side 
+ * @param {*} tt 
+ * @param {*} nofix 
+ */
+function registerDragSide(t,side,tt,nofix=false){
+	if(!tt) tt = t;
+	let n_ondrag = t.getAttribute("nondrag");
+	if(n_ondrag) t.n_ondrag = Function(n_ondrag);
+	let bar = document.createElement("div");
+	if(side == 0 || side == 1){
+		bar.className = "bar";
+		if(side == 0){
+			bar.style.left = "0px";
+			bar.style.top = "-5px";
+		}
+		else{
+			bar.style.left = "0px";
+			bar.style.bottom = "5px";
+		}
+	}
+	else{
+		bar.className = "hbar";
+		if(side == 2){
+			bar.style.right = "5px";
+			bar.style.top = "0px";
+		}
+		else{
+			bar.style.left = "-5px";
+			bar.style.top = "0px";
+		}
+	}
+	bar.px = 0;
+	bar.py = 0;
+	bar.x = 0;
+	bar.y = 0;
+	let rect = tt.getBoundingClientRect();
+	bar.sh = rect.height;
+	bar.sw = rect.width;
+	bar.ssx = rect.x;
+	bar.ssy = rect.y;
+	bar.h = bar.sh;
+	bar.w = bar.sw;
+	// tt.style.height = bar.h+"px";
+	let smx = 0;
+	let smy = 0;
+	let sw = rect.width;
+	let sh = rect.height;
+	function onmove(x,y,e,ref){
+		if(t.n_ondrag) t.n_ondrag(t);
+		// let rect = can.parentNode.getBoundingClientRect();
+		// let cell = rect.width/img.w;
+		if(ref.sel == -1){
+			console.warn("Side1 was -1");
+			return;
+		}
+		let side1 = ref.sel;
+		let side2 = ref.sel2;
+		if(side1 == 0){
+			let dif = e.clientY-smy;
+			bar.h = sh-dif;
+			tt.style.height = bar.h+"px";
+			if(!nofix){
+				let max = (bar.ssy-bar.h+sh);
+				if(bar.h < 100) max = bar.ssy-100+sh;
+				tt.style.top = max+"px";
+			}
+		}
+		else if(side1 == 1){
+			let dif = e.clientY-smy;
+			bar.h = sh+dif;
+			tt.style.height = bar.h+"px";
+		}
+		if(side1 == 2 || side2 == 2){
+			let dif = e.clientX-smx;
+			bar.w = sw+dif;
+			tt.style.width = bar.w+"px";
+		}
+		if(side1 == 3 || side2 == 3){
+			let dif = e.clientX-smx;
+			bar.w = sw-dif;
+			tt.style.width = bar.w+"px";
+			if(!nofix){
+				let max = (bar.ssx-bar.w+sw);
+				if(bar.w < 100) max = bar.ssx-100+sw;
+				tt.style.left = max+"px";
+			}
+		}
+	}
+	function ondown(e){
+		let rr = tt.getBoundingClientRect();
+		smx = e.clientX;
+		smy = e.clientY;
+		let style = getComputedStyle(tt);
+		sw = parseFloat(style.width.replace("px",""));
+		sh = parseFloat(style.height.replace("px",""));
+		bar.ssx = rr.x;
+		bar.ssy = rr.y;
+	}
+
+	let found = false;
+	for(let i = 0; i < uniRanges.length; i++){
+		let r1 = uniRanges[i];
+		if(r1.ref == tt){
+			found = true;
+			if(!r1.sides.includes(side)) r1.sides.push(side);
+		}
+	}
+	if(!found){
+		let v = {
+			v:true,
+			sides:[side],
+			ref:tt,
+			onmove,
+			ondown,
+			sel:-1
+		};
+		uniRanges.push(v);
+	}
+	if(getComputedStyle(t).position == "static") t.style.position = "relative";
 }
