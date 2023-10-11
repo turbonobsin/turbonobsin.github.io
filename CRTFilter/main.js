@@ -11,9 +11,9 @@ let img1 = document.createElement("img");
 // img1.src = "ship1.jfif";
 // img1.src = "insiders.png";
 // img1.src = "emoji.png";
-img1.src = "char.png";
+// img1.src = "char.png";
 // img1.src = "green.jpg";
-// img1.src = "blue.jpg";
+img1.src = "blue.jpg";
 
 let rez = 256; //256
 

@@ -1,0 +1,23 @@
+body{
+    background-color:whitesmoke;
+}
+
+.cont{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:500px;
+    height:500px;
+}
+canvas{
+    position:absolute;
+    width:100%;
+    height:100%;
+}
+#can{
+    display:none;
+}
+#can-sand{
+    image-rendering:pixelated;
+}
