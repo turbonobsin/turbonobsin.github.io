@@ -542,8 +542,24 @@ const _chnlogL = [
 		"Fixed periodic error of drag uni ranges not being detected properly",
 		"Added willReadFrequently tags that may possibly improve performance"
 	],
+	[
+		"Version: 1.7.1b (10-9-23)",
+		"Some small bug fixes to reduce the amount of error messages at certain points"
+	],
+	[
+		"Version: 1.7.2 (10-12-23)",
+		"Fixed registerDragSide not being defined on some page reloads",
+		"Added error display and safe exit when an error occurs while trying to save a .QS file",
+		"Fixed issue with uniRanges not being defined on some reloads",
+		"Started adding error handling for saving files"
+	],
+	[
+		"Version: 1.7.2b (10-13-23)",
+		"Saving QS error handling finished mostly",
+		"Added error handeling for database not loading"
+	]
 	// [
-	// 	"Version: 1.7.2a (10-9-23)",
+	// 	"Version: 1.7.3 (10-13-23)",
 	// 	""
 	// ]
 ];
@@ -4621,7 +4637,6 @@ function onwheel(/**@type {WheelEvent}*/e){
 	let difY = e.deltaY-e.movementY;
 	let isTouchpad = (Math.max(Math.abs(difX),Math.abs(difY)) < 100);
 	if(newTouchpadScrolling) if(overCanvas) if(isTouchpad){
-		console.log("using touchpad");
 		e.preventDefault();
 
 		if(e.ctrlKey) e.preventDefault();
@@ -7502,6 +7517,7 @@ async function saveQSFile(wasSaveAs,newHandle){
 			// if(h > height) height = h;
 			totalLayers++;
 			width += frameWidth;
+			// asd.asjdkl = 123;
 		}
 	}
 	// colAmt = Math.ceil(Math.sqrt(totalLayers)); //square
@@ -7797,6 +7813,29 @@ async function saveQSFile(wasSaveAs,newHandle){
 	return {blob,_can};
 }
 
+// document.onerror = function(e,src,lineno,colno,error){
+// 	console.warn("ERROR FOUND WHILE TRYING TO SAVE QS FILE:",src,lineno,colno,error,e);
+// };
+
+class ErrorType{
+	constructor(src,linno,colno,error){
+		this.src = src;
+		this.linno = linno;
+		this.colno = colno;
+		this.error = error;
+	}
+	src;
+	lineno;
+	colno;
+	error;
+}
+let consoleErrorHistory = [];
+window.onerror = function(e,src,lineno,colno,error){
+	// console.warn("ERROR FOUND WHILE TRYING TO SAVE QS FILE:",src,lineno,colno,error,e);
+	consoleErrorHistory.push(new ErrorType(src,linno,colno,error));
+	return true;
+};
+
 async function file_save(wasSaveAs=false){
 	keys.s = false;
 
@@ -7837,8 +7876,19 @@ async function file_save(wasSaveAs=false){
 	let str = "";
 	switch(type){
 		case "qs":{
-			let {blob,_can} = await saveQSFile(wasSaveAs,newHandle);
-			_blob = blob;
+			try{
+				let {blob,_can} = await saveQSFile(wasSaveAs,newHandle);
+				_blob = blob;
+			}
+			catch(e){
+				if(!_blob){
+					alert("there was an error while saving (PLEASE PRESS F12 and show the log to Claeb): "+e);
+					console.warn("there was an error while saving: ",e);
+					console.warn("HERE IS THE ERROR LOG: ",consoleErrorHistory);
+					console.log("QS SAVE CRASH REPORT: "+e.toString()+" && "+e.line+" && "+e.columnNumber);
+					return;
+				}
+			}
 			console.log("TIME: ",performance.now()-startTime);
 		} break;
 		case "png":
@@ -8146,25 +8196,30 @@ function openFileBase(e,type,fd_name,fileHandle){
 }
 function addFileToRecents(fileHandle,blobURL){
 	requestAnimationFrame(async ()=>{
-		// let blobURL = URL.createObjectURL(blob);
-		let transaction = db.transaction(["recentFiles"],"readwrite");
-		let store = transaction.objectStore("recentFiles");
-		// let key = 0;
-		// let list = await getRecentFilesList();
-		// for(const data of list){
-		// 	if(data.id > key) key = data.id;
-		// }
-		// key++;
-		transaction = db.transaction(["recentFiles"],"readwrite");
-		store = transaction.objectStore("recentFiles");
-		let addReq = store.put({
-			name:project.name,
-			url:blobURL,
-			file:fileHandle,
-			date:Date.now()
-		});
-		addReq.onsuccess = e=>console.log("Stored file in DB successfully");
-		addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
+		try{
+			// let blobURL = URL.createObjectURL(blob);
+			let transaction = db.transaction(["recentFiles"],"readwrite");
+			let store = transaction.objectStore("recentFiles");
+			// let key = 0;
+			// let list = await getRecentFilesList();
+			// for(const data of list){
+			// 	if(data.id > key) key = data.id;
+			// }
+			// key++;
+			transaction = db.transaction(["recentFiles"],"readwrite");
+			store = transaction.objectStore("recentFiles");
+			let addReq = store.put({
+				name:project.name,
+				url:blobURL,
+				file:fileHandle,
+				date:Date.now()
+			});
+			addReq.onsuccess = e=>console.log("Stored file in DB successfully");
+			addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
+		}
+		catch(e){
+			addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
+		}
 	});
 }
 function addRPToRecents(name,handle){
@@ -10744,16 +10799,6 @@ function updateRedoCtxB(){
 		else b.className = "";
 	}
 }
-const backRef = document.getElementById("backRef");
-//https://www.pngkit.com/png/full/206-2062034_minecraft-bukkit-icon-8-bit-coin.png
-let dragRef = null;
-let dragX = 0;
-let dragY = 0;
-let dragDown = false;
-let uniDrag = null;
-let uniRanges = [];
-let uniDragX = 0;
-let uniDragY = 0;
 /**
  * 
  * @param {HTMLElement} a 
@@ -12690,6 +12735,7 @@ d_keys.children[5].style.justifyContent = "right";
 var didBind = false;
 var m_keys = document.getElementById("menu_keys");
 function isBind(ref){ //isBind(keybinds.tools.pencil)
+	if(!ref) return;
 	if(ref[10]){
 		ref[10] = false;
 		didBind = true;
@@ -13084,6 +13130,7 @@ function init2(){
 
 	let request = indexedDB.open("qs-main",parseInt(localStorage.getItem("db-ver")));
 	// let request = indexedDB.open("qs-main");
+	console.log("loading db...");
 	request.onsuccess = (e)=>{
 		db = e.target.result;
 
@@ -13094,6 +13141,7 @@ function init2(){
 		console.error(e);
 	};
 	request.onupgradeneeded = (e)=>{
+		console.log("upgrading db...");
 		/**@type {IDBDatabase} */
 		let db = e.target.result;
 
@@ -13120,18 +13168,23 @@ localStorage.setItem("db-ver",parseInt(localStorage.getItem("db-ver"))+1);
 /**@type {IDBDatabase} */
 let db;
 async function getRecentFilesList(){
-	let trans = db.transaction(["recentFiles"],"readwrite");
-	let req = trans.objectStore("recentFiles").getAll();
-	return new Promise(resolve=>{
-		req.onsuccess = e=>{
-			resolve(e.target.result.sort((a,b)=>(b.date||0)-(a.date||0)));
-		};
-		req.onerror = e=>{
-			alert("Error when getting recent files list, see console");
-			console.error(e);
-			resolve([]);
-		};
-	});
+	try{
+		let trans = db.transaction(["recentFiles"],"readwrite");
+		let req = trans.objectStore("recentFiles").getAll();
+		return new Promise(resolve=>{
+			req.onsuccess = e=>{
+				resolve(e.target.result.sort((a,b)=>(b.date||0)-(a.date||0)));
+			};
+			req.onerror = e=>{
+				alert("Error when getting recent files list, see console");
+				console.error(e);
+				resolve([]);
+			};
+		});
+	}
+	catch(e){
+		return [];
+	}
 }
 async function getRecentRPList(){
 	let trans = db.transaction(["recentRP"],"readwrite");
@@ -13733,129 +13786,4 @@ async function wait(delay){
 			resolve();
 		},delay);
 	});
-}
-
-
-/**
- * 
- * @param {HTMLElement} t 
- * @param {*} side 
- * @param {*} tt 
- * @param {*} nofix 
- */
-function registerDragSide(t,side,tt,nofix=false){
-	if(!tt) tt = t;
-	let n_ondrag = t.getAttribute("nondrag");
-	if(n_ondrag) t.n_ondrag = Function(n_ondrag);
-	let bar = document.createElement("div");
-	if(side == 0 || side == 1){
-		bar.className = "bar";
-		if(side == 0){
-			bar.style.left = "0px";
-			bar.style.top = "-5px";
-		}
-		else{
-			bar.style.left = "0px";
-			bar.style.bottom = "5px";
-		}
-	}
-	else{
-		bar.className = "hbar";
-		if(side == 2){
-			bar.style.right = "5px";
-			bar.style.top = "0px";
-		}
-		else{
-			bar.style.left = "-5px";
-			bar.style.top = "0px";
-		}
-	}
-	bar.px = 0;
-	bar.py = 0;
-	bar.x = 0;
-	bar.y = 0;
-	let rect = tt.getBoundingClientRect();
-	bar.sh = rect.height;
-	bar.sw = rect.width;
-	bar.ssx = rect.x;
-	bar.ssy = rect.y;
-	bar.h = bar.sh;
-	bar.w = bar.sw;
-	// tt.style.height = bar.h+"px";
-	let smx = 0;
-	let smy = 0;
-	let sw = rect.width;
-	let sh = rect.height;
-	function onmove(x,y,e,ref){
-		if(t.n_ondrag) t.n_ondrag(t);
-		// let rect = can.parentNode.getBoundingClientRect();
-		// let cell = rect.width/img.w;
-		if(ref.sel == -1){
-			console.warn("Side1 was -1");
-			return;
-		}
-		let side1 = ref.sel;
-		let side2 = ref.sel2;
-		if(side1 == 0){
-			let dif = e.clientY-smy;
-			bar.h = sh-dif;
-			tt.style.height = bar.h+"px";
-			if(!nofix){
-				let max = (bar.ssy-bar.h+sh);
-				if(bar.h < 100) max = bar.ssy-100+sh;
-				tt.style.top = max+"px";
-			}
-		}
-		else if(side1 == 1){
-			let dif = e.clientY-smy;
-			bar.h = sh+dif;
-			tt.style.height = bar.h+"px";
-		}
-		if(side1 == 2 || side2 == 2){
-			let dif = e.clientX-smx;
-			bar.w = sw+dif;
-			tt.style.width = bar.w+"px";
-		}
-		if(side1 == 3 || side2 == 3){
-			let dif = e.clientX-smx;
-			bar.w = sw-dif;
-			tt.style.width = bar.w+"px";
-			if(!nofix){
-				let max = (bar.ssx-bar.w+sw);
-				if(bar.w < 100) max = bar.ssx-100+sw;
-				tt.style.left = max+"px";
-			}
-		}
-	}
-	function ondown(e){
-		let rr = tt.getBoundingClientRect();
-		smx = e.clientX;
-		smy = e.clientY;
-		let style = getComputedStyle(tt);
-		sw = parseFloat(style.width.replace("px",""));
-		sh = parseFloat(style.height.replace("px",""));
-		bar.ssx = rr.x;
-		bar.ssy = rr.y;
-	}
-
-	let found = false;
-	for(let i = 0; i < uniRanges.length; i++){
-		let r1 = uniRanges[i];
-		if(r1.ref == tt){
-			found = true;
-			if(!r1.sides.includes(side)) r1.sides.push(side);
-		}
-	}
-	if(!found){
-		let v = {
-			v:true,
-			sides:[side],
-			ref:tt,
-			onmove,
-			ondown,
-			sel:-1
-		};
-		uniRanges.push(v);
-	}
-	if(getComputedStyle(t).position == "static") t.style.position = "relative";
 }
