@@ -596,5 +596,18 @@
 		<!--<script src="conversions.js"></script>
 		<script src="NobsinEngine.js"></script>
 		<script src="script.js"></script>-->
+
+		<!-- SAVE ERROR TESTING -->
+		<!-- <canvas id="c"></canvas>
+		<script>
+			try{
+				const data__ = new Uint8ClampedArray([255, 0, 0, 255]);
+				const ctx__ = document.querySelector("#c").getContext("2d");
+				ctx__.putImageData(new ImageData(data__,1,1), 10/0, 0);
+			}
+			catch(e){
+				alert("ERROR: "+e);
+			}
+		</script> -->
 	</body>
 </html>

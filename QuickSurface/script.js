@@ -556,12 +556,24 @@ const _chnlogL = [
 	[
 		"Version: 1.7.2b (10-13-23)",
 		"Saving QS error handling finished mostly",
-		"Added error handeling for database not loading"
+		"Added error handling for database not loading"
+	],
+	[
+		"Version: 1.7.3 (10-13-23)",
+		"Fixed up error handling"
+	],
+	[
+		"Version: 1.7.4 (10-16-23)",
+		"Added more error log messages in potential areas of data loss while saving"
+	],
+	[
+		"Version: 1.7.5 (10-18-23)",
+		"Removed unused export opens in the file menu",
+	],
+	[
+		"Version: 1.7.6 (10-23-23)",
+		"Added abort messages and checks into saving .qs files"
 	]
-	// [
-	// 	"Version: 1.7.3 (10-13-23)",
-	// 	""
-	// ]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
 
@@ -1885,15 +1897,25 @@ function rasterizeLayer(l){
 }
 function rasterizeFrame(i,skip=1,save=false){
 	let f = project.frames[i];
+	if(!f){
+		console.warn("ERROR: could not rasterize frame");
+		return null;
+	}
 	let n = new NobsinCtx(ctx);
 	n.buf = new Uint8ClampedArray(n.size);
 	for(let j = 0; j < f.layers.length; j++){
 		let l = f.layers[j];
+		if(!l) console.warn("ERRORED while trying to rasterize frame: could not find layer: ",i,j);
 		if(save){
 			if(l.ops.obj) continue;
 			if(l.ops.rendered) continue;
 		}
-		if(l.visible) n.drawImage_basic_skip(rasterizeLayer(l),0,0,skip);
+		let fr = rasterizeLayer(l);
+		if(!fr){
+			console.warn("ERRORED while trying to rasterize frame: could not rasterize layer: ",i,j);
+			continue;
+		}
+		if(l.visible) n.drawImage_basic_skip(fr,0,0,skip);
 	}
 	return n;
 }
@@ -5017,7 +5039,64 @@ const editFunc = {
 			_histAdd(HistIds.deselect);
 		}
 	},
-	paste:function(){
+	paste:async function(){
+		if(curTool != Tools.move){
+			this.deselect();
+			
+			let items = await navigator.clipboard.read();
+			/**@type {ClipboardItem} */
+			let _item;
+			for(const item of items){
+				if(item.types.includes("image/png")){
+					_item = item;
+					break;
+				}
+			}
+			let blob = await _item.getType("image/png");
+			let url = URL.createObjectURL(blob);
+			let _img = document.createElement("img");
+			_img.src = url;
+			await new Promise(resolve=>{
+				_img.onload = function(){
+					resolve();
+				};
+			});
+			let _can = document.createElement("canvas");
+			_can.width = project.w;
+			_can.height = project.h;
+			let _ctx = _can.getContext("2d");
+			_ctx.drawImage(_img,0,0);
+			let buf = _ctx.getImageData(0,0,project.w,project.h).data;
+			
+			createLayer_bare(img.curLayer.ind,"From Clipboard");
+			img.curLayer.nob.buf = cloneBuf(buf,buf.length);
+			
+			img.select2 = new Uint8ClampedArray(nob.ssize);
+			img.selCount = nob.ssize;
+			let i = 0;
+			for(let y = 0; y < _img.height; y++){
+				for(let x = 0; x < _img.width; x++){
+					img.select2[i] = 1;
+					i++;
+				}
+				i += project.w;
+				i -= _img.width;
+			}
+
+			// let url2 = _can.toDataURL("image/png");
+			// alert(url2);
+
+			clipboard[0] = getMapOfSelection();
+			clipboard[1] = cloneBuf(img.select2,nob.ssize);
+			clipboard[2] = img.selCount;
+
+			selectTool(Tools.move);
+			resetTool();
+			startMoveTool(false);
+			
+			return;
+		}
+
 		selectTool(Tools.move);
 		resetTool();
 		let td = toolData[curTool];
@@ -5486,7 +5565,7 @@ function startMoveTool(fromCP=false){
 		img.select2 = cloneBuf(clipboard[1],nob.ssize);
 		img.selCount = clipboard[2];
 		for(const [cstr,list] of d.data){
-		for(let i = 0; i < list.length; i++){
+			for(let i = 0; i < list.length; i++){
 				let p = list[i];
 				if(p[0] < left) left = p[0];
 				if(p[1] < top) top = p[1];
@@ -7505,8 +7584,11 @@ async function saveQSFile(wasSaveAs,newHandle){
 
 	let width = 0;
 	let height = 0;
-	let frameWidth = project.frames[0].w;
-	let frameHeight = project.frames[0].h;
+	// let frameWidth = project.frames[0].w;
+	// let frameHeight = project.frames[0].h;
+	let frameWidth = img.w; //no issue
+	let frameHeight = img.h; //no issue
+
 	let totalLayers = 0;
 	let colAmt = 1;
 	for(let i = 0; i < project.frames.length; i++){
@@ -7517,14 +7599,28 @@ async function saveQSFile(wasSaveAs,newHandle){
 			// if(h > height) height = h;
 			totalLayers++;
 			width += frameWidth;
-			// asd.asjdkl = 123;
+			// asd.asjdkl = 123; //<- error testing
 		}
 	}
+
+	if(!totalLayers){
+		alert("ABORTED: A serious issue has occured: totalLayers was not valid, the value was: "+totalLayers);
+		return;
+	}
+	// totalLayers must not be 0 or undefined
+
 	// colAmt = Math.ceil(Math.sqrt(totalLayers)); //square
 	colAmt = totalLayers; //one row
 	width = Math.ceil(frameWidth*colAmt);
-	let rowAmt = totalLayers/colAmt;
-	height = frameHeight*rowAmt;
+	// let rowAmt = totalLayers/colAmt;
+	// height = frameHeight*rowAmt;
+	height = frameHeight;
+
+	console.warn("CHECKING VALIDITY OF WIDTH & HEIGHT: ",width,height);
+	if(!width || !height){
+		alert("ABORTED: A serious issue has occured: width or height was not valid, the values were: "+width+", "+height);
+		return;
+	}
 
 	let text = `____________0,${frameWidth},${frameHeight}\n`; //[metaWidth & metaHeight reserved x12], [version], [cellWidth], [cellHeight]
 	for(let i = 0; i < project.frames.length; i++){
@@ -7575,9 +7671,29 @@ async function saveQSFile(wasSaveAs,newHandle){
 
 	//finished with generating meta string
 
+	if(text.length < 12){
+		alert("ABORTED: A serious issue has occured: metaText failed to be constructed, current value surrounded in square brackets: "+`[${text}]`);
+		return;
+	}
+
+	console.warn("VALIDATING metaText: value, length:",text.length);
+	if(!text.length){
+		alert("ABORTED: A serious issue has occured: metaText was not valid (check console for value), the length was was: "+text.length);
+		console.log("MetaText Value (surrounded by square brackets): ",`[${text}]`);
+		return;
+	}
+
 	let metaWidth = Math.ceil(text.length/height/3);
 	if(metaWidth <= 3) metaWidth = 4;
 	let metaHeight = height;
+
+	console.warn("VALIDATING metaWidth: value: ",metaWidth);
+	if(!metaWidth){
+		alert("ABORTED: A serious issue has occured: metaWidth was not valid, the value was: "+metaWidth);
+		alert("Possible cause could be from invalid metaText length, length is: "+text.length+". Check console");
+		console.warn("MetaWidth was not valid, could have been due to metaText.length. MetaText.length is ",text.length,"The actual text:",text);
+		return;
+	}
 
 	let metaWidthLen = metaWidth.toString().length;
 	let metaHeightLen = metaHeight.toString().length;
@@ -7596,6 +7712,8 @@ async function saveQSFile(wasSaveAs,newHandle){
 	for(let i = 0; i < project.frames.length; i++){
 		let frame = project.frames[i];
 		for(let j = 0; j < frame.layers.length; j++){
+			// if(j == 1) break; //<- error testing -- disable the second check for this to change something
+			
 			let layer = frame.layers[j];
 			if(layer.ops.obj || layer.ops.rendered) continue;
 			let n = layer.nob;
@@ -7765,7 +7883,7 @@ async function saveQSFile(wasSaveAs,newHandle){
 	}
 	function copy6(){
 		let cellX = 0;
-		for(let i = 0; i < project.frames.length; i++){
+		if(false) for(let i = 0; i < project.frames.length; i++){
 			let frame = project.frames[i];
 			for(let j = 0; j < frame.layers.length; j++){
 				let layer = frame.layers[j];
@@ -7832,7 +7950,7 @@ class ErrorType{
 let consoleErrorHistory = [];
 window.onerror = function(e,src,lineno,colno,error){
 	// console.warn("ERROR FOUND WHILE TRYING TO SAVE QS FILE:",src,lineno,colno,error,e);
-	consoleErrorHistory.push(new ErrorType(src,linno,colno,error));
+	consoleErrorHistory.push(new ErrorType(src,lineno,colno,error));
 	return true;
 };
 
@@ -7877,7 +7995,12 @@ async function file_save(wasSaveAs=false){
 	switch(type){
 		case "qs":{
 			try{
-				let {blob,_can} = await saveQSFile(wasSaveAs,newHandle);
+				let result = await saveQSFile(wasSaveAs,newHandle);
+				if(!result){
+					alert("The file saving process was aborted");
+					return;
+				}
+				let {blob,_can} = result;
 				_blob = blob;
 			}
 			catch(e){
@@ -8218,7 +8341,7 @@ function addFileToRecents(fileHandle,blobURL){
 			addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
 		}
 		catch(e){
-			addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
+			// addReq.onerror = e=>console.log("Error, failed to stored file in DB",e);
 		}
 	});
 }
@@ -11836,9 +11959,9 @@ function openContext(id,x,y,temp,level,b){
 				"Save As",
 				"Save",
 				"Import",
-				"Export As",
-				"Export",
-				"Export As SS",
+				// "Export As",
+				// "Export",
+				"Export As Spritesheet",
 				"File Recovery",
 				`AutoSave: <span style="color:${autoSave?"limegreen":"red"}">${autoSave?"ON":"OFF"}</span>`,
 				"<span class='prev' style='color:darkgray'>Legacy File System:</span>",
@@ -12060,7 +12183,7 @@ function openContext(id,x,y,temp,level,b){
 							//openFile_bare(null,true);
 						};
 					break;
-					case "Export As SS":
+					case "Export As Spritesheet":
 						d.onclick = function(){
 							file_exportAs();
 						};
