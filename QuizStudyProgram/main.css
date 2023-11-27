@@ -1,0 +1,49 @@
+body{
+    background-color:gainsboro;
+}
+
+.main{
+    background-color:whitesmoke;
+    display:flex;
+    flex-direction:column;
+    gap:1.5rem;
+
+    min-width:400px;
+    width:1000px;
+    margin-left:50%;
+    margin-top:30px;
+    translate:-50% 0px;
+    padding:4rem;
+    border:solid 1px gray;
+}
+.main > div{
+    display:flex;
+    align-items:center;
+    gap:2rem;
+    padding:0.5rem;
+}
+.main > div.correct{
+    background-color:rgb(211, 255, 211);
+    border:solid 1px green;
+}
+.main > div.wrong{
+    background-color:rgb(255, 211, 211);
+    border:solid 1px red;
+}
+
+input{
+    padding:0.5rem;
+}
+
+.controls{
+    gap:0.5rem;
+    padding:0.5rem;
+}
+
+button{
+    padding:0.5rem 1rem;
+}
+input[type="checkbox"]{
+    width:20px;
+    height:20px;
+}
