@@ -19,7 +19,7 @@ class TermsFile{
     terms;
     name;
 }
-let file, file2;
+let file, file2, file3;
 function construct(){
     file = new TermsFile("Chapter 11",{
         "Strength":"how much weight can a given material support? What is its breaking point when it is twisted, folded, or bent?",
@@ -63,6 +63,19 @@ function construct(){
         "Layering":"used to create complex or contradictory meanings",
         "Hybridity":"the creation of artworks using disparate media and meanings to create a unified statement"
     });
+    file3 = new TermsFile("Chapter 8 (Real/Final Version)",{
+        "Iconography":"is a cultural and historical reference that builds meaning that describes images. It is the study of such symbolic visual systems.",
+        "Stereotype":"A ___ is a fixed generalization based on a preconception",
+        "Cliche":"A ___ is an an overused expression or a predictable treatment of an idea",
+        "Nonrepresentational shapes":"Nonobjective, such as circles, rectangles, and squares are called ___",
+        "Representational shapes":"We derive ___ from specific subject matter that is strongly based on direct observation?",
+        "Abstract shapes":"Between these two extremes, ___ are derived from visual reality but are distilled and transformed, reducing their resemblance to the original source",
+        "Definition":"is the degree to which we distinguish one visual component from another",
+        "Analogy":"an ___ creates a general connection between unrelated objects or ideas,",
+        "Simile":"whereas a ___ creates the connection using the word 'as' or 'like'",
+        "Appropriation":"We often use ___ (the reuse of an existing artwork) to create a connection between past and presnet cultural values",
+        "Layering":"Artists often use ___ to create complex or even contradictory meanings"
+    });
 }
 construct();
 
@@ -75,7 +88,7 @@ b_cp11.onclick = function(){
     selectFile(file);
 };
 b_cp8.onclick = function(){
-    selectFile(file2);
+    selectFile(file3);
 };
 cb_random.onclick = function(){
     useShuffle = cb_random.checked;
