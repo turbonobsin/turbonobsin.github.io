@@ -1,0 +1,20 @@
+#square{
+    width:200px;
+    height:200px;
+    /* background-color:red; */
+
+    /* background-image:url(rainbow.gif); */
+    background-image:url(car.png);
+    background-size:contain;
+
+    /* margin-left:100px; */
+
+    transition:all 0.2s ease-out;
+}
+/* #square:hover{
+    background-color:blue;
+} */
+
+body{
+    background-color:white;
+}
