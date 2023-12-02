@@ -11,8 +11,12 @@ function objToMap(data){
 }
 
 class TermsFile{
-    constructor(name,terms){
+    constructor(name,/**@type {[string,string|Object][]}*/terms){
         this.name = name;
+        if(useShuffle){
+            terms = terms.filter(v=>v[0] != "-");
+            terms.sort((a,b)=>Math.random()-0.5);
+        }
         this.list = terms;
         // this.terms = objToMap(terms);
     }
@@ -330,9 +334,9 @@ b_cp8.onclick = function(){
 };
 cb_random.onclick = function(){
     useShuffle = cb_random.checked;
-    let i = (_file == file ? 0 : file2);
+    let i = (_file == fileFinal ? 0 : file2);
     construct();
-    if(i == 0) _file = file;
+    if(i == 0) _file = fileFinal;
     else _file = file2;
     loadTerms(_file);
 };
