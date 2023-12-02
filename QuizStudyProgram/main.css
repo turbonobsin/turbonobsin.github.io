@@ -22,11 +22,11 @@ body{
     gap:2rem;
     padding:0.5rem;
 }
-.main > div.correct{
+.correct{
     background-color:rgb(211, 255, 211);
     border:solid 1px green;
 }
-.main > div.wrong{
+.wrong{
     background-color:rgb(255, 211, 211);
     border:solid 1px red;
 }
@@ -61,4 +61,10 @@ div.space{
 }
 .otherAns-out{
     
+}
+
+.inp-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
 }
