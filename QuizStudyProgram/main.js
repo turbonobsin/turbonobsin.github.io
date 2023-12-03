@@ -238,7 +238,7 @@ function construct(){
         ["tempo","the number of beats with in a given space creates the ___ or rate of change"],
         // Quiz 9: Chapter 11
         ["-","Quiz 9: Chapter 11"],
-        ["composite","a ___ is created when we fue together two or more materials of different strength"],
+        ["composite","a ___ is created when we fuse together two or more materials of different strength"],
         ["exoskeleton","an ___ provides a structure on the outside like insects, crabs and lobsters use"],
         ["compression","occurs when you push a material inward"],
         ["tension","occurs when you pull a material outward"],
@@ -249,11 +249,11 @@ function construct(){
         ["ephemera","is a material that rapidly decays or trash which is already in a state of decay"],
         ["assemblage","is a method of using objects or images orginally designed for another purpose to create a work of art or design"],
         // Quiz 10: Chapter 8 (we got one wrong on this quiz but I don't know which one it was)
-        ["-","Quiz 10: Chapter 8 (we got one wrong on this quiz but I don't know which one it was)"],
+        ["-","Quiz 10: Chapter 8"],
         ["Iconography","is a cultural and historical reference that builds meaning that describes images. It is the study of such symbolic visual systems."],
         ["Stereotype","A ___ is a fixed generalization based on a preconception"],
         ["Cliche","A ___ is an an overused expression or a predictable treatment of an idea"],
-        ["Nonrepresentational shapes","Nonobjective, such as circles, rectangles, and squares are called ___"],
+        ["pure forms","Nonobjective, such as circles, rectangles, and squares are called ___"],
         ["Representational shapes","We derive ___ from specific subject matter that is strongly based on direct observation?"],
         ["Abstract shapes","Between these two extremes, ___ are derived from visual reality but are distilled and transformed, reducing their resemblance to the original source"],
         ["Definition","is the degree to which we distinguish one visual component from another"],
