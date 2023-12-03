@@ -124,7 +124,7 @@ function construct(){
             n:3
         }],
         ["tertiary colors","a primary color mixed with a secondary color adjacent to it are called"],
-        ["tints","Variations on a single hue are called, (please correct, not sure if this has the correct answer)"],
+        ["monochromatic color scheme","Variations on a single hue are called"],
         ["analogous","adjacent colors in the spectrum are used in an ___ color scheme"],
         ["triadic","a color scheme that uses three hues equally spaced around the color wheel is called ___"],
         ["key color","A ___, or dominant color, can heighten psychological as well as compositional impact"],
