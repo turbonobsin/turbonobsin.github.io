@@ -4,8 +4,8 @@ body{
 #can{
   image-rendering:pixelated;
   width:50%;
-  border-bottom:solid 1px gray;
-  border-right:solid 1px gray;
+  /* border-bottom:solid 1px gray; */
+  /* border-right:solid 1px gray; */
 }
 .flex{
   display:flex;
@@ -38,4 +38,10 @@ input::-webkit-file-upload-button:hover{
 input[type="checkbox"]{
   width:1.2rem;
   height:1.2rem;
+}
+
+li{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
 }
