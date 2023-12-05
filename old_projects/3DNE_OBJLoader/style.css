@@ -2,7 +2,7 @@ body{
   margin:0;
 }
 #can{
-  image-rendering:pixelated;
+  image-rendering:unset;
   width:50%;
   /* border-bottom:solid 1px gray; */
   /* border-right:solid 1px gray; */
