@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Nobsin Engine 3D Renderer</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <div class="flex">
+      <canvas id="can"></canvas>
+      <div class="options">
+        <div class="flex">
+          <div>Import File</div>
+          <input class="i-file" type="file" name="" id="">
+        </div>
+        <div>
+          <div>Presets:</div>
+          <ul>
+            <li class="d-btns">
+              <button>Torus</button>
+              <button>Suzanne</button>
+              <button>Icosphere</button>
+              <button>Cube</button>
+              <button>Cube (Triangular)</button>
+              <button>Tall Box</button>
+            </li>
+          </ul>
+        </div>
+        <div class="flex">
+          <div>Draw Faces (disable to drastically improve performance)</div>
+          <input class="cb-drawFaces" type="checkbox" checked>
+        </div>
+        <div class="flex">
+          <div>Draw Edges</div>
+          <input class="cb-drawEdges" type="checkbox" checked>
+        </div>
+        <div class="flex">
+          <div>Monochromatic</div>
+          <input class="cb-mono" type="checkbox" checked>
+        </div>
+        <div class="flex">
+          <div>Anti-aliasing</div>
+          <input class="cb-anti" type="checkbox">
+        </div>
+      </div>
+    </div>
+    <script src="NobsinEngine.js"></script>
+    <!-- <script src="NE_1.3.2.js"></script> -->
+    <!-- <script src="script copy.js"></script> -->
+    <script src="script2.js"></script>
+  </body>
+</html>
