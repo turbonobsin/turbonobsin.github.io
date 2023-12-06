@@ -1280,6 +1280,13 @@ function renderObject(x=200,y=200,z=0){
 
 var mouseX = 0;
 var mouseY = 0;
+var mouseOver = false;
+document.addEventListener("mouseenter",e=>{
+  mouseOver = true;
+});
+document.addEventListener("mouseleave",e=>{
+  mouseOver = false;
+});
 function update(){
   window.requestAnimationFrame(update);
 
@@ -1299,6 +1306,12 @@ function update(){
   let perspec = 1; //For 1 x, 0.5 y
   //test: render tree with 3d rotation
   renderObject(nob.centerX,nob.centerY,20);
+
+  if(innerWidth < 800 || !mouseOver){
+    mouseX += 2;
+    mouseY += 0.5;
+  }
+
   //let cubeW = 10+(mouseX/16);
   //renderCube(100,100,0,cubeW,5,10,0,0,0,0,0,0);
   if(false){

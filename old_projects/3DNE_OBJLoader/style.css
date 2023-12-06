@@ -45,3 +45,12 @@ li{
   gap:5px;
   flex-wrap:wrap;
 }
+
+@media (max-width: 800px){
+  .super-flex{
+    flex-direction:column;
+  }
+  #can{
+    width:100%;
+  }
+}
