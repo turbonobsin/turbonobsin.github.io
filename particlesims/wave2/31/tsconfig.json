@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "ES2022",
+        "strictNullChecks": false,
+        "sourceMap": true,
+        "lib": [
+            "DOM",
+            "ES2022"
+        ]
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}

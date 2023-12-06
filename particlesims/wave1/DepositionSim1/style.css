@@ -1,0 +1,8 @@
+body{
+    margin:0px;
+  }
+  #can{
+    width:100%;
+    border-bottom:solid 1px gray;
+    image-rendering:pixelated;
+  }
