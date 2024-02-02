@@ -573,6 +573,10 @@ const _chnlogL = [
 	[
 		"Version: 1.7.6 (10-23-23)",
 		"Added abort messages and checks into saving .qs files"
+	],
+	[
+		"Version: 1.7.7 (2-2-24)",
+		""
 	]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
@@ -4388,7 +4392,7 @@ function update(){
 	let tmpCtx = tmpCan.getContext("2d");
 	tmpCan.width = nob.width;
 	tmpCan.height = nob.height;
-	if(true) for(let i = 0; i < img.layers.length; i++){
+	for(let i = 0; i < img.layers.length; i++){
 		if(!layers_d.children[i]) continue;
 		let l = img.layers[i];
 
@@ -4432,7 +4436,10 @@ function update(){
 			ctx.drawImage(tmpCan,0,0);
 		}
 
-		// if(l.visible) nob.drawImage_basic(lr,0,0);
+		// if(l.visible){
+			// nob.drawImage_basic(lr,0,0);
+			// ctx.putImageData(new ImageData(nob.buf,nob.width,nob.height),0,0);
+		// }
 		// if(l.visible) nob.drawImage_fast(lr,0,0);
 	}
 	_perf_displayTime = performance.now()-_start1;
@@ -4476,6 +4483,7 @@ function update(){
 		let _tn;
 		let _tn2;
 		if(curTool == Tools.move){
+			let data = ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
 			ctx.canvas.width = d.width;
 			ctx.canvas.height = d.height;
 			_tn = new NobsinCtx(ctx);
@@ -4487,6 +4495,7 @@ function update(){
 			_tn.buf = new Uint8ClampedArray(_tn.size);
 			_tn2.buf = new Uint8ClampedArray(_tn2.size);
 			_tn2.dep = new Uint8ClampedArray(_tn2.ssize);
+			ctx.putImageData(data,0,0);
 		}
 		if(img.selCount != 0) for(let i = 0; i < nob.ssize; i++){
 			if(img.select2[i]){
