@@ -24,13 +24,15 @@ function init3D(){
 	globalThis.loaded3D = true;
 	
 	scene = new THREE.Scene();
-	const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	// const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	const camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
 	
 	let newCan = document.getElementById("threeCan")
 	const renderer = new THREE.WebGLRenderer({
 		canvas:newCan
 	});
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	// renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setSize( window.innerHeight, window.innerHeight );
 	renderer.sortObjects = false;
 	// document.body.appendChild( renderer.domElement );
 	// renderer.domElement.classList.add("threejs-canvas");
@@ -105,26 +107,35 @@ function init3D(){
 	console.log("Finished loading 3D.");
 }
 
-function load3D_player(){
+function load3D_player(path){
 	let skin_texture = new THREE.TextureLoader().load('models/skin.png');
 	globalThis.skin_texture = skin_texture;
 
-	let player = loader.load("models/mainPlayer.glb",(/**@type {{scene:THREE.Group}}*/s)=>{
+	if(_s) scene.remove(_s);
+
+	loader.load(`models/${path}.glb`,(/**@type {{scene:THREE.Group}}*/s)=>{
 		console.log("loaded player");
 		console.log(s);
 		scene.add(s.scene);
 		_s = s.scene;
+
+		window.player = s.scene;
 		
-		for(let c of s.scene.children){
-			c.material = new THREE.MeshStandardMaterial({map:c.material.map});
-			/**@type {THREE.MeshBasicMaterial} */
-			let mat = c.material;
-			mat.needsUpdate = true;
-			mat.transparent = true;
-			mat.side = THREE.DoubleSide;
-			// mat.depthWrite = false;
-			// console.log(c.name,c);
+		function run(obj){
+			for(let c of obj.children){
+				c.material = new THREE.MeshStandardMaterial({map:c.material.map});
+				/**@type {THREE.MeshBasicMaterial} */
+				let mat = c.material;
+				mat.needsUpdate = true;
+				mat.transparent = true;
+				mat.side = THREE.DoubleSide;
+				// mat.depthWrite = false;
+				// console.log(c.name,c);
+
+				if(c.children?.length != 0) run(c);
+			}
 		}
+		run(s.scene);
 	});
 }
 function load3D_cube(){
@@ -194,19 +205,23 @@ function update3D(){
 		new_skin_texture.flipY = false;
 		new_skin_texture.needsUpdate = true;
 		new_skin_texture.colorSpace = "srgb";
-		for(const s of _s.children){
-			/**@type {THREE.MeshStandardMaterial} */
-			let mat = s.material;
-			if(!mat) continue;
+		function run(obj){
+			for(const s of obj.children){
+				/**@type {THREE.MeshStandardMaterial} */
+				let mat = s.material;
+				if(!mat) continue;
+	
+				mat.map = new_skin_texture;
+				// mat.normalMap = new_skin_texture_n;
+	
+				// mat.transparent = true;
+				// mat.side = THREE.DoubleSide;
+				mat.needsUpdate = true;
 
-			mat.map = new_skin_texture;
-			// mat.normalMap = new_skin_texture_n;
-
-			// mat.transparent = true;
-			// mat.side = THREE.DoubleSide;
-			mat.needsUpdate = true;
+				if(s.children?.length != 0) run(s);
+			}
 		}
-
+		run(_s);
 	}
 }
 

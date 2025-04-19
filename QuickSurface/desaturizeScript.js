@@ -16,17 +16,17 @@ SR.loopAllPixels((x,y,i)=>{
     let contrast = 0.2;
     let lightness = 50;
 
-    src[0] += (av-src[0])*contrast;
-    src[1] += (av-src[1])*contrast;
-    src[2] += (av-src[2])*contrast;
+    // src[0] += (av-src[0])*contrast;
+    // src[1] += (av-src[1])*contrast;
+    // src[2] += (av-src[2])*contrast;
 
-    src[0] += lightness;
-    src[1] += lightness;
-    src[2] += lightness;
+    // src[0] += lightness;
+    // src[1] += lightness;
+    // src[2] += lightness;
 
-    src[0] = Math.min(255,src[0]);
-    src[1] = Math.min(255,src[1]);
-    src[2] = Math.min(255,src[2]);
+    // src[0] = Math.min(255,src[0]);
+    // src[1] = Math.min(255,src[1]);
+    // src[2] = Math.min(255,src[2]);
 
     buf[i] = src[0];
     buf[i+1] = src[1];

@@ -576,7 +576,19 @@ const _chnlogL = [
 	],
 	[
 		"Version: 1.7.7 (2-2-24)",
-		""
+		"Fixed image disapearing when using the move tool"
+	],
+	[
+		"Version: 1.7.8 (4-18-25)",
+		"Wow over a year since the last update! Been working on QS2 for quite a while now even",
+		"Fixed Preview so it's a square aspect ratio (versus the landscape ratio before)",
+		"Changed load3D_player so it takes a string parameter for what file you want to load",
+		"Added another option to the previewer to load slim player model",
+		"Fixed the mainPlayer model so that it has all the correct mapping for the base and outer layer parts",
+		"Fixed the mainPlayer model so that it has correct layering to prevent z-fighting with the outer layers",
+		"Fixed the mainPlayer model to have correctly scaled outer layers based on the base size",
+		"Added slim player model with these same additions",
+		"Changed loading the 3D model so that if you toggle to a different type it'll switch instead of toggle off"
 	]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
@@ -3812,6 +3824,7 @@ let preview = {
 			"Toggle Camera ",
 			"Select Camera ",
 			"Toggle 3D Player",
+			"Toggle 3D Player (Slim)",
 			"Toggle 3D Cube"
 			// "Cam Mode: off [...]"
 		],[],(i,d)=>{
@@ -3839,18 +3852,37 @@ let preview = {
 			}
 			else if(i == 2){ //Toggle 3D Player
 				let threeCan = document.getElementById("threeCan");
-				if(threeCan.classList.contains("hide")){
+				if(threeCan.classList.contains("hide") || threeCan.classList.contains("type-slim")){
 					threeCan.classList.remove("hide");
+					threeCan.classList.add("type-normal");
+					threeCan.classList.remove("type-slim");
 					prevCan.classList.add("hide");
 					if(!loaded3D) init3D();
-					load3D_player();
+					load3D_player("mainPlayer_out");
 				}
 				else{
 					threeCan.classList.add("hide");
+					threeCan.classList.remove("type-normal");
 					prevCan.classList.remove("hide");
 				}
 			}
-			else if(i == 3){ //Toggle 3D Cube
+			else if(i == 3){ //Toggle 3D Player (Slim)
+				let threeCan = document.getElementById("threeCan");
+				if(threeCan.classList.contains("hide") || threeCan.classList.contains("type-normal")){
+					threeCan.classList.remove("hide");
+					threeCan.classList.add("type-slim");
+					threeCan.classList.remove("type-normal");
+					prevCan.classList.add("hide");
+					if(!loaded3D) init3D();
+					load3D_player("mainPlayerSlim_out");
+				}
+				else{
+					threeCan.classList.add("hide");
+					threeCan.classList.remove("type-slim");
+					prevCan.classList.remove("hide");
+				}
+			}
+			else if(i == 4){ //Toggle 3D Cube
 				let threeCan = document.getElementById("threeCan");
 				if(threeCan.classList.contains("hide")){
 					threeCan.classList.remove("hide");
