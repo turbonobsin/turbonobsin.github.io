@@ -589,6 +589,10 @@ const _chnlogL = [
 		"Fixed the mainPlayer model to have correctly scaled outer layers based on the base size",
 		"Added slim player model with these same additions",
 		"Changed loading the 3D model so that if you toggle to a different type it'll switch instead of toggle off"
+	],
+	[
+		"Version: 1.7.9 (4-20-25)",
+		"Finally fixed the 3D player and slim player models' texture mapping to be correct"
 	]
 ];
 const WIPText = "This feature is still in development/unfinished and is not available for use yet."
