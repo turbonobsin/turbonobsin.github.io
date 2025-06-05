@@ -1,0 +1,34 @@
+:root{
+    /* 62a1f3 */
+    --ctx-color:#4b81c9;
+    --ctx-text-color:rgb(255, 255, 255);
+    --ctx-item-border:rgb(185, 196, 214);
+    --ctx-item-hover:#135bb8;
+    /* --ctx-item-hover:#1f78eb; */
+
+    --ctx-item-disabled:gray;
+    --ctx-text-disabled:gainsboro;
+
+    --menubar-mainbutton-hover:#4b81c9;
+
+    /* --background:rgb(223, 239, 237); */
+    --foreground:gainsboro;
+    --cont-background:rgb(236, 236, 236);
+    --hsl-bg:gainsboro;
+
+    --tool-sel:#1cc15b;
+    --tool-hover:#169848;
+    --tool-temp:goldenrod;
+    --tool-temp-hover:darkgoldenrod;
+    /* --tool-sel:#5de4cd; */
+    
+    /* --button-background:white; */
+    /* --button-hover:lightgray; */
+    /* --button-active:darkgray; */
+}
+
+.menuBar > div.main{
+    background-color:#1a3d6b;
+    color:white;
+    /* 1f4b83 */
+}

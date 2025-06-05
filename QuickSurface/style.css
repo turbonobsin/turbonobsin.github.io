@@ -2244,3 +2244,31 @@ button.b-rpe-add{
 .flex-input-cont > input{
 	height:15px !important;
 }
+
+/*  */
+
+button.unchecked{
+	/* background-color:var(--background); */
+	/* color:var(--text-color); */
+	filter:contrast(0.5);
+	opacity:0.75;
+	text-decoration:line-through;
+}
+button.checked{
+	background-color:green !important;
+	color:white !important;
+}
+
+.threeCanOpsGrid{
+	display:grid;
+	grid-template-columns:1fr 1fr 1fr 1fr;
+	gap:5px;
+}
+.threeCanOpsGrid-2{
+	display:grid;
+	grid-template-columns:1fr 1fr 1fr 1fr;
+	gap:5px;
+}
+.threeCanOp{
+	min-height:25px;
+}

@@ -22,10 +22,127 @@ let scene;
 globalThis.loaded3D = false;
 function init3D(){
 	globalThis.loaded3D = true;
+
+	// RL, LL, chest, RA, LA, head, outer_chest, outer_RL, outer_LL, outer_RA, outer_LA, outer_head
 	
 	scene = new THREE.Scene();
+	window.scene = scene;
 	// const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 	const camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
+	
+	// let threeCanCont = document.getElementById("threeCan-cont");
+	let threeCanOps = document.getElementById("threeCan-ops");
+
+	function setupThreeCanOps(){
+		class Option{
+			constructor(label,id){
+				this.label = label;
+				this.id = id;
+			}
+			label = "";
+			id = "";
+			show = true;
+			/**@type {HTMLButtonElement} */
+			btn = null;
+			action(){}
+		}
+		class OptionToggle extends Option{
+			constructor(label,id){
+				super(label,id);
+				this.show = true;
+			}
+			toggle(){
+				this.show = !this.show;
+				if(this.btn){
+					this.btn.classList.toggle("unchecked",!this.show);
+				}
+
+				/**@type {THREE.Object3D} */
+				let obj = scene.getObjectByName(this.id);
+				if(obj){
+					obj.visible = this.show;
+				}
+			}
+			action(){
+				this.toggle();
+			}
+		}
+		class OptionMirrorToggle extends Option{
+			constructor(label,id){
+				super(label,id);
+				this.show = true;
+			}
+			toggle(){
+				this.show = !this.show;
+				if(this.btn){
+					this.btn.classList.toggle("checked",this.show);
+				}
+
+				autoClone[this.id] = this.show;
+				if(this.show){
+					runAutoClone(false);
+				}
+			}
+			action(){
+				this.toggle();
+			}
+		}
+		let grid1 = document.createElement("div");
+		grid1.classList.add("threeCanOpsGrid");
+		threeCanOps.appendChild(grid1);
+		let grid2 = document.createElement("div");
+		grid2.classList.add("threeCanOpsGrid-2");
+		threeCanOps.appendChild(grid2);
+		let options = [
+			new OptionToggle("Head","head"),
+			new OptionToggle("Head (outer)","outer_head"),
+			new OptionToggle("Body","chest"),
+			new OptionToggle("Body (outer)","outer_chest"),
+			new OptionToggle("Left Arm","LA"),
+			new OptionToggle("Left Arm (outer)","outer_LA"),
+			new OptionToggle("Right Arm","RA"),
+			new OptionToggle("Right Arm (outer)","outer_RA"),
+			new OptionToggle("Left Leg","LL"),
+			new OptionToggle("Left Leg (outer)","outer_LL"),
+			new OptionToggle("Right Leg","RL"),
+			new OptionToggle("Right Leg (outer)","outer_RL"),
+		];
+		let ops2 = [
+			new OptionMirrorToggle("LA","mirrorLA"),
+			new OptionMirrorToggle("LA (outer)","mirrorLAOuter"),
+			new OptionMirrorToggle("LL","mirrorLL"),
+			new OptionMirrorToggle("LL (outer)","mirrorLLOuter"),
+		];
+		ops2.forEach(op=>op.show = false);
+		for(const op of options){
+			let btn = document.createElement("button");
+			btn.className = "threeCanOp";
+			btn.textContent = op.label;
+			btn.onmousedown = ()=>{
+				op.action();
+			};
+			grid1.appendChild(btn);
+			btn.classList.toggle("unchecked",!op.show);
+			op.btn = btn;
+		}
+		grid1.appendChild(document.createElement("hr"));
+		grid1.appendChild(document.createElement("hr"));
+		let label = document.createElement("div");
+		label.textContent = "Auto clone options:";
+		grid2.parentElement.insertBefore(label,grid2);
+		for(const op of ops2){
+			let btn = document.createElement("button");
+			btn.className = "threeCanOp";
+			btn.textContent = op.label;
+			btn.onmousedown = ()=>{
+				op.action();
+			};
+			grid2.appendChild(btn);
+			btn.classList.toggle("checked",op.show);
+			op.btn = btn;
+		}
+	}
+	setupThreeCanOps();
 	
 	let newCan = document.getElementById("threeCan")
 	const renderer = new THREE.WebGLRenderer({
